@@ -25,6 +25,7 @@
     "spike:prepare-pipeline": "node research/prepare-pipeline.mjs",
     "spike:build-pipeline": "powershell -NoProfile -ExecutionPolicy Bypass -File research/build-speaker.ps1 -Kind pipeline",
     "spike:pipeline": "node research/pipeline-smoke.mjs",
+    "spike:pipeline-stress": "node research/pipeline-stress.mjs",
     "spike:pipeline-browser": "node research/browser-live-asr.mjs --pipeline",
     "verify:speaker-assets": "node scripts/verify-speaker-assets.mjs",
     "build": "npm run typecheck && npm run verify:speaker-assets && vite build",

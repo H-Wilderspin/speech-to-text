@@ -44,6 +44,7 @@ if ($Kind -eq 'asr' -or $Kind -eq 'pipeline') {
       '_SherpaOnnxVoiceActivityDetectorFront', '_SherpaOnnxVoiceActivityDetectorPop',
       '_SherpaOnnxVoiceActivityDetectorDetected',
       '_SherpaOnnxDestroySpeechSegment', '_SherpaOnnxVoiceActivityDetectorFlush'
+      '_SherpaOnnxVoiceActivityDetectorReset'
     )) | Select-Object -Unique
   }
 }

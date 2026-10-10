@@ -3,6 +3,8 @@
 Date: 2026-10-10
 Status: Accepted experiment; no production diarization or identity selection
 
+The native-state continuation after forced Flush described below is superseded by [ADR 0012](0012-vad-window-reset.md), following a longer-stream failure. Other decisions remain in effect.
+
 ## Context
 
 The continuous capture adapter supplies ordered 16 kHz samples. M3 still needs speech boundaries and speaker evidence from those exact samples. Browser ASR timing cannot supply this association. The existing sherpa checkout contains a small Silero VAD export and the already evaluated English embedding model.

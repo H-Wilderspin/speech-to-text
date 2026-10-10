@@ -1,9 +1,13 @@
 import { expect, it } from 'vitest';
 import { createSpeechDetector } from './speech-regions.mjs';
 
+it('requests a runtime rebuild before capturing with an older native module', () => {
+  expect(() => createSpeechDetector({}, new Uint8Array(1))).toThrow('spike:build-pipeline');
+});
+
 function fixture() {
   const buffer = new ArrayBuffer(4 * 1024 * 1024); let pointer = 64; let accepted = 0; let head = 0;
-  let pending = []; let segment;
+  let pending = []; let segment; let flushed = false;
   const module = {
     HEAPU32: new Uint32Array(buffer), HEAPF32: new Float32Array(buffer),
     FS: { writeFile() {}, unlink() {} },
@@ -12,14 +16,20 @@ function fixture() {
     _SherpaOnnxCreateVoiceActivityDetector: () => 1, _SherpaOnnxDestroyVoiceActivityDetector() {},
     _SherpaOnnxVoiceActivityDetectorDetected: () => 1,
     _SherpaOnnxVoiceActivityDetectorAcceptWaveform: (_detector, audio, count) => {
+      if (flushed) throw new Error('Reset native VAD before continuing after Flush.');
       expect(count).toBe(512); pending.push(module.HEAPF32.slice(audio / 4, audio / 4 + count)); accepted += count;
     },
     _SherpaOnnxVoiceActivityDetectorFlush: () => {
+      flushed = true;
       if (!pending.length) return;
       const audio = module._malloc((accepted - head) * 4); let offset = audio / 4;
       for (const samples of pending) { module.HEAPF32.set(samples, offset); offset += samples.length; }
       const handle = module._malloc(12); module.HEAPU32.set([head, audio, accepted - head], handle / 4);
       segment = handle; pending = []; head = accepted;
+    },
+    _SherpaOnnxVoiceActivityDetectorReset: () => {
+      expect(pending).toHaveLength(0); expect(segment).toBeUndefined();
+      accepted = 0; head = 0; flushed = false;
     },
     _SherpaOnnxVoiceActivityDetectorEmpty: () => segment ? 0 : 1,
     _SherpaOnnxVoiceActivityDetectorFront: () => segment,
@@ -27,7 +37,7 @@ function fixture() {
   };
   return createSpeechDetector(module, new Uint8Array(1));
 }
-it('feeds complete model windows and bounds continuous speech without resetting its clock', () => {
+it('resets native analysis windows after Flush while preserving the global input clock', () => {
   const detector = fixture(); const samples = Float32Array.from({ length: 21 * 16000 + 79 }, (_, i) => (i % 100) / 100);
   const regions = [];
   for (let offset = 0; offset < samples.length; offset += 1234) regions.push(...detector.accept(samples.subarray(offset, offset + 1234), offset));
@@ -37,6 +47,7 @@ it('feeds complete model windows and bounds continuous speech without resetting 
   ]);
   for (const region of regions) expect(region.samples).toEqual(samples.slice(region.startSample, region.endSample));
   expect(tail.acceptedSamples - tail.analyzedSamples).toBe(207);
+  expect(regions.map((region) => region.analysisWindowStartSample)).toEqual([0, 163840, 327680]);
   detector.close(); detector.close();
 });
 it('rejects gaps and input after finishing rather than restarting timestamps', () => {

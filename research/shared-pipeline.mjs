@@ -36,6 +36,7 @@ export async function createSharedPipeline(module, createOnlineRecognizer, asset
       return regions.map((region) => {
         inspectRegion(region);
         return { clockId, startSample: region.startSample, endSample: region.endSample, reason: region.reason,
+          analysisWindowStartSample: region.analysisWindowStartSample,
           speaker: 'Unknown', singleSpeakerVerified: false };
       });
     } finally { regions.forEach((region) => region.samples.fill(0)); }

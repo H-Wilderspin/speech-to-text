@@ -80,3 +80,12 @@
 - **Solution:** keep a three-second PCM ring and compute bounded windows at most every 1.5 seconds when current VAD state reports speech. Force marked VAD window cuts every 10.24 seconds without resetting the sample clock. These cuts and windows do not prove a speaker turn.
 - **Verification:** Node maximum processing steps fell below 310 ms in these fixtures; Chromium's complete capture/pipeline run peaked at 381 ms without queue overrun. Forced-cut and sample-window tests verify continuity and exact sample values. Physical-phone throughput is unverified.
 - **Prevention:** benchmark worst processing bursts and simultaneous model memory, not only average real-time factor. Preserve the explicit overrun stop and Unknown labels until turn/identity evidence exists. Related: ADR 0010.
+
+## 2026-10-10 — VAD failed after two minutes of repeated speech
+
+- **Context:** combined WASM pipeline, Node 22.20.0/Windows, generated speech with three-second gaps, forced 10.24-second VAD cuts.
+- **Symptoms:** `spike:pipeline-stress -- 3` reproducibly rejected a zero-length region at sample 1,966,080 after processing 1,969,152 samples (123.072 seconds). The short 24-second continuous fixture passed.
+- **Root cause:** using native Flush midstream without resetting. Flush is documented for final input; outer region state was cleared while Silero's pending-silence state survived. Source inspection explains the empty sample range after continuing input.
+- **Solution:** flush/drain, reset native VAD, and add the analysis-window starting offset to subsequent native indices. Keep capture/ASR clocks continuous and reject malformed spans. This changes the implementation detail in ADR 0010; see ADR 0012.
+- **Verification:** the formerly failing three-minute input completed with exact sample-slice and monotonically increasing ASR-final checks. The unit fixture now refuses continuation after Flush without Reset and verifies global indices across resets. Longer-run results are in feasibility.
+- **Prevention:** test repeated silence transitions across many window cuts, and distinguish end-of-stream APIs from streaming operations. Mapping indices correctly does not establish speech-boundary accuracy near a reset.

@@ -1,6 +1,8 @@
 // Native VAD spans are speech-region estimates, never verified single-speaker turns.
 export function createSpeechDetector(module, model) {
+  if (typeof module._SherpaOnnxVoiceActivityDetectorReset !== 'function') throw new Error('The research runtime is outdated. Run npm run spike:build-pipeline.');
   let detector = 0; let input = 0; let accepted = 0; let processed = 0; let used = 0; let lastEnd = 0; let finished = false;
+  let windowStart = 0;
   const pending = new Float32Array(512);
   const pointers = [];
   const allocate = (size) => {
@@ -28,13 +30,16 @@ export function createSpeechDetector(module, model) {
     while (!module._SherpaOnnxVoiceActivityDetectorEmpty(detector)) {
       const segment = module._SherpaOnnxVoiceActivityDetectorFront(detector);
       if (!segment) throw new Error('VAD returned no speech segment.');
-      const [startSample, pointer, count] = module.HEAPU32.subarray(segment / 4, segment / 4 + 3);
+      const [localStart, pointer, count] = module.HEAPU32.subarray(segment / 4, segment / 4 + 3);
+      const startSample = windowStart + localStart;
       try {
         const endSample = startSample + count;
-        if (!count || startSample < lastEnd || endSample > processed || count > 16000 * 11) throw new Error('VAD returned an incompatible speech span.');
+        if (!count || startSample < lastEnd || endSample > processed || count > 16000 * 11) {
+          throw new Error('VAD returned an incompatible speech span.', { cause: { startSample, endSample, count, lastEnd, processed } });
+        }
         const samples = module.HEAPF32.slice(pointer / 4, pointer / 4 + count);
         lastEnd = endSample;
-        regions.push({ startSample, endSample, reason, samples });
+        regions.push({ startSample, endSample, reason, samples, analysisWindowStartSample: windowStart });
       } finally {
         module.HEAPF32.fill(0, pointer / 4, pointer / 4 + count);
         module._SherpaOnnxDestroySpeechSegment(segment);
@@ -58,10 +63,12 @@ export function createSpeechDetector(module, model) {
             module.HEAPF32.fill(0, input / 4, input / 4 + 512); pending.fill(0); used = 0; processed += 512;
             drain('detector', regions);
             // The native maximum-duration setting only changes detection thresholds.
-            // Force a bounded window every 320 blocks (10.24 s), without resetting
-            // the detector's sample clock or claiming this cut is a speaker change.
+            // Flush is end-of-input, not a midstream cut. Reset native state for
+            // each new analysis window and map its sample indices to the unchanged
+            // capture clock. No samples are skipped and no speaker change is implied.
             if (processed % (512 * 320) === 0) {
               module._SherpaOnnxVoiceActivityDetectorFlush(detector); drain('window-limit', regions);
+              module._SherpaOnnxVoiceActivityDetectorReset(detector); windowStart = processed;
             }
           }
         }
