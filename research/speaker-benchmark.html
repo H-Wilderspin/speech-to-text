@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Speaker runtime experiment</title>
+  <style>
+    body { font: 18px/1.5 system-ui; margin: 2rem auto; padding: 0 1rem; max-width: 55rem; color: #192f2b; background: #f7f8f2; }
+    button { font: inherit; min-height: 48px; padding: .5rem 1rem; margin-right: .5rem; }
+    pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <h1>Speaker runtime experiment</h1>
+  <p>This uses a synthetic signal, without microphone access. It checks whether real model inference runs here; it does <strong>not</strong> measure speaker recognition accuracy.</p>
+  <p>Run loads approximately 52 MB of runtime/model files from this local server into a worker. Memory use will be larger. No audio, embeddings or reports are saved. Cancel stops the worker; leaving this page also stops it.</p>
+  <button id="run">Run synthetic benchmark</button><button id="cancel" disabled>Cancel</button>
+  <p id="status" role="status">Ready.</p>
+  <pre id="report" aria-label="Benchmark report"></pre>
+  <script type="module" src="./speaker-benchmark.js"></script>
+</body>
+</html>
