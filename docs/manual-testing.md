@@ -2,13 +2,15 @@
 
 On 2026-10-10 the user reported that speech appears and Stop releases the microphone on their physical Pixel 8 using the deployed HTTPS app. This is a basic user-reported Listen/Stop pass, not completion of the full device matrix. Android/browser versions and tab/installed mode were not supplied. Desktop WebKit with an iPhone viewport is not iOS Safari.
 
+The user also reported successful Pixel 8 speaker-profile saving, persistence after reload and deletion. This is a basic enrolment/storage pass. Model load/processing times, similarity scores, cancellation/interruption behaviour and deletion persistence after another reload have not been reported.
+
 ## Required device matrix
 
 | Configuration | Device / OS / browser version | Result |
 |---|---|---|
 | iPhone Safari tab over HTTPS | iPhone model and iOS version to confirm | Pending — user reports iPhone unavailable |
 | iPhone installed PWA | Same iPhone; model/version to confirm | Pending — device unavailable |
-| Android Chrome tab over HTTPS (target) | Pixel 8; actual browser/version and tab/installed mode to confirm | Basic Pixel 8 Listen/Stop passed by user report; remaining checks pending |
+| Android Chrome tab over HTTPS (target) | Pixel 8; actual browser/version and tab/installed mode to confirm | Basic Listen/Stop and profile save/reload/delete passed by user report; remaining checks pending |
 | Android installed PWA | Pixel 8; Android/Chrome versions to confirm | Pending |
 
 Targets supplied by the user on 2026-10-10. On Pixel 8, find Android version in Settings → About phone → Android version; Chrome version in Chrome Settings → About Chrome. On iPhone, find model and iOS version in Settings → General → About when that device becomes available.
