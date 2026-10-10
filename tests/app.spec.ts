@@ -25,7 +25,7 @@ async function result(page: Page, text: string, isFinal: boolean) {
 test('anonymous listening, interim revision, stop, resume, clear, and no persistence', async ({ page }) => {
   await mockRecognition(page); await page.goto('/');
   await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
-  await expect(page.locator('#processing-note')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Listen', exact: true })).toHaveAttribute('aria-describedby', 'processing-note');
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   await result(page, 'a blue', false); await result(page, 'a new day', true);
   await expect(page.getByRole('region', { name: 'Live transcript' })).toContainText('a new day');
@@ -35,7 +35,7 @@ test('anonymous listening, interim revision, stop, resume, clear, and no persist
   await result(page, 'Another thought.', true);
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
   await expect(page.locator('.confirmed')).toHaveCount(2);
-  await page.getByRole('button', { name: 'Clear text' }).click();
+  await page.getByRole('button', { name: 'Clear' }).click();
   await expect(page.locator('.confirmed')).toHaveCount(0);
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   await result(page, 'Memory only.', true); await page.reload();
@@ -54,6 +54,34 @@ test('permission denial is actionable and a new gesture can recover', async ({ p
   await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('Listening.');
+});
+
+test('three top controls leave the viewport to captions and settings preserve an active session', async ({ page }) => {
+  await mockRecognition(page); await page.setViewportSize({ width: 390, height: 844 }); await page.goto('/');
+  await expect(page.getByRole('button')).toHaveText(['Listen', 'Clear', 'Settings']);
+  await expect(page.getByRole('button', { name: 'Clear', exact: true })).toBeDisabled();
+  const transcript = page.getByRole('region', { name: 'Live transcript' });
+  const box = await transcript.boundingBox();
+  expect(box!.height).toBeGreaterThan(740);
+  expect(box!.y + box!.height).toBeLessThanOrEqual(844);
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByLabel('Speech language').selectOption('en-US');
+  await expect(page.getByText('may send microphone audio', { exact: false })).toBeVisible();
+  await page.getByRole('button', { name: 'Back to captions' }).click();
+  await page.getByRole('button', { name: 'Listen', exact: true }).click();
+  await result(page, 'The captions fill this page.', true);
+  await expect(page.getByRole('button')).toHaveText(['Stop', 'Clear', 'Settings']);
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(page.getByLabel('Speech language')).toBeDisabled();
+  await page.getByRole('button', { name: 'Larger text' }).click();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Settings', exact: true })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeEnabled();
+  await expect(page.locator('.confirmed')).toHaveText('The captions fill this page.');
+  await page.getByRole('button', { name: 'Stop', exact: true }).click();
+  await page.getByRole('button', { name: 'Clear', exact: true }).click();
+  await expect(page.locator('.confirmed')).toHaveCount(0);
+  await page.screenshot({ path: `test-results/clean-page-${test.info().project.name}.png` });
 });
 
 test('growing hypotheses render once, listening restarts, and a spoken command stops it', async ({ page }) => {
@@ -90,12 +118,16 @@ test('unsupported capability preserves readable UI and accessible speaker dialog
   await page.goto('/');
   await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeDisabled();
   await expect(page.getByRole('alert')).toContainText('does not offer');
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await page.getByRole('button', { name: 'Speakers', exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Back to captions' })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Back to settings' })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog', { name: 'Settings', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Speakers', exact: true })).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Speakers', exact: true })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Settings', exact: true })).toBeFocused();
 });
 
 test('page interruption aborts the microphone without clearing confirmed speech', async ({ page }) => {
@@ -109,7 +141,9 @@ test('page interruption aborts the microphone without clearing confirmed speech'
 
 test('320px and larger text do not create horizontal overflow', async ({ page }) => {
   await mockRecognition(page); await page.setViewportSize({ width: 320, height: 740 }); await page.goto('/');
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
   for (let i = 0; i < 6; i++) await page.getByRole('button', { name: 'Larger text' }).click();
+  await page.getByRole('button', { name: 'Back to captions' }).click();
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   await result(page, 'LongUnbrokenWord'.repeat(20), true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
@@ -123,7 +157,7 @@ test('offline shell opens without claiming offline recognition', async ({ page, 
   await page.reload();
   await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
   await context.setOffline(true); await page.reload();
-  await expect(page.getByRole('heading', { name: 'Speech to Text' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Settings', exact: true })).toBeVisible();
   await expect(page.getByText('You’re offline.', { exact: false })).toBeVisible();
   const cachedUrls = await page.evaluate(async () => {
     const keys = await caches.keys();
@@ -136,7 +170,7 @@ test('offline shell opens without claiming offline recognition', async ({ page, 
 test('subdirectory deployment installs scoped assets and opens offline', async ({ page, context }) => {
   await mockRecognition(page);
   await page.goto('http://127.0.0.1:4174/speech-to-text/');
-  await expect(page.getByRole('heading', { name: 'Speech to Text' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Settings', exact: true })).toBeVisible();
   const scope = await page.evaluate(() => navigator.serviceWorker.ready.then((registration) => registration.scope));
   expect(scope).toBe('http://127.0.0.1:4174/speech-to-text/');
   const manifestResponse = await page.request.get(`${scope}manifest.webmanifest`);
@@ -148,17 +182,17 @@ test('subdirectory deployment installs scoped assets and opens offline', async (
     expect(response.headers()['content-type']).toContain('image/png');
   }
   await page.reload(); await context.setOffline(true); await page.reload();
-  await expect(page.getByRole('heading', { name: 'Speech to Text' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Settings', exact: true })).toBeVisible();
   await expect(page.getByText('You’re offline.', { exact: false })).toBeVisible();
 });
 
-test('reading earlier speech preserves scroll and newest restores it', async ({ page }) => {
+test('reading earlier speech preserves scroll and returning to bottom resumes following', async ({ page }) => {
   await mockRecognition(page); await page.goto('/');
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   await result(page, 'A readable sentence. '.repeat(200), true);
   const region = page.getByRole('region', { name: 'Live transcript' });
   await region.evaluate((element) => { element.scrollTop = 0; element.dispatchEvent(new Event('scroll')); });
-  await expect(page.getByRole('button', { name: 'Newest speech' })).toBeVisible();
+  await expect(page.getByRole('button')).toHaveCount(3);
   await page.evaluate(() => {
     const host = window as Window & { testRecognition?: { onresult: (event: unknown) => void } };
     host.testRecognition?.onresult({ results: [
@@ -167,7 +201,6 @@ test('reading earlier speech preserves scroll and newest restores it', async ({ 
     ] });
   });
   expect(await region.evaluate((element) => element.scrollTop)).toBe(0);
-  await page.getByRole('button', { name: 'Newest speech' }).click();
-  await expect(region).toBeFocused();
+  await region.evaluate((element) => { element.scrollTop = element.scrollHeight; element.dispatchEvent(new Event('scroll')); });
   expect(await region.evaluate((element) => element.scrollHeight - element.clientHeight - element.scrollTop)).toBeLessThan(2);
 });
