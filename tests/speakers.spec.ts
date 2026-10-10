@@ -17,7 +17,11 @@ async function syntheticMicrophone(page: Page, delayed = false) {
       const oscillator = context.createOscillator(); oscillator.frequency.value = 173;
       const gain = context.createGain(); gain.gain.value = .1;
       const destination = context.createMediaStreamDestination();
-      oscillator.connect(gain); gain.connect(destination); oscillator.start();
+      // Keep the source graph rendering in WebKit even when its only useful
+      // output is a MediaStream consumed by another AudioContext. Never play the tone.
+      const silentOutput = context.createGain(); silentOutput.gain.value = 0;
+      oscillator.connect(gain); gain.connect(destination); gain.connect(silentOutput);
+      silentOutput.connect(context.destination); oscillator.start();
       const track = destination.stream.getAudioTracks()[0]!;
       const stop = track.stop.bind(track);
       track.stop = () => { stops++; stop(); oscillator.stop(); void context.close(); };
@@ -88,7 +92,7 @@ test('project-path lazy model, consent, real enrolment, persisted profile and de
   await expect(compare).toBeVisible({ timeout: 30000 }); await expect(compare).toBeDisabled();
   expect(await stats(page)).toEqual({ calls: 0, stops: 0 });
   await page.getByRole('checkbox').check(); await compare.click();
-  await expect(page.locator('.comparison').getByRole('status')).toHaveText('Comparison complete. No profile was changed.', { timeout: 30000 });
+  await expect(page.locator('.comparison p[role="status"]')).toHaveText('Comparison complete. No profile was changed.', { timeout: 30000 });
   const score = Number(await page.getByLabel('Similarity score').innerText());
   expect(Number.isFinite(score)).toBe(true); expect(score).toBeGreaterThanOrEqual(-1); expect(score).toBeLessThanOrEqual(1);
   expect(await stats(page)).toEqual({ calls: 1, stops: 1 });

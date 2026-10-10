@@ -33,7 +33,7 @@ FR-06/07 are explicitly research-dependent in the specification. The Unknown fal
 
 ## Evidence needed next
 
-The configured remote currently has no `main` branch (`git ls-remote` returned success with no matching ref). The user retained the first push. Run `git -C speech-to-text push -u origin main`, wait for Actions, then open `https://h-wilderspin.github.io/speech-to-text/` on Pixel 8. Start with Listen/Stop and report the result plus Android/Chrome versions. Repeat on iPhone, identifying its model/iOS version, then follow the tab/PWA, accessibility and enrolment steps in [manual testing](manual-testing.md).
+The user subsequently authorized the push, and GitHub now has `main`. Actions runs automatically; publication remains gated on successful checks. Once deployed, open `https://h-wilderspin.github.io/speech-to-text/` on Pixel 8. Start with Listen/Stop and report the result plus Android/Chrome versions. Repeat on iPhone, identifying its model/iOS version, then follow the tab/PWA, accessibility and enrolment steps in [manual testing](manual-testing.md).
 
 Use Speakers → Compare recordings with consent for realistic same/different-person trials. Follow the held-out protocol in [feasibility](feasibility.md); retain anonymous score/timing observations, not personal audio or voiceprints. Synthetic signals and two generated voices cannot replace this evidence. Additional production attribution work should be based on those results rather than a guessed threshold.
 

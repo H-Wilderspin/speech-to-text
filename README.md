@@ -39,12 +39,12 @@ npm run preview
 
 ### GitHub Pages under H-Wilderspin
 
-The public repository [H-Wilderspin/speech-to-text](https://github.com/H-Wilderspin/speech-to-text) is created. GitHub Pages is configured to deploy through Actions, and the `github-pages` environment permits deployment from `main`. This directory is a Git repository on `main`, with `origin` pointing to that repository.
+The public repository [H-Wilderspin/speech-to-text](https://github.com/H-Wilderspin/speech-to-text) is created and the source has been pushed. GitHub Pages is configured to deploy through Actions, and the `github-pages` environment permits deployment from `main`. Local `main` tracks `origin/main`.
 
-From this directory, publish the prepared commit with:
+From this directory, publish subsequent committed changes with:
 
 ```sh
-git push -u origin main
+git push
 ```
 
 Every subsequent push to `main` runs [.github/workflows/pages.yml](.github/workflows/pages.yml): install dependencies, typecheck, lint, unit tests, production build, Chromium/WebKit tests, then publish `dist/`. Pull requests run checks without publishing. Follow progress in [GitHub Actions](https://github.com/H-Wilderspin/speech-to-text/actions).
