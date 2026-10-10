@@ -12,6 +12,8 @@ M3 research has a streaming ASR candidate with token timestamps on its input sam
 
 A separate offline speaker-turn candidate now runs in Node, Chromium and WebKit. Two generated voices expose incorrect cluster assignments despite a correct speaker count; processing approximately 24 seconds takes 9–11 seconds on the tested desktop. It is not enabled for live captions. See [ADR 0013](docs/decisions/0013-offline-diarization-candidate.md) and [reproduction instructions](research/README.md).
 
+The [acceptance audit](docs/acceptance-audit.md) maps every requirement to current evidence and the remaining device/human-speaker checks. Ten-second segmentation isolation is faster but still merges the two alternating generated voices; it does not resolve the attribution gate.
+
 ### Run locally
 
 Use Node 22.12+ (tested: 22.20.0):
