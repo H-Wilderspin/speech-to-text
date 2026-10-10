@@ -2,7 +2,8 @@ import { expect, test, type Page } from '@playwright/test';
 import { createServer } from 'node:http';
 import { once } from 'node:events';
 
-// Real AudioWorklet, resampling, WASM and IndexedDB; synthetic input replaces only the microphone.
+// Real AudioWorklet, resampling, WASM and IndexedDB. Replace permission and
+// MediaStreamAudioSource with a tone in the consumer context, not OS microphone routing.
 async function syntheticMicrophone(page: Page, delayed = false) {
   await page.goto('/');
   const audioSupported = await page.evaluate(() => Boolean(globalThis.AudioContext && globalThis.AudioWorkletNode && globalThis.OfflineAudioContext));
@@ -11,20 +12,34 @@ async function syntheticMicrophone(page: Page, delayed = false) {
   expect(audioSupported).toBe(true);
   await page.addInitScript(({ delayed }) => {
     let calls = 0; let stops = 0;
+    const NativeAudioContext = globalThis.AudioContext;
+    const recordingContexts: AudioContext[] = [];
+    const streams = new WeakMap<MediaStream, { destination: MediaStreamAudioDestinationNode; release: () => void }>();
+    class SyntheticAudioContext extends NativeAudioContext {
+      constructor(options?: AudioContextOptions) { super(options); recordingContexts.push(this); }
+      createMediaStreamSource(stream: MediaStream): MediaStreamAudioSourceNode {
+        const fixture = streams.get(stream);
+        if (!fixture) return super.createMediaStreamSource(stream);
+        const oscillator = this.createOscillator(); oscillator.frequency.value = 173;
+        const gain = this.createGain(); gain.gain.value = .1;
+        oscillator.connect(gain); oscillator.start();
+        fixture.release = () => { oscillator.stop(); oscillator.disconnect(); gain.disconnect(); };
+        // Capture only uses AudioNode.connect/disconnect on this source. Its real
+        // worklet emits silence; the generated tone never reaches the speakers.
+        return gain as unknown as MediaStreamAudioSourceNode;
+      }
+    }
+    Object.assign(globalThis, { AudioContext: SyntheticAudioContext });
     Object.defineProperty(navigator, 'mediaDevices', { value: { getUserMedia: async () => {
       calls++;
-      const context = new AudioContext(); await context.resume();
-      const oscillator = context.createOscillator(); oscillator.frequency.value = 173;
-      const gain = context.createGain(); gain.gain.value = .1;
-      const destination = context.createMediaStreamDestination();
-      // Keep the source graph rendering in WebKit even when its only useful
-      // output is a MediaStream consumed by another AudioContext. Never play the tone.
-      const silentOutput = context.createGain(); silentOutput.gain.value = 0;
-      oscillator.connect(gain); gain.connect(destination); gain.connect(silentOutput);
-      silentOutput.connect(context.destination); oscillator.start();
+      const recordingContext = recordingContexts.pop();
+      if (!recordingContext) throw new Error('Synthetic input requires the recorder context.');
+      const destination = recordingContext.createMediaStreamDestination();
+      const fixture = { destination, release: () => {} };
+      streams.set(destination.stream, fixture);
       const track = destination.stream.getAudioTracks()[0]!;
       const stop = track.stop.bind(track);
-      track.stop = () => { stops++; stop(); oscillator.stop(); void context.close(); };
+      track.stop = () => { stops++; stop(); fixture.release(); streams.delete(destination.stream); };
       if (delayed) await new Promise<void>((resolve) => Object.assign(window, { resolvePermission: resolve }));
       return destination.stream;
     } } });
@@ -60,6 +75,7 @@ test('project-path lazy model, consent, real enrolment, persisted profile and de
   const record = page.getByRole('button', { name: 'Record 8 seconds' });
   await expect(record).toBeDisabled(); await agree(page);
   await record.click();
+  await expect(page.getByRole('dialog').getByRole('status')).toContainText('Voice profile saved on this device.', { timeout: 30000 });
   await expect(page.getByRole('button', { name: 'Delete Synthetic test', exact: true })).toBeVisible({ timeout: 30000 });
   expect(await stats(page)).toEqual({ calls: 1, stops: 1 });
   const stored = await page.evaluate(async () => {

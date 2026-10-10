@@ -49,7 +49,7 @@ export function SpeakersDialog({ onClose, createServices, canRecord }: {
   return <dialog ref={dialog} aria-labelledby="speakers-title" onClose={onClose}>
     <span className="eyebrow">Experimental voice profiles</span>
     <h2 id="speakers-title">Speakers on this device</h2>
-    <p>Save profiles here to use in Compare recordings. Live captions do not use saved profiles yet and always show <strong>Unknown</strong>, even after a successful comparison.</p>
+    <p>Save profiles here to use in Compare recordings. Live captions do not use saved profiles yet, even after a successful comparison.</p>
     <form method="dialog"><button autoFocus>Back to settings</button></form>
     {comparing ? <VoiceComparison session={comparison} profiles={profiles} canRecord={canRecord} onBack={() => {
       comparison.cancel(); setComparing(false); void refresh();
