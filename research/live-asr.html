@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Shared-clock local ASR experiment</title>
 <style>body{font:1.2rem system-ui;max-width:50rem;margin:2rem auto;padding:0 1rem}button{font:inherit;padding:.7rem;margin:.3rem}pre{white-space:pre-wrap;overflow-wrap:anywhere}#transcript{font-size:1.8rem;min-height:8rem}</style></head>
 <body><h1>Shared-clock local ASR experiment</h1>
-<p>Development experiment: prepare downloads about 57 MB of local model/runtime files. Listen uses your microphone and processes audio in this browser. Nothing is uploaded or saved. All text remains Unknown; speaker attribution is unfinished. Keep this page open.</p>
+<p>Development experiment: prepare downloads about <span id="model-size">57 MB</span> of local model/runtime files. Listen uses your microphone and processes audio in this browser. Nothing is uploaded or saved. All text remains Unknown; speaker attribution is unfinished. Keep this page open.</p>
 <button id="prepare">Prepare local ASR</button><button id="listen" disabled>Listen locally</button><button id="stop" disabled>Stop</button><button id="cancel" disabled>Cancel</button>
 <p id="status" role="status">Not prepared.</p><p>Unknown</p><pre id="transcript" aria-label="Local transcript"></pre><pre id="report"></pre>
 <script type="module" src="./live-asr.js"></script></body></html>

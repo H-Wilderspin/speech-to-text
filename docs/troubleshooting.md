@@ -71,3 +71,12 @@
 - **Solution:** retain the upstream no-hotword default `modelingUnit: 'cjkchar'`; collect stdout/stderr only during initialization and disable diagnostic collection before audio input.
 - **Verification:** Node, Chromium and WebKit produced timestamped utterances across endpoint reset using the staged quantized models.
 - **Prevention:** consult the wrapper and native configuration validation together; model family and optional hotword configuration have distinct meanings.
+
+## 2026-10-10 — Whole-region speaker inference exceeded the live queue budget
+
+- **Context:** shared single-threaded WASM ASR/VAD/English embedding experiment on Windows, Node 22.20.0. Capture permits eight unacknowledged 100 ms frames.
+- **Symptoms:** a ten-second generated speech region took 909 ms to embed, producing a 911 ms processing step. A live producer cannot safely wait this long with its current queue budget.
+- **Root cause:** embedding cost grows with input duration; delaying all work until a long speech region ends creates a processing burst. Separately, native VAD's maximum-duration setting only adjusts thresholds and cannot guarantee a hard region-storage limit.
+- **Solution:** keep a three-second PCM ring and compute bounded windows at most every 1.5 seconds when current VAD state reports speech. Force marked VAD window cuts every 10.24 seconds without resetting the sample clock. These cuts and windows do not prove a speaker turn.
+- **Verification:** Node maximum processing steps fell below 310 ms in these fixtures; Chromium's complete capture/pipeline run peaked at 381 ms without queue overrun. Forced-cut and sample-window tests verify continuity and exact sample values. Physical-phone throughput is unverified.
+- **Prevention:** benchmark worst processing bursts and simultaneous model memory, not only average real-time factor. Preserve the explicit overrun stop and Unknown labels until turn/identity evidence exists. Related: ADR 0010.

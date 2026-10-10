@@ -4,7 +4,10 @@ const prepare = document.querySelector('#prepare'); const listen = document.quer
 const stop = document.querySelector('#stop'); const cancel = document.querySelector('#cancel');
 const status = document.querySelector('#status'); const transcript = document.querySelector('#transcript'); const report = document.querySelector('#report');
 let worker; let controller; let capture; let generation = 0; let nextId = 0;
+const pipelineMode = new URL(location.href).searchParams.get('pipeline') === '1';
+if (pipelineMode) { document.querySelector('#model-size').textContent = '85 MB'; document.querySelector('h1').textContent = 'Shared-clock ASR, speech regions and speaker windows'; }
 const pending = new Map(); let finals = []; let interim = ''; let chunks = 0; let maxProcessingMs = 0; let firstTextSeconds = null;
+let speechRegionCount = 0; let windowCount = 0; let maxEmbeddingMs = 0;
 const release = () => {
   controller?.abort(); capture = undefined;
   worker?.terminate(); worker = undefined;
@@ -28,14 +31,19 @@ const showResult = (result) => {
   else interim = result.text;
   transcript.textContent = [...finals, interim].filter(Boolean).join('\n');
   maxProcessingMs = Math.max(maxProcessingMs, result.processingMs);
+  speechRegionCount += result.regions?.length ?? 0; windowCount += result.windows?.length ?? 0;
+  for (const window of result.windows ?? []) maxEmbeddingMs = Math.max(maxEmbeddingMs, window.embeddingMs);
   report.textContent = JSON.stringify({ chunks, acceptedSamples: result.acceptedSamples, sampleRate: 16000,
     firstTextAfterAcceptedSeconds: firstTextSeconds, maxProcessingMs: Math.round(maxProcessingMs),
-    wasmLinearMemoryBytes: result.wasmLinearMemoryBytes, hasText: firstTextSeconds !== null }, null, 2);
+    wasmLinearMemoryBytes: result.wasmLinearMemoryBytes, hasText: firstTextSeconds !== null,
+    ...(pipelineMode ? { speechRegionCount, windowCount, maxEmbeddingMs: Math.round(maxEmbeddingMs), singleSpeakerVerified: false } : {}) }, null, 2);
 };
 prepare.onclick = async () => {
   release(); const job = ++generation; controls('preparing'); status.textContent = 'Preparing local ASR…';
   finals = []; interim = ''; chunks = 0; maxProcessingMs = 0; firstTextSeconds = null; transcript.textContent = ''; report.textContent = '';
-  worker = new Worker(new URL('./live-asr-worker.js', import.meta.url), { type: 'module' });
+  speechRegionCount = 0; windowCount = 0; maxEmbeddingMs = 0;
+  worker = pipelineMode ? new Worker(new URL('./pipeline-worker.js', import.meta.url), { type: 'module' })
+    : new Worker(new URL('./live-asr-worker.js', import.meta.url), { type: 'module' });
   worker.onmessage = ({ data }) => {
     const waiting = pending.get(data.id); if (!waiting) return;
     clearTimeout(waiting.timeout); pending.delete(data.id);

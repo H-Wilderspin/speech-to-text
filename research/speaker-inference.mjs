@@ -51,7 +51,10 @@ export async function createExtractor(module, model) {
         return embedding;
       } finally {
         if (audioPointer) { module.HEAPF32.fill(0, audioPointer / 4, (audioPointer + samples.byteLength) / 4); module._free(audioPointer); }
-        if (embeddingPointer) module._SherpaOnnxSpeakerEmbeddingExtractorDestroyEmbedding(embeddingPointer);
+        if (embeddingPointer) {
+          module.HEAPF32.fill(0, embeddingPointer / 4, embeddingPointer / 4 + dimension);
+          module._SherpaOnnxSpeakerEmbeddingExtractorDestroyEmbedding(embeddingPointer);
+        }
         module._SherpaOnnxDestroyOnlineStream(stream);
       }
     },

@@ -1,6 +1,7 @@
 import { chromium, webkit } from '@playwright/test';
 import assert from 'node:assert/strict';
-const url = process.env.LIVE_ASR_URL ?? 'http://localhost:5178/research/live-asr.html';
+const pipelineMode = process.argv.includes('--pipeline');
+const url = process.env.LIVE_ASR_URL ?? `http://localhost:5178/research/live-asr.html${pipelineMode ? '?pipeline=1' : ''}`;
 for (const [name, engine] of Object.entries({ chromium, webkit })) {
   const browser = await engine.launch();
   try {
@@ -45,6 +46,7 @@ for (const [name, engine] of Object.entries({ chromium, webkit })) {
     await page.getByText('Complete. Microphone stopped.', { exact: true }).waitFor();
     const report = JSON.parse(await page.locator('#report').innerText());
     assert(report.hasText); assert(report.chunks >= 100); assert.equal(report.sampleRate, 16000);
+    if (pipelineMode) { assert(report.speechRegionCount > 0); assert(report.windowCount > 0); assert.equal(report.singleSpeakerVerified, false); }
     await page.waitForFunction(() => window.captureStats().closed === 1);
     assert.deepEqual(await page.evaluate(() => window.captureStats()), { calls: 1, stops: 1, closed: 1 });
     console.log(JSON.stringify({ engine: name, version: browser.version(), fixture: 'generated-speech-through-continuous-capture', ...report }));

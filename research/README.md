@@ -62,3 +62,19 @@ Model/runtime checksums and measurements are in [feasibility](../docs/feasibilit
 After the same ASR preparation/build steps, open `/research/live-asr.html` on the development server. **Prepare local ASR** loads only local assets. **Listen locally** requests the microphone, sends continuous 16 kHz frames to the ASR worker and displays temporary text labelled Unknown. Stop flushes the final partial audio frame; Cancel discards unfinished work. Backgrounding or a processing overrun stops the microphone. No text or audio is saved or uploaded. This page is not published to GitHub Pages.
 
 `npm run spike:live-asr` exercises the actual capture adapter using the generated fixture played into a synthetic 48 kHz microphone source. It checks 16 kHz resampling, contiguous frames, local recognition, Stop draining, denied/late permission, pagehide and stalled processing. It prints timing/counts only. Windows WebKit skips capture because it lacks Web Audio and checks the fallback instead. `LIVE_ASR_URL` overrides the default localhost URL. Phone microphone tests require a reachable HTTPS development host; ordinary LAN HTTP is insufficient.
+
+## Shared speech and speaker windows
+
+After ASR preparation and fixture generation above:
+
+```sh
+npm run spike:prepare-pipeline
+npm run spike:build-pipeline
+npm run spike:pipeline
+# With the development server on port 5178:
+npm run spike:pipeline-browser
+```
+
+Open `/research/live-asr.html?pipeline=1` for the combined local experiment. Prepare loads approximately 85 MB including the ASR, small Silero VAD and public English embedding model. The pipeline uses one WASM instance, bounds speech-region storage, and extracts three-second speaker windows on the same sample clock as ASR. It reports counts/timing only for embeddings and keeps transcript labels Unknown. Windows can cross speaker changes; this is not working diarization or calibrated identification.
+
+`spike:pipeline` verifies every extracted region and window against the original generated audio, checks silence and forces bounded cuts during a 24-second repeated fragment. The browser runner verifies actual paced capture plus cleanup failures. See [ADR 0010](../docs/decisions/0010-shared-speech-and-speaker-windows.md) for why the implementation moved away from whole-region embedding. Model/runtime files remain under ignored `research/private/`, and these pages are absent from the deployed app.

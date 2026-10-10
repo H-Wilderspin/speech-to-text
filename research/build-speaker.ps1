@@ -1,7 +1,7 @@
 param(
   [string]$SherpaBuild = "$PSScriptRoot/../../sherpa-onnx/build-wasm-simd-vad-asr",
   [string]$Emsdk = "$PSScriptRoot/../../emsdk",
-  [ValidateSet('speaker', 'asr')][string]$Kind = 'speaker'
+  [ValidateSet('speaker', 'asr', 'pipeline')][string]$Kind = 'speaker'
 )
 $ErrorActionPreference = 'Stop'
 $buildRoot = (Resolve-Path -LiteralPath $SherpaBuild).Path
@@ -26,7 +26,8 @@ $exports = @(
   '_SherpaOnnxOnlineStreamAcceptWaveform', '_SherpaOnnxOnlineStreamInputFinished', '_SherpaOnnxDestroyOnlineStream'
 )
 $runtimeMethods = 'FS,stringToUTF8,lengthBytesUTF8,HEAPF32,HEAPU8,HEAPU32'
-if ($Kind -eq 'asr') {
+if ($Kind -eq 'asr' -or $Kind -eq 'pipeline') {
+  $speakerExports = $exports
   $exports = @(
     '_malloc', '_free', '_SherpaOnnxCreateOnlineRecognizer', '_SherpaOnnxDestroyOnlineRecognizer',
     '_SherpaOnnxCreateOnlineStream', '_SherpaOnnxDestroyOnlineStream',
@@ -36,6 +37,15 @@ if ($Kind -eq 'asr') {
     '_SherpaOnnxOnlineStreamIsEndpoint', '_SherpaOnnxOnlineStreamReset'
   )
   $runtimeMethods += ',setValue,UTF8ToString'
+  if ($Kind -eq 'pipeline') {
+    $exports = ($exports + $speakerExports + @(
+      '_SherpaOnnxCreateVoiceActivityDetector', '_SherpaOnnxDestroyVoiceActivityDetector',
+      '_SherpaOnnxVoiceActivityDetectorAcceptWaveform', '_SherpaOnnxVoiceActivityDetectorEmpty',
+      '_SherpaOnnxVoiceActivityDetectorFront', '_SherpaOnnxVoiceActivityDetectorPop',
+      '_SherpaOnnxVoiceActivityDetectorDetected',
+      '_SherpaOnnxDestroySpeechSegment', '_SherpaOnnxVoiceActivityDetectorFlush'
+    )) | Select-Object -Unique
+  }
 }
 $env:EM_CONFIG = Join-Path $sdkRoot '.emscripten'
 $env:EMSDK_PYTHON = Join-Path $sdkRoot 'python/3.13.3_64bit/python.exe'
