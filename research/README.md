@@ -56,3 +56,9 @@ Open `/research/asr-benchmark.html` on the development server for a cancellable 
 Model/runtime checksums and measurements are in [feasibility](../docs/feasibility.md); [ADR 0007](../docs/decisions/0007-streaming-asr-clock-experiment.md) explains why token points must not be invented into utterance end times.
 
 `npm run spike:asr-startup` runs that generated phrase once per fresh stream with 0, 0.5, 1, 2 and 3 seconds of leading silence. It reports aggregate word edits across all endpoint results against the fixed synthetic reference, without printing recognized text. This investigates startup sensitivity; it is not a human speech accuracy evaluation or a production padding workaround.
+
+## Continuous local listening experiment
+
+After the same ASR preparation/build steps, open `/research/live-asr.html` on the development server. **Prepare local ASR** loads only local assets. **Listen locally** requests the microphone, sends continuous 16 kHz frames to the ASR worker and displays temporary text labelled Unknown. Stop flushes the final partial audio frame; Cancel discards unfinished work. Backgrounding or a processing overrun stops the microphone. No text or audio is saved or uploaded. This page is not published to GitHub Pages.
+
+`npm run spike:live-asr` exercises the actual capture adapter using the generated fixture played into a synthetic 48 kHz microphone source. It checks 16 kHz resampling, contiguous frames, local recognition, Stop draining, denied/late permission, pagehide and stalled processing. It prints timing/counts only. Windows WebKit skips capture because it lacks Web Audio and checks the fallback instead. `LIVE_ASR_URL` overrides the default localhost URL. Phone microphone tests require a reachable HTTPS development host; ordinary LAN HTTP is insufficient.

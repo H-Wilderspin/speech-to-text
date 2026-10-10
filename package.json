@@ -21,6 +21,7 @@
     "spike:asr": "node research/asr-smoke.mjs",
     "spike:asr-startup": "node research/asr-startup.mjs",
     "spike:asr-browser": "node research/browser-asr-smoke.mjs",
+    "spike:live-asr": "node research/browser-live-asr.mjs",
     "verify:speaker-assets": "node scripts/verify-speaker-assets.mjs",
     "build": "npm run typecheck && npm run verify:speaker-assets && vite build",
     "preview": "vite preview --host 0.0.0.0",
