@@ -1,19 +1,19 @@
 # Manual validation and acceptance gates
 
-No physical device has been tested by this implementation run. Desktop WebKit with an iPhone viewport is not iOS Safari. Simulated recognition is not a microphone test.
+On 2026-10-10 the user reported that speech appears and Stop releases the microphone on their physical Pixel 8 using the deployed HTTPS app. This is a basic user-reported Listen/Stop pass, not completion of the full device matrix. Android/browser versions and tab/installed mode were not supplied. Desktop WebKit with an iPhone viewport is not iOS Safari.
 
 ## Required device matrix
 
 | Configuration | Device / OS / browser version | Result |
 |---|---|---|
-| iPhone Safari tab over HTTPS | iPhone model and iOS version to confirm | Pending |
-| iPhone installed PWA | Same iPhone; model/version to confirm | Pending |
-| Android Chrome tab over HTTPS | Pixel 8; Android/Chrome versions to confirm | Pending |
+| iPhone Safari tab over HTTPS | iPhone model and iOS version to confirm | Pending — user reports iPhone unavailable |
+| iPhone installed PWA | Same iPhone; model/version to confirm | Pending — device unavailable |
+| Android Chrome tab over HTTPS (target) | Pixel 8; actual browser/version and tab/installed mode to confirm | Basic Pixel 8 Listen/Stop passed by user report; remaining checks pending |
 | Android installed PWA | Pixel 8; Android/Chrome versions to confirm | Pending |
 
-Targets supplied by the user on 2026-10-10. On Pixel 8, find Android version in Settings → About phone → Android version; Chrome version in Chrome Settings → About Chrome. On iPhone, find model and iOS version in Settings → General → About. No device run has been reported yet.
+Targets supplied by the user on 2026-10-10. On Pixel 8, find Android version in Settings → About phone → Android version; Chrome version in Chrome Settings → About Chrome. On iPhone, find model and iOS version in Settings → General → About when that device becomes available.
 
-Use a consented speaker and non-identifying phrases. Record only aggregate observations, not identifiable transcript text or audio. Follow the README's GitHub Pages setup for `H-Wilderspin`. If the repository is named `speech-to-text`, use `https://h-wilderspin.github.io/speech-to-text/` after its deployment succeeds; the address has not yet been verified live.
+Use a consented speaker and non-identifying phrases. Record only aggregate observations, not identifiable transcript text or audio. The verified live test address is `https://h-wilderspin.github.io/speech-to-text/`.
 
 On 2026-10-10 the user reported that the LAN benchmark URL could not open on the phone. The cause is undiagnosed; this is not an inference failure or a device test pass. Use the deployed HTTPS app for M1 tests. The research benchmark is currently excluded from that deployment, so its previous development URL is not a Pages test link.
 
