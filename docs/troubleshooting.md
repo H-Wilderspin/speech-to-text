@@ -89,3 +89,13 @@
 - **Solution:** flush/drain, reset native VAD, and add the analysis-window starting offset to subsequent native indices. Keep capture/ASR clocks continuous and reject malformed spans. This changes the implementation detail in ADR 0010; see ADR 0012.
 - **Verification:** the formerly failing three-minute input completed with exact sample-slice and monotonically increasing ASR-final checks. The unit fixture now refuses continuation after Flush without Reset and verifies global indices across resets. Longer-run results are in feasibility.
 - **Prevention:** test repeated silence transitions across many window cuts, and distinguish end-of-stream APIs from streaming operations. Mapping indices correctly does not establish speech-boundary accuracy near a reset.
+
+## 2026-10-10 — Correct cluster count with incorrect speaker assignments (Unresolved)
+
+- **Context:** offline pyannote 3.0 int8 segmentation plus English ERes2Net, sherpa source `9db1af1`, Windows Node 22.20.0 / Chromium 156 / WebKit 27.2; default unknown-count clustering distance 0.5.
+- **Symptoms:** generated A/B/A reports two speakers but splits A's first solo clip between both clusters. A/B overlap reports two simultaneous clusters and then reuses A's earlier cluster for B's solo speech.
+- **Cause:** the output is demonstrably inconsistent with the exact generated playback schedule. The relative contribution of segmentation, embedding extraction and clustering has not been isolated; do not attribute this to a particular model component yet.
+- **Containment:** keep the candidate outside live captions. Preserve clusters as per-call anonymous metadata. Do not force two clusters, tune identity thresholds on these two voices, or treat a correct count as successful attribution.
+- **Verification:** `npm run spike:diarization` and `npm run spike:diarization-browser` reproduce identical segment/cluster output in all three engines. Browser worker termination keeps cancellation responsive during expensive inference.
+- **Next:** isolate local segmentation from cross-window clustering, evaluate conservative overlap exclusion and use consented held-out human data before enabling identification. Native `NumSpeakers()` counts distinct IDs rather than promising dense numbering; the adapter preserves sparse IDs and has a regression test.
+- **Related:** [ADR 0013](decisions/0013-offline-diarization-candidate.md), [measurements](feasibility.md).

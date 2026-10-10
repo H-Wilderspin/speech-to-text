@@ -82,3 +82,22 @@ Open `/research/live-asr.html?pipeline=1` for the combined local experiment. Pre
 `npm run spike:pipeline-stress` feeds fifteen minutes of the generated phrase with silence gaps through one persistent pipeline, using only one small reusable input buffer. It verifies every returned speech region and speaker window against its original sample coordinates, checks increasing final ASR timestamps, and prints memory/processing checkpoints for each minute of input. `npm run spike:pipeline-stress -- 3` is the shorter regression reproduction; durations from 1–30 minutes are accepted. Input is processed as fast as possible, so this is not a fifteen-minute wall-clock microphone or battery test. No recognized text, embeddings or audio values are printed.
 
 Rebuild the combined runtime after pulling the reset change in [ADR 0012](../docs/decisions/0012-vad-window-reset.md). Forced VAD flushes now reset native analysis state; each native window is explicitly mapped back to the unchanged capture clock. The earlier runtime can return an empty region when a forced flush intersects trailing silence.
+
+## Offline speaker-turn candidate
+
+This isolated experiment reuses the public English embedding model and existing native libraries. It downloads a pinned public 1.5 MB MIT segmentation export into ignored research assets, then generates two Windows TTS voices locally. Requires the existing Emscripten/static-library build described above and Microsoft Hazel Desktop / Microsoft Zira Desktop voices.
+
+```sh
+npm run spike:prepare-diarization
+npm run spike:build-diarization
+npm run spike:generate-diarization-fixtures
+npm run spike:diarization
+# With the development server on port 5178:
+npm run spike:diarization-browser
+```
+
+Open `/research/diarization-benchmark.html` to run it manually. `DIARIZATION_BENCHMARK_URL` overrides the browser runner's default localhost URL. It loads approximately 41 MB of local assets, takes roughly half a minute on the tested desktop, and requests no microphone. Cancel, pagehide, visibility loss and timeout terminate the worker. The browser runner tests cancellation during native inference, interruption and a failed model download in Chromium and WebKit; no Web Audio support is needed.
+
+The four fixtures are silence, one repeated voice, A/B/A and an overlapping mixture. Output contains timing, anonymous clusters and coverage of known playback intervals, never PCM, embeddings or transcript text. Those intervals include TTS pauses and cannot serve as precise speech annotations. All inference calls use unknown speaker count and the upstream distance threshold; this is not a calibrated identity threshold. IDs are local to each call and may be sparse. Input copies are erased and native resources released; worker termination also discards its process state.
+
+Observed misassignment and batch latency prevent promotion to live attribution. See [ADR 0013](../docs/decisions/0013-offline-diarization-candidate.md) and [feasibility](../docs/feasibility.md). These models, generated WAVs and pages are absent from the production build; physical-device and human-speaker validation remain outstanding.

@@ -10,6 +10,8 @@ M1's application is implemented: accessible anonymous captions, replaceable inte
 
 M3 research has a streaming ASR candidate with token timestamps on its input sample clock. A continuous capture adapter feeds real AudioWorklet frames to a combined ASR, speech-region detector and bounded speaker-window experiment; Chromium tests use a synthetic microphone source. Shared sample coordinates and desktop throughput are verified, but startup behaviour, accurate speaker turns, identity calibration and physical-device capture remain unfinished. These experiments are not shipped as the live recognizer; see [ADR 0007](docs/decisions/0007-streaming-asr-clock-experiment.md), [ADR 0009](docs/decisions/0009-continuous-audio-clock.md) and [ADR 0010](docs/decisions/0010-shared-speech-and-speaker-windows.md).
 
+A separate offline speaker-turn candidate now runs in Node, Chromium and WebKit. Two generated voices expose incorrect cluster assignments despite a correct speaker count; processing approximately 24 seconds takes 9–11 seconds on the tested desktop. It is not enabled for live captions. See [ADR 0013](docs/decisions/0013-offline-diarization-candidate.md) and [reproduction instructions](research/README.md).
+
 ### Run locally
 
 Use Node 22.12+ (tested: 22.20.0):

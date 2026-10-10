@@ -1,7 +1,7 @@
 param(
   [string]$SherpaBuild = "$PSScriptRoot/../../sherpa-onnx/build-wasm-simd-vad-asr",
   [string]$Emsdk = "$PSScriptRoot/../../emsdk",
-  [ValidateSet('speaker', 'asr', 'pipeline')][string]$Kind = 'speaker'
+  [ValidateSet('speaker', 'asr', 'pipeline', 'diarization')][string]$Kind = 'speaker'
 )
 $ErrorActionPreference = 'Stop'
 $buildRoot = (Resolve-Path -LiteralPath $SherpaBuild).Path
@@ -26,6 +26,15 @@ $exports = @(
   '_SherpaOnnxOnlineStreamAcceptWaveform', '_SherpaOnnxOnlineStreamInputFinished', '_SherpaOnnxDestroyOnlineStream'
 )
 $runtimeMethods = 'FS,stringToUTF8,lengthBytesUTF8,HEAPF32,HEAPU8,HEAPU32'
+if ($Kind -eq 'diarization') {
+  $exports = @(
+    '_malloc', '_free', '_SherpaOnnxCreateOfflineSpeakerDiarization',
+    '_SherpaOnnxDestroyOfflineSpeakerDiarization', '_SherpaOnnxOfflineSpeakerDiarizationGetSampleRate',
+    '_SherpaOnnxOfflineSpeakerDiarizationProcess', '_SherpaOnnxOfflineSpeakerDiarizationResultGetNumSpeakers',
+    '_SherpaOnnxOfflineSpeakerDiarizationResultGetNumSegments', '_SherpaOnnxOfflineSpeakerDiarizationResultSortByStartTime',
+    '_SherpaOnnxOfflineSpeakerDiarizationDestroySegment', '_SherpaOnnxOfflineSpeakerDiarizationDestroyResult'
+  )
+}
 if ($Kind -eq 'asr' -or $Kind -eq 'pipeline') {
   $speakerExports = $exports
   $exports = @(
