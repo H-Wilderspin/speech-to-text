@@ -1,14 +1,9 @@
 // Research-only contracts. No inference model or uncalibrated threshold is shipped to the UI.
+import { cosine } from '../src/identification/similarity';
+export { cosine };
 export interface VoiceEmbedding { modelVersion: string; values: readonly number[] }
 export interface Candidate { speakerId: string; embedding: VoiceEmbedding }
 export interface Calibration { modelVersion: string; minimumCosine: number; minimumMargin: number; evidenceId: string }
-
-export function cosine(a: readonly number[], b: readonly number[]): number | null {
-  if (!a.length || a.length !== b.length || !a.every(Number.isFinite) || !b.every(Number.isFinite)) return null;
-  const aNorm = Math.hypot(...a); const bNorm = Math.hypot(...b);
-  if (!Number.isFinite(aNorm) || !Number.isFinite(bNorm) || aNorm === 0 || bNorm === 0) return null;
-  return a.reduce((sum, value, i) => sum + (value / aNorm) * (b[i]! / bNorm), 0);
-}
 
 export function identify(query: VoiceEmbedding, candidates: readonly Candidate[], calibration?: Calibration): string | undefined {
   if (!calibration?.evidenceId.trim() || calibration.modelVersion !== query.modelVersion

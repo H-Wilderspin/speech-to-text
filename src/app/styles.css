@@ -54,6 +54,9 @@ dialog h2 { font-size: 1.8rem; line-height: 1.2; letter-spacing: -.025em; }
 dialog button { width: 100%; margin-top: 1rem; }
 dialog section { border-top: 1px solid #b6c4b9; margin-top: 1.5rem; padding-top: .5rem; }
 .speaker-name { display: grid; gap: .4rem; }
+.speaker-name select { width: 100%; min-width: 0; font-size: 1rem; }
+.model-version { overflow-wrap: anywhere; }
+.comparison { overflow-wrap: anywhere; }
 .speaker-name input { min-width: 0; width: 100%; min-height: 48px; border: 1px solid #87937e; border-radius: 6px; padding: .5rem; }
 .consent { display: flex; gap: .75rem; align-items: flex-start; margin-top: 1rem; }
 .consent input { flex-shrink: 0; width: 24px; height: 24px; margin: .25rem 0; }

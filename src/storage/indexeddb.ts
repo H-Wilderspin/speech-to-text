@@ -70,6 +70,12 @@ export class IndexedDbProfiles implements ProfileStore {
     try { await this.transact('readwrite', (store) => store.add(safe), signal); }
     finally { safe.embedding.fill(0); }
   }
+  async read(id: string, signal: AbortSignal) {
+    const profile = await this.transact<SpeakerProfile | undefined>('readonly', (store) => store.get(id), signal);
+    if (!profile) return undefined;
+    try { signal.throwIfAborted(); return validateProfile(profile); }
+    finally { if (Array.isArray(profile.embedding)) profile.embedding.fill(0); }
+  }
   async remove(id: string) { await this.transact('readwrite', (store) => store.delete(id)); }
   async clear() { await this.transact('readwrite', (store) => store.clear()); }
   close() { this.closed = true; void this.database?.then((db) => db.close(), () => {}); }

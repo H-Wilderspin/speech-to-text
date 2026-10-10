@@ -15,6 +15,8 @@ export type SpeakerProfile = {
 export type ProfileSummary = Omit<SpeakerProfile, 'embedding'>;
 export interface ProfileStore {
   list(): Promise<ProfileSummary[]>;
+  /** Caller must erase the returned temporary embedding after use. */
+  read(id: string, signal: AbortSignal): Promise<SpeakerProfile | undefined>;
   save(profile: SpeakerProfile, signal: AbortSignal): Promise<void>;
   remove(id: string): Promise<void>;
   clear(): Promise<void>;

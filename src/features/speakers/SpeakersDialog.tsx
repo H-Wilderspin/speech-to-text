@@ -2,13 +2,17 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from '
 import { watchInterruptions } from '../../audio/interruption';
 import type { ProfileStore, ProfileSummary } from '../../storage/profiles';
 import type { EnrolmentSession } from './enrolment';
+import type { VoiceComparisonSession } from './comparison';
+import { VoiceComparison } from './VoiceComparison';
 
-export type SpeakerServices = { store: ProfileStore; session: EnrolmentSession };
+export type SpeakerServices = { store: ProfileStore; session: EnrolmentSession; comparison: VoiceComparisonSession };
 export function SpeakersDialog({ onClose, createServices, canRecord }: {
   onClose: () => void; createServices: () => SpeakerServices; canRecord: boolean;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
-  const [{ store, session }] = useState(createServices);
+  const comparisonButton = useRef<HTMLButtonElement>(null);
+  const [{ store, session, comparison }] = useState(createServices);
+  const [comparing, setComparing] = useState(false);
   const snapshot = useSyncExternalStore(session.subscribe, session.getSnapshot);
   const [profiles, setProfiles] = useState<ProfileSummary[]>([]);
   const [storageError, setStorageError] = useState('');
@@ -17,6 +21,7 @@ export function SpeakersDialog({ onClose, createServices, canRecord }: {
   const [consent, setConsent] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
   const alive = useRef(true);
+  useEffect(() => { if (!comparing) comparisonButton.current?.focus(); }, [comparing]);
   const busy = ['preparing', 'recording', 'processing', 'saving'].includes(snapshot.phase);
   const ready = ['ready', 'saved'].includes(snapshot.phase);
   const refresh = useCallback(() => store.list().then(
@@ -25,9 +30,9 @@ export function SpeakersDialog({ onClose, createServices, canRecord }: {
   ), [store]);
   useEffect(() => {
     alive.current = true; dialog.current?.showModal(); void refresh();
-    const unwatch = watchInterruptions(() => session.cancel());
-    return () => { alive.current = false; unwatch(); session.dispose(); store.close(); };
-  }, [refresh, session, store]);
+    const unwatch = watchInterruptions(() => { session.cancel(); comparison.cancel(); });
+    return () => { alive.current = false; unwatch(); session.dispose(); comparison.dispose(); store.close(); };
+  }, [refresh, session, comparison, store]);
   const remove = async (id?: string) => {
     setStorageBusy(true);
     try { if (id) await store.remove(id); else await store.clear(); await refresh(); }
@@ -46,6 +51,9 @@ export function SpeakersDialog({ onClose, createServices, canRecord }: {
     <h2 id="speakers-title">Speakers on this device</h2>
     <p>Profiles can be recorded and deleted here. Voice matching is still being evaluated; live captions remain <strong>Unknown</strong>.</p>
     <form method="dialog"><button autoFocus>Back to captions</button></form>
+    {comparing ? <VoiceComparison session={comparison} profiles={profiles} canRecord={canRecord} onBack={() => {
+      comparison.cancel(); setComparing(false); void refresh();
+    }} /> : <>
     <section aria-labelledby="saved-speakers-title">
       <h3 id="saved-speakers-title">Saved speakers</h3>
       {profiles.length === 0 && !storageError && <p>No saved speakers on this device.</p>}
@@ -53,6 +61,7 @@ export function SpeakersDialog({ onClose, createServices, canRecord }: {
         <span><strong>{profile.displayName}</strong><small>Saved {new Date(profile.createdAt).toLocaleDateString()}</small></span>
         <button disabled={busy || storageBusy} aria-label={`Delete ${profile.displayName}`} onClick={() => void remove(profile.id)}>Delete</button>
       </li>)}</ul>
+      {profiles.length > 0 && <button ref={comparisonButton} disabled={busy || storageBusy} onClick={() => { session.cancel(); setComparing(true); }}>Compare recordings</button>}
       {storageError && <p role="alert" className="error">{storageError}</p>}
       {(profiles.length > 0 || storageError) && <>
         {confirmClear ? <div><p>Delete all saved voice profiles on this device?</p>
@@ -82,5 +91,6 @@ export function SpeakersDialog({ onClose, createServices, canRecord }: {
       {busy && <button onClick={() => session.cancel()}>Cancel enrolment</button>}
       <p><a href={`${import.meta.env.BASE_URL}speaker/THIRD-PARTY-NOTICES.txt`} target="_blank" rel="noreferrer">Voice model and runtime licences</a></p>
     </section>
+    </>}
   </dialog>;
 }

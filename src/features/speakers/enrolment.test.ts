@@ -12,7 +12,7 @@ function setup() {
   const embedding = new Float32Array(192).fill(.1);
   const recorder = { record: vi.fn().mockResolvedValue(samples) };
   const engine = { prepare: vi.fn().mockResolvedValue(undefined), compute: vi.fn().mockResolvedValue(embedding), dispose: vi.fn() };
-  const store: ProfileStore = { list: vi.fn().mockResolvedValue([]), save: vi.fn().mockResolvedValue(undefined), remove: vi.fn(), clear: vi.fn(), close: vi.fn() };
+  const store: ProfileStore = { list: vi.fn().mockResolvedValue([]), read: vi.fn(), save: vi.fn().mockResolvedValue(undefined), remove: vi.fn(), clear: vi.fn(), close: vi.fn() };
   const session = new EnrolmentSession(recorder, engine, store);
   return { session, recorder, engine, store, samples, embedding };
 }

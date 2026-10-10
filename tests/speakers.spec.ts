@@ -76,6 +76,47 @@ test('project-path lazy model, consent, real enrolment, persisted profile and de
     dimension: 192, normalized: true, consent: 'local-voiceprint-v1', schema: 1,
   }]);
   await page.reload(); await page.getByRole('button', { name: 'Speakers', exact: true }).click();
+  await page.getByRole('button', { name: 'Compare recordings', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Back to saved speakers' })).toBeFocused();
+  await expect(page.getByRole('heading', { name: 'Add a speaker' })).toHaveCount(0);
+  await page.getByLabel('Saved voice to compare').selectOption({ label: 'Synthetic test' });
+  await page.getByLabel('Who is recording?').selectOption('same');
+  await page.getByRole('button', { name: 'Prepare comparison', exact: true }).click();
+  const compare = page.getByRole('button', { name: 'Record comparison (8 seconds)', exact: true });
+  await expect(compare).toBeVisible({ timeout: 30000 }); await expect(compare).toBeDisabled();
+  expect(await stats(page)).toEqual({ calls: 0, stops: 0 });
+  await page.getByRole('checkbox').check(); await compare.click();
+  await expect(page.getByText('Comparison complete. No profile was changed.', { exact: true })).toBeVisible({ timeout: 30000 });
+  const score = Number(await page.getByLabel('Similarity score').innerText());
+  expect(Number.isFinite(score)).toBe(true); expect(score).toBeGreaterThanOrEqual(-1); expect(score).toBeLessThanOrEqual(1);
+  expect(await stats(page)).toEqual({ calls: 1, stops: 1 });
+  await expect(page.getByText('No match threshold has been validated.', { exact: false })).toBeVisible();
+  await page.setViewportSize({ width: 320, height: 720 });
+  await page.evaluate(() => { document.documentElement.style.fontSize = '24px'; });
+  await page.getByText('All 1 temporary results', { exact: true }).click();
+  expect(await page.getByRole('dialog').evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
+  await compare.click(); await expect.poll(() => stats(page)).toEqual({ calls: 2, stops: 1 });
+  await page.getByRole('button', { name: 'Cancel comparison', exact: true }).click();
+  await expect.poll(() => stats(page)).toEqual({ calls: 2, stops: 2 });
+  await expect(page.getByLabel('Similarity score')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Back to saved speakers' }).click();
+  await expect(page.getByRole('button', { name: 'Compare recordings', exact: true })).toBeFocused();
+  await page.reload(); await page.getByRole('button', { name: 'Speakers', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Delete Synthetic test', exact: true })).toHaveCount(1);
+  const persisted = await page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open('speech-to-text-speakers:/speech-to-text/', 1); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);
+    });
+    try {
+      return await new Promise((resolve, reject) => {
+        const tx = db.transaction('profiles'); const request = tx.objectStore('profiles').getAll();
+        tx.oncomplete = () => resolve({ stores: Array.from(db.objectStoreNames), count: request.result.length,
+          normalized: Math.abs(Math.hypot(...request.result[0].embedding as number[]) - 1) < .0001 });
+        tx.onabort = () => reject(tx.error);
+      });
+    } finally { db.close(); }
+  });
+  expect(persisted).toEqual({ stores: ['profiles'], count: 1, normalized: true });
   await page.getByRole('button', { name: 'Delete Synthetic test', exact: true }).click();
   await expect(page.getByText('No saved speakers on this device.')).toBeVisible();
   await page.reload(); await page.getByRole('button', { name: 'Speakers', exact: true }).click();
