@@ -49,7 +49,7 @@ git push
 
 Every subsequent push to `main` runs [.github/workflows/pages.yml](.github/workflows/pages.yml): install dependencies, typecheck, lint, unit tests, production build, Chromium/WebKit tests, then publish `dist/`. Pull requests run checks without publishing. Follow progress in [GitHub Actions](https://github.com/H-Wilderspin/speech-to-text/actions).
 
-The configured address is **https://h-wilderspin.github.io/speech-to-text/**. It becomes available after the first successful deployment; deployment has not yet been verified. Open it on Pixel 8 and iPhone and follow [manual testing](docs/manual-testing.md). First check Listen/Stop and the microphone indicator, then installation. The earlier LAN address was unreachable; no physical-device pass has been recorded.
+The live address is **https://h-wilderspin.github.io/speech-to-text/**. The first successful [deployment](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38051991375) passed all 32 Linux Chromium/WebKit browser tests. The published HTTPS page, manifest/icons, scoped service worker and offline shell were verified in desktop Chromium/WebKit; Chromium also prepared the hosted voice model without requesting a microphone. Open it on Pixel 8 and iPhone and follow [manual testing](docs/manual-testing.md). First check Listen/Stop and the microphone indicator, then installation. No physical-device pass has been recorded.
 
 The one-time account setup is reproducible with `./scripts/setup-github-pages.ps1` in PowerShell using Git Credential Manager's existing sign-in. It creates the public repository if absent and configures Pages and its deployment environment. It does not push code or store credentials in project files. It has already been run for this repository.
 
