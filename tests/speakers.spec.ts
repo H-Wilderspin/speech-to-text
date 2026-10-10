@@ -1,4 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
+import { createServer } from 'node:http';
+import { once } from 'node:events';
 
 // Real AudioWorklet, resampling, WASM and IndexedDB; synthetic input replaces only the microphone.
 async function syntheticMicrophone(page: Page, delayed = false) {
@@ -148,16 +150,35 @@ test('closing during a permission prompt stops a microphone granted afterward', 
 
 test('model failure and cancellation recover without requesting a microphone', async ({ page }) => {
   await syntheticMicrophone(page);
-  await page.route('**/speaker/v1/embedding.onnx', (route) => route.abort());
-  await openSpeakers(page); await page.getByRole('button', { name: 'Prepare voice model' }).click();
-  await expect(page.getByRole('dialog').getByRole('status')).toContainText('Voice model download failed.');
-  await expect(page.getByRole('button', { name: 'Prepare voice model' })).toBeVisible();
-  expect(await stats(page)).toEqual({ calls: 0, stops: 0 });
-  await page.unroute('**/speaker/v1/embedding.onnx');
-  await page.getByRole('button', { name: 'Prepare voice model' }).click();
-  await page.getByRole('button', { name: 'Cancel enrolment' }).click();
-  await expect(page.getByRole('button', { name: 'Prepare voice model' })).toBeVisible();
-  expect(await stats(page)).toEqual({ calls: 0, stops: 0 });
+  // WebKit's dedicated-worker fetch bypassed page.route in Linux CI. A real
+  // loopback HTTP failure exercises the same production worker in every engine.
+  let failModel = true; let failedRequests = 0;
+  const server = createServer((request, response) => {
+    void (async () => {
+      if (failModel && request.url?.split('?')[0] === '/speaker/v1/embedding.onnx') {
+        failedRequests++; response.writeHead(503, { 'Cache-Control': 'no-store' }); response.end(); return;
+      }
+      const upstream = await fetch(`http://127.0.0.1:4173${request.url ?? '/'}`);
+      response.writeHead(upstream.status, { 'Content-Type': upstream.headers.get('content-type') ?? 'application/octet-stream', 'Cache-Control': 'no-store' });
+      response.end(Buffer.from(await upstream.arrayBuffer()));
+    })().catch(() => { if (!response.headersSent) response.writeHead(502); response.end(); });
+  });
+  server.listen(0, '127.0.0.1'); await once(server, 'listening');
+  try {
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('Missing failure-test server address.');
+    await openSpeakers(page, `http://127.0.0.1:${address.port}/`);
+    await page.getByRole('button', { name: 'Prepare voice model' }).click();
+    await expect(page.getByRole('dialog').getByRole('status')).toContainText('Voice model download failed.');
+    expect(failedRequests).toBeGreaterThan(0);
+    await expect(page.getByRole('button', { name: 'Prepare voice model' })).toBeVisible();
+    expect(await stats(page)).toEqual({ calls: 0, stops: 0 });
+    failModel = false;
+    await page.getByRole('button', { name: 'Prepare voice model' }).click();
+    await page.getByRole('button', { name: 'Cancel enrolment' }).click();
+    await expect(page.getByRole('button', { name: 'Prepare voice model' })).toBeVisible();
+    expect(await stats(page)).toEqual({ calls: 0, stops: 0 });
+  } finally { server.closeAllConnections(); await new Promise<void>((resolve) => server.close(() => resolve())); }
 });
 
 test('unavailable storage is actionable and leaves captions accessible', async ({ page }) => {
