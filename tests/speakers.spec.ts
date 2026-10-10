@@ -88,7 +88,7 @@ test('project-path lazy model, consent, real enrolment, persisted profile and de
   await expect(compare).toBeVisible({ timeout: 30000 }); await expect(compare).toBeDisabled();
   expect(await stats(page)).toEqual({ calls: 0, stops: 0 });
   await page.getByRole('checkbox').check(); await compare.click();
-  await expect(page.getByText('Comparison complete. No profile was changed.', { exact: true })).toBeVisible({ timeout: 30000 });
+  await expect(page.locator('.comparison').getByRole('status')).toHaveText('Comparison complete. No profile was changed.', { timeout: 30000 });
   const score = Number(await page.getByLabel('Similarity score').innerText());
   expect(Number.isFinite(score)).toBe(true); expect(score).toBeGreaterThanOrEqual(-1); expect(score).toBeLessThanOrEqual(1);
   expect(await stats(page)).toEqual({ calls: 1, stops: 1 });
