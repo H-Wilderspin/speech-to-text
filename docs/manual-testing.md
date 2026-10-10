@@ -2,7 +2,9 @@
 
 On 2026-10-10 the user reported that speech appears and Stop releases the microphone on their physical Pixel 8 using the deployed HTTPS app. This is a basic user-reported Listen/Stop pass, not completion of the full device matrix. Android/browser versions and tab/installed mode were not supplied. Desktop WebKit with an iPhone viewport is not iOS Safari.
 
-The user also reported successful Pixel 8 speaker-profile saving, persistence after reload and deletion. This is a basic enrolment/storage pass. Model load/processing times, similarity scores, cancellation/interruption behaviour and deletion persistence after another reload have not been reported.
+The user also reported successful Pixel 8 speaker-profile saving, persistence after reload and deletion. Three same-person comparison scores were all approximately 0.8; only the latest processing time was reported, approximately 0.9 seconds. Another person is unavailable, so different-person scores remain pending. Model load times, cancellation/interruption behaviour and deletion persistence after another reload have not been reported. These initial comparisons do not establish accuracy or a threshold.
+
+The user subsequently reported growing repeated transcript text and requested uninterrupted listening plus a spoken “command stop”. The updated reconciliation/restart/command paths require a phone retest; the earlier basic Listen/Stop report does not verify these changes.
 
 ## Required device matrix
 
@@ -22,12 +24,14 @@ On 2026-10-10 the user reported that the LAN benchmark URL could not open on the
 ## M1 workflow
 
 1. Open fresh site data. Confirm Listen is available without enrolment or accounts and the processing disclosure is visible before microphone access. Opening the page alone must not activate the microphone.
-2. Tap Listen. Grant permission; speak at least 10 short phrases including corrections/repetitions. Observe interim replacements, stable confirmed text, and no duplicated phrase when a result finalises. Measure approximate first-word latency for each phrase; record median/range without promising a one-second result.
+2. Tap Listen. Grant permission; speak at least 10 short phrases including corrections/repetitions. Observe interim replacements, stable confirmed text, and no duplicated phrase when a result finalises. Pause for at least 15 seconds, then speak without tapping Listen: Stop should remain available and captions should resume. Check “very very good” and deliberately repeating a phrase after a pause are preserved. Measure approximate first-word latency for each phrase; record median/range without promising a one-second result.
 3. Tap Stop while speaking. Verify the browser/OS microphone indicator ends and no new capture continues. Repeat Listen/Stop 10 times, including cancelling a pending permission prompt. Confirm existing final text remains readable.
 4. Deny permission, then allow it in site settings and retry. Test disabled device speech service, microphone unavailable, silence, network loss and recovery. Messages should give a useful next action. Offline opening must not be described as guaranteed offline transcription.
 5. Listen, background the app, lock/unlock the phone, receive an incoming call where practical, and return. Confirm capture ends and requires another Listen gesture. Unconfirmed text may be discarded; confirmed text stays while the page remains alive. Reload or OS eviction intentionally loses in-memory text.
-6. Run for 15 minutes, including pauses and multiple voices. All voices remain Unknown in M1. Read old text while new text arrives: scroll position should be preserved; Newest speech should return to the end. The app bounds a session at 100,000 characters and requests Clear before continuing.
+6. Run for 15 minutes, including pauses and multiple voices. All voices remain Unknown in M1. Read old text while new text arrives: scroll position should be preserved; Newest speech should return to the end. The app retains the newest 100,000 characters, removing older text without stopping capture. Record capture gaps or permission prompts between native recognition cycles as device limitations.
 7. Clear while stopped and reload. Check no transcript survives and no recordings or localStorage profiles have been created by the app. Anonymous listening alone does not open IndexedDB; opening Speakers opens its local profile store. Browser-provider audio handling is outside app storage controls.
+
+8. While listening, say “command stop”. Confirm listening ends, the microphone indicator turns off, preceding speech remains and the command is omitted. Repeat with a pause between “command” and “stop”. Say “stop” alone and “command stopping” to check that neither ends listening. Check both the button and spoken command after an automatic restart. Commands act only when confirmed by the provider; record any recognition failure or delay.
 
 ## M2 enrolment (experimental)
 

@@ -1,5 +1,13 @@
 # Troubleshooting
 
+## 2026-10-10 — Growing repeated captions (physical retest pending)
+
+- **Context/symptom:** the user reports that captions repeat the phrase with each new word. Android/browser versions and native event payload remain unknown.
+- **Cause:** unconfirmed on the device. A fixture containing successive cumulative final slots reproduces the visual failure in the old reconciliation logic; it rendered every slot as an independent paragraph. This is a candidate explanation, not evidence of the phone's exact event sequence.
+- **Change:** single-utterance native recognition with automatic application restart, plus strict cumulative-prefix normalization within each native utterance. Independent repeated utterances remain intact. See [ADR 0014](decisions/0014-persistent-listening-and-voice-stop.md).
+- **Verification:** regression unit tests and Chromium/WebKit app tests show only the growing phrase once. All 112 unit tests and 30 available local browser tests passed; four existing Windows WebKit audio cases skipped. Physical resolution remains unverified until the deployed app is retested on the Pixel 8.
+- **Prevention:** preserve raw final slots for interrupted interim recovery, scope normalization to one native utterance, and retain fixtures for both provider-like cumulative output and intentional repetitions. No personal transcript or audio is logged.
+
 ## 2026-10-10 — Windows sandbox blocks build-tool configuration
 
 - **Context:** Node 22.20.0, Vite 7.3.7/Vitest 3.2.7, restricted Windows workspace.

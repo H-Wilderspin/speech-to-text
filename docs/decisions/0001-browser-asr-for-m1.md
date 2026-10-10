@@ -1,7 +1,7 @@
 # ADR 0001: Browser recognition for anonymous captions
 
 Date: 2026-10-10
-Status: Accepted
+Status: Accepted; restart, retention and cumulative-result behaviour superseded by [ADR 0014](0014-persistent-listening-and-voice-stop.md)
 
 ## Context
 

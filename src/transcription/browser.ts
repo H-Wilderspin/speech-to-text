@@ -1,4 +1,5 @@
-import { reconcileResults } from './reconcile';
+import { collapseCumulativeResults, reconcileResults } from './reconcile';
+import { consumeStopCommand } from './stop-command';
 import type { BrowserRecognizer, RecognizerFactory, TranscriptionEngine, TranscriptionSnapshot, TranscriptSegment } from './types';
 
 const REQUEST_TIMEOUT_MS = 30_000;
@@ -23,6 +24,10 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
   private history: TranscriptSegment[] = [];
   private current: TranscriptSegment[] = [];
   private sessionId = 0;
+  private listeningRequested = false;
+  private language = 'en-GB';
+  private restartDelay = 200;
+  private commandStartSessionId = 0;
 
   constructor(private factory: RecognizerFactory | null, public readonly unavailableReason: string | null = null) {}
 
@@ -33,7 +38,21 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
   };
 
   private publish(phase: TranscriptionSnapshot['phase'], message: string) {
-    this.snapshot = { phase, message, segments: [...this.history, ...this.current] };
+    // Retain a rolling window instead of stopping a long listening session.
+    let excess = [...this.history, ...this.current].reduce((total, segment) => total + segment.text.length, 0) - MAX_SESSION_CHARACTERS;
+    for (const segments of [this.history, this.current]) {
+      while (excess > 0 && segments.length) {
+        const first = segments[0]!;
+        if (first.text.length <= excess) {
+          excess -= first.text.length;
+          segments.shift();
+        } else {
+          segments[0] = { ...first, text: first.text.slice(excess) };
+          excess = 0;
+        }
+      }
+    }
+    this.snapshot = { phase, message, segments: [...this.history, ...collapseCumulativeResults(this.current)] };
     this.listeners.forEach((listener) => listener());
   }
 
@@ -60,49 +79,81 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
   }
 
   private finish(phase: 'idle' | 'error', message: string, abort = true) {
+    this.listeningRequested = false;
     const recognizer = this.detach();
     if (abort) this.abort(recognizer);
-    this.history.push(...this.current.filter((segment) => segment.isFinal));
+    this.history.push(...collapseCumulativeResults(this.current.filter((segment) => segment.isFinal)));
     this.current = [];
     this.publish(phase, message);
   }
 
   start(language: string) {
-    if (this.recognizer) return;
-    if (this.history.reduce((total, segment) => total + segment.text.length, 0) > MAX_SESSION_CHARACTERS) {
-      this.publish('idle', 'This session is full. Clear the text before starting a new session.');
-      return;
-    }
+    if (this.listeningRequested || this.recognizer) return;
     if (!this.factory || this.unavailableReason) {
       this.publish('error', this.unavailableReason ?? 'Speech recognition is not available in this browser.');
       return;
     }
-    this.sessionId++;
+    this.listeningRequested = true;
+    this.language = language;
+    this.restartDelay = 200;
+    this.commandStartSessionId = this.sessionId + 1;
     this.publish('requesting-permission', 'Waiting for microphone access…');
+    this.begin();
+  }
+
+  private restart(abort = false) {
+    const recognizer = this.detach();
+    if (abort) this.abort(recognizer);
+    this.history.push(...collapseCumulativeResults(this.current.filter((segment) => segment.isFinal)));
+    this.current = [];
+    if (!this.listeningRequested) { this.publish('idle', 'Stopped.'); return; }
+    this.publish('listening', 'Listening. Say “command stop” or tap Stop to finish.');
+    this.timer = setTimeout(() => {
+      this.timer = undefined;
+      if (this.listeningRequested) this.begin();
+    }, this.restartDelay);
+    this.restartDelay = Math.min(this.restartDelay * 2, 2_000);
+  }
+
+  private begin() {
+    this.sessionId++;
     try {
-      const recognizer = this.factory();
+      const recognizer = this.factory!();
       this.recognizer = recognizer;
-      recognizer.lang = language;
-      recognizer.continuous = true;
+      recognizer.lang = this.language;
+      // Keep the app session running ourselves. A single native utterance avoids
+      // mobile providers accumulating successive hypotheses as final phrases.
+      recognizer.continuous = false;
       recognizer.interimResults = true;
       recognizer.maxAlternatives = 1;
       recognizer.onstart = () => {
         if (this.recognizer !== recognizer) { this.abort(recognizer); return; }
         if (this.snapshot.phase === 'stopping') return;
         this.cancelTimer();
-        this.publish('listening', 'Listening. Speak naturally.');
+        this.publish('listening', 'Listening. Say “command stop” or tap Stop to finish.');
       };
       recognizer.onresult = ({ results }) => {
         if (this.recognizer !== recognizer) return;
-        this.current = reconcileResults(this.current, results, this.sessionId);
-        this.publish(this.snapshot.phase, this.snapshot.message);
-        if (this.snapshot.segments.reduce((total, segment) => total + segment.text.length, 0) > MAX_SESSION_CHARACTERS) {
-          this.finish('idle', 'This session is full. Your confirmed text is still here. Clear the text before starting a new session.');
+        this.current = reconcileResults(this.current, results, this.sessionId, true);
+        if (this.current.length) this.restartDelay = 200;
+        const earlierSessions = this.history.filter((segment) => Number(segment.id.split(':')[0]) < this.commandStartSessionId);
+        const activeSession = this.history.slice(earlierSessions.length);
+        const beforeCommand = consumeStopCommand([...activeSession, ...collapseCumulativeResults(this.current.filter((segment) => segment.isFinal))]);
+        if (beforeCommand) {
+          this.history = [...earlierSessions, ...beforeCommand];
+          this.current = [];
+          this.finish('idle', 'Stopped by voice command.');
+          return;
         }
+        this.publish(this.snapshot.phase, this.snapshot.message);
       };
       recognizer.onerror = ({ error }) => {
         if (this.recognizer !== recognizer) return;
-        if (this.snapshot.phase === 'stopping' && error === 'aborted') {
+        if (this.listeningRequested && error === 'no-speech') {
+          // Normally followed by onend. Bound the wait for broken providers.
+          this.cancelTimer();
+          this.timer = setTimeout(() => this.restart(true), STOP_TIMEOUT_MS);
+        } else if (this.snapshot.phase === 'stopping' && (error === 'aborted' || error === 'no-speech')) {
           this.finish('idle', 'Stopped.');
         } else {
           this.finish(error === 'no-speech' || error === 'aborted' ? 'idle' : 'error',
@@ -111,7 +162,8 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
       };
       recognizer.onend = () => {
         if (this.recognizer !== recognizer) return;
-        this.finish('idle', this.snapshot.phase === 'stopping' ? 'Stopped.' : 'Listening ended. Tap Listen to continue.', false);
+        if (this.listeningRequested) this.restart();
+        else this.finish('idle', 'Stopped.', false);
       };
       this.timer = setTimeout(() => this.finish('error', 'Microphone access did not start. Check permission, then tap Listen.'), REQUEST_TIMEOUT_MS);
       recognizer.start(); // Keep this in the original user gesture (especially on mobile).
@@ -121,7 +173,9 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
   }
 
   stop() {
-    if (!this.recognizer || this.snapshot.phase === 'stopping') return;
+    this.listeningRequested = false;
+    if (!this.recognizer) { this.cancelTimer(); this.publish('idle', 'Stopped.'); return; }
+    if (this.snapshot.phase === 'stopping') return;
     if (this.snapshot.phase === 'requesting-permission') {
       this.finish('idle', 'Microphone request cancelled.');
       return;
@@ -133,17 +187,18 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
   }
 
   interrupt() {
-    if (this.recognizer) this.finish('idle', 'Listening paused because you left the app. Tap Listen to continue.');
+    if (this.recognizer || this.listeningRequested) this.finish('idle', 'Listening paused because you left the app. Tap Listen to continue.');
   }
 
   clear() {
-    if (this.recognizer) return;
+    if (this.recognizer || this.listeningRequested) return;
     this.history = [];
     this.current = [];
     this.publish('idle', 'Text cleared. Ready when you are.');
   }
 
   dispose() {
+    this.listeningRequested = false;
     this.abort(this.detach());
     this.history = [];
     this.current = [];

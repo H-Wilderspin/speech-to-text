@@ -64,6 +64,7 @@ export function App({ engine, createSpeakers }: { engine: TranscriptionEngine; c
           </label>
           <button className="quiet clear" disabled={active || snapshot.segments.length === 0} onClick={() => engine.clear()}>Clear text</button>
         </div>
+        <p className="privacy">Listening continues across pauses. Tap Stop or say “command stop” to finish. Keep the app open; the latest 100,000 characters stay on screen.</p>
         <p className="privacy" id="processing-note">By tapping Listen, you allow your browser to process microphone audio using its speech service, which may send audio to its provider. This app keeps captions only until you clear or reload the page.</p>
         <details><summary>Privacy &amp; installing the app</summary>
           <p>No account, analytics, saved audio, or saved transcripts. Optional consented voice profiles stay in this browser and can be deleted in Speakers. The browser provider’s processing and retention rules apply to its speech service. Only app files are cached for offline opening; offline transcription is not guaranteed.</p>

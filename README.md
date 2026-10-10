@@ -6,9 +6,11 @@ M1's application is implemented: accessible anonymous captions, replaceable inte
 
 The user reports that captions appear and Stop releases the microphone on a physical Pixel 8. This basic Listen/Stop check passed; browser/OS versions, installed-PWA behaviour and the wider device checks remain unconfirmed. The iPhone is currently unavailable for testing.
 
-Pixel 8 speaker enrolment also passed a user-reported check: a profile saved, survived reloading and was deleted successfully. This verifies the reported basic storage workflow; speaker similarity/accuracy and processing timings remain unmeasured.
+Pixel 8 speaker enrolment also passed a user-reported check: a profile saved, survived reloading and was deleted successfully. Three initial same-person comparisons were reported as approximately 0.8 similarity; the latest showed approximately 0.9 seconds of voice processing. Different-person testing awaits another participant. These observations do not establish accuracy or a matching threshold.
 
-**The full project plan is not complete.** Experimental M2 enrolment is implemented: consented eight-second recordings produce local English-model voiceprints with versioned IndexedDB storage, listing and deletion. Prepare downloads about 39 MB of public model/runtime files only on request; raw audio is discarded. Physical Pixel 8/iPhone performance and speaker accuracy remain unverified. Browser ASR still lacks usable per-utterance alignment, so live identity attribution is not enabled and all captions remain Unknown. See [ADR 0006](docs/decisions/0006-experimental-local-enrolment.md), [model assets and licences](docs/speaker-assets.md), and the [device test matrix](docs/manual-testing.md).
+Listening now restarts across pauses and normal browser recognition endings. Tap Stop or say **“command stop”** to finish; the confirmed command is removed from captions. Keep the app open: leaving it or a microphone/provider failure still interrupts capture. The newest 100,000 characters are retained without stopping a long session. Growing cumulative hypotheses within one native utterance are displayed once; repeated phrases in separate utterances remain. These fixes have automated coverage; the reported phone repetition issue needs a physical retest. See [ADR 0014](docs/decisions/0014-persistent-listening-and-voice-stop.md).
+
+**The full project plan is not complete.** Experimental M2 enrolment is implemented: consented eight-second recordings produce local English-model voiceprints with versioned IndexedDB storage, listing and deletion. Prepare downloads about 39 MB of public model/runtime files only on request; raw audio is discarded. Broader physical-device performance and speaker accuracy remain unverified. Browser ASR still lacks usable per-utterance alignment, so live identity attribution is not enabled and all captions remain Unknown. See [ADR 0006](docs/decisions/0006-experimental-local-enrolment.md), [model assets and licences](docs/speaker-assets.md), and the [device test matrix](docs/manual-testing.md).
 
 **Speakers → Compare recordings** now supports local same-person/different-person evaluation against a saved profile. It requires consent and a declared relationship, displays cosine similarity and processing time, and retains at most 20 temporary results until you clear them, leave the screen or interrupt the app. The test recording and voiceprint are discarded; saved profiles are unchanged. Scores are measurements, not probabilities or confirmed identities. See [ADR 0011](docs/decisions/0011-local-voice-comparison.md).
 
@@ -103,7 +105,7 @@ This README is the **product specification and development guide** for Codex. `A
 2. Tap **Listen**, grant microphone access when prompted, and begin speaking.
 3. Interim words appear promptly and are clearly distinguished from confirmed text; interim revisions must **replace**, not duplicate, text.
 4. Finalised text stays readable as further speech arrives. The screen uses nearly all available display area for transcription.
-5. Tap **Stop** to end microphone capture. Clear errors and actionable recovery prompts are shown if permission is denied or recognition fails.
+5. Listening continues across pauses while the app stays open. Tap **Stop** or say **“command stop”** to end microphone capture. Clear errors and actionable recovery prompts are shown if permission is denied or recognition fails.
 
 ### Enrolled speakers
 
@@ -127,7 +129,7 @@ This README is the **product specification and development guide** for Codex. `A
 
 | ID | Priority | Requirement | Demonstration / acceptance |
 |---|---|---|---|
-| FR-01 | Must | Start/stop live transcription with **Listen** / **Stop** | Tap Listen; speech appears; Stop ends mic use. |
+| FR-01 | Must | Persistent live transcription with **Listen**, **Stop** and spoken **“command stop”** | Tap Listen; speech appears once; pauses resume automatically; button or confirmed spoken command ends mic use. |
 | FR-02 | Must | Interim and final transcription rendering | Interim revisions do not duplicate words; final segments remain stable. |
 | FR-03 | Must | Readable, accessible full-screen display | Large text, text scaling, high contrast, accessible controls on phone sizes. |
 | FR-04 | Must | Anonymous mode works immediately | No speaker profiles, account, or cloud service required to enter listening mode. |

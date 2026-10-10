@@ -56,6 +56,35 @@ test('permission denial is actionable and a new gesture can recover', async ({ p
   await expect(page.getByRole('status')).toContainText('Listening.');
 });
 
+test('growing hypotheses render once, listening restarts, and a spoken command stops it', async ({ page }) => {
+  await mockRecognition(page); await page.goto('/');
+  await page.getByRole('button', { name: 'Listen', exact: true }).click();
+  for (let count = 1; count <= 3; count++) {
+    await page.evaluate((count) => {
+      const host = window as Window & { testRecognition?: { onresult: (event: unknown) => void } };
+      host.testRecognition?.onresult({ results: ['We', 'We are', 'We are here.'].slice(0, count).map((text) => ({
+        0: { transcript: text, confidence: .9 }, length: 1, isFinal: true,
+      })) });
+    }, count);
+  }
+  await expect(page.locator('.confirmed')).toHaveText(['We are here.']);
+  await page.evaluate(() => {
+    const host = window as Window & { testRecognition?: { onend: () => void }; previousRecognition?: unknown };
+    host.previousRecognition = host.testRecognition;
+    host.testRecognition?.onend();
+  });
+  await expect.poll(() => page.evaluate(() => {
+    const host = window as Window & { testRecognition?: unknown; previousRecognition?: unknown };
+    return host.testRecognition !== host.previousRecognition;
+  })).toBe(true);
+  await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeEnabled();
+  await result(page, 'All finished. Command stop.', true);
+  await expect(page.getByRole('status')).toContainText('Stopped by voice command');
+  await expect(page.locator('.confirmed')).toHaveText(['We are here.', 'All finished.']);
+  await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
+  expect(await page.evaluate(() => (window as Window & { wasAborted?: boolean }).wasAborted)).toBe(true);
+});
+
 test('unsupported capability preserves readable UI and accessible speaker dialog', async ({ page }) => {
   await page.addInitScript(() => Object.assign(window, { SpeechRecognition: undefined, webkitSpeechRecognition: undefined }));
   await page.goto('/');

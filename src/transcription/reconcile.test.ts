@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { reconcileResults } from './reconcile';
+import { collapseCumulativeResults, reconcileResults } from './reconcile';
 import type { RecognitionResult } from './types';
 
 function result(text: string, isFinal = false): RecognitionResult {
@@ -27,5 +27,19 @@ describe('complete recognition snapshots', () => {
   it('ignores empty alternatives and does not invent timing or identity', () => {
     const next = reconcileResults([], [result('  '), result(' hello ')], 1);
     expect(next).toEqual([{ id: '1:1', text: 'hello', isFinal: false }]);
+  });
+  it('collapses a growing phrase reported in successive final slots in one utterance', () => {
+    let segments = reconcileResults([], [result('We', true)], 1, true);
+    segments = reconcileResults(segments, [result('We', true), result('We are', true)], 1, true);
+    segments = reconcileResults(segments, [result('We', true), result('We are', true), result('We are here.', true)], 1, true);
+    expect(collapseCumulativeResults(segments).map((segment) => segment.text)).toEqual(['We are here.']);
+  });
+  it('accepts cumulative extensions to a prematurely final single slot', () => {
+    const first = reconcileResults([], [result('We are', true)], 1, true);
+    expect(reconcileResults(first, [result('we are here.', true)], 1, true).map((segment) => segment.text)).toEqual(['we are here.']);
+  });
+  it('preserves deliberate repeated words and independent repeated phrases', () => {
+    const segments = reconcileResults([], [result('Very very good.', true), result('Very very good.', true), result('Good evening.', true)], 1, true);
+    expect(segments.map((segment) => segment.text)).toEqual(['Very very good.', 'Very very good.', 'Good evening.']);
   });
 });
