@@ -7,6 +7,8 @@ export interface TranscriptSegment {
   startMs?: number;
   endMs?: number;
   speakerId?: string;
+  // Set together only by an attribution engine with sufficient voice evidence.
+  speakerName?: string;
 }
 
 export interface TranscriptionSnapshot {

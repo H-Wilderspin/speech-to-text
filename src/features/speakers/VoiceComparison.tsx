@@ -1,4 +1,4 @@
-import { useState, useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { speakerModel } from '../../identification/model';
 import type { ProfileSummary } from '../../storage/profiles';
 import { type DeclaredRelation, type VoiceComparisonSession } from './comparison';
@@ -7,9 +7,10 @@ export function VoiceComparison({ session, profiles, canRecord, onBack }: {
   session: VoiceComparisonSession; profiles: readonly ProfileSummary[]; canRecord: boolean; onBack: () => void;
 }) {
   const snapshot = useSyncExternalStore(session.subscribe, session.getSnapshot);
+  useEffect(() => { void session.restore(); }, [session]);
   const [reference, setReference] = useState(''); const [relation, setRelation] = useState<DeclaredRelation | ''>('');
   const [consent, setConsent] = useState(false);
-  const busy = ['preparing', 'recording', 'processing'].includes(snapshot.phase);
+  const busy = ['checking', 'preparing', 'recording', 'processing'].includes(snapshot.phase);
   const ready = ['ready', 'complete'].includes(snapshot.phase);
   const compatible = profiles.filter((profile) => profile.modelVersion === speakerModel.version);
   const last = snapshot.trials.at(-1);

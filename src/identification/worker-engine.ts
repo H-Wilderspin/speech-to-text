@@ -1,4 +1,5 @@
 import type { EmbeddingEngine } from './model';
+import { hasCachedModel } from './model-cache';
 
 export class WorkerEmbeddingEngine implements EmbeddingEngine {
   private worker?: Worker;
@@ -7,7 +8,7 @@ export class WorkerEmbeddingEngine implements EmbeddingEngine {
   private rejectPending?: (reason: unknown) => void;
   constructor(private readonly assetsUrl: string) {}
 
-  private request(data: { base?: string; samples?: Float32Array }, signal: AbortSignal): Promise<Float32Array | undefined> {
+  private request(data: { base?: string; cachedOnly?: boolean; samples?: Float32Array }, signal: AbortSignal): Promise<Float32Array | undefined> {
     signal.throwIfAborted();
     if (this.rejectPending) return Promise.reject(new Error('Voice processing is already running.'));
     this.worker ??= new Worker(new URL('./embedding.worker.ts', import.meta.url), { type: 'module' });
@@ -30,9 +31,10 @@ export class WorkerEmbeddingEngine implements EmbeddingEngine {
       try { worker.postMessage({ id, ...data }); } catch (error) { fail(error); }
     });
   }
-  async prepare(signal: AbortSignal) {
+  isCached() { return hasCachedModel(this.assetsUrl); }
+  async prepare(signal: AbortSignal, cachedOnly = false) {
     signal.throwIfAborted();
-    if (!this.ready) { await this.request({ base: this.assetsUrl }, signal); signal.throwIfAborted(); this.ready = true; }
+    if (!this.ready) { await this.request({ base: this.assetsUrl, cachedOnly }, signal); signal.throwIfAborted(); this.ready = true; }
   }
   async compute(samples: Float32Array, signal: AbortSignal) {
     if (!this.ready) throw new Error('Prepare the voice model before recording.');

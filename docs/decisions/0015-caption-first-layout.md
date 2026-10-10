@@ -3,6 +3,10 @@
 Date: 2026-10-10
 Status: Accepted; supersedes ADR 0001's visible disclosure placement and the original transcript controls
 
+The later name/colour request adds compact speaker labels within the transcript,
+including a neutral Unknown label when identity metadata is missing. See
+[ADR 0017](0017-direct-live-attribution-prototype.md). The three-button layout remains.
+
 ## Context
 
 The user explicitly requests only Listen, Clear and Settings at the top of the page, with text occupying the remaining space. The original branding, status row, text controls, language selector and footer reduce the caption area. The Unknown banner also made the unfinished identification feature look like an attempted match.

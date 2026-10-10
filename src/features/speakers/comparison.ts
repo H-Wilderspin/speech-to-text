@@ -8,7 +8,7 @@ export type ComparisonTrial = {
   referenceName: string; referenceId: string; relation: DeclaredRelation; score: number;
   modelVersion: string; durationMs: number; processingMs: number;
 };
-type Phase = 'idle' | 'preparing' | 'ready' | 'recording' | 'processing' | 'complete' | 'error';
+type Phase = 'idle' | 'checking' | 'preparing' | 'ready' | 'recording' | 'processing' | 'complete' | 'error';
 type Snapshot = { phase: Phase; message: string; seconds: number; trials: readonly ComparisonTrial[] };
 
 /** Temporary evaluation only: records declared pair relationships, never identities. */
@@ -24,10 +24,23 @@ export class VoiceComparisonSession {
     if (this.disposed) return;
     this.snapshot = { phase, message, seconds, trials }; this.listeners.forEach((listener) => listener());
   }
+  async restore() {
+    if (this.disposed || this.operation || !this.engine.isCached || this.recorder.unavailableReason) return;
+    const operation = new AbortController(); this.operation = operation;
+    this.set('checking', 'Checking for a saved voice model…');
+    try {
+      const cached = await this.engine.isCached(); operation.signal.throwIfAborted();
+      if (!cached) { this.set('idle', 'Prepare the voice model once to compare recordings.'); return; }
+      this.set('preparing', 'Loading the saved voice model. No download is needed.');
+      await this.engine.prepare(operation.signal, true); operation.signal.throwIfAborted();
+      this.set('ready', 'Ready to record a comparison.');
+    } catch (error) { if (!operation.signal.aborted) this.set('idle', error instanceof Error ? error.message : 'The saved model could not be loaded. Prepare it again.'); }
+    finally { if (this.operation === operation) this.operation = undefined; }
+  }
   async prepare() {
     if (this.disposed || this.operation) return;
     const operation = new AbortController(); this.operation = operation;
-    this.set('preparing', 'Loading the voice model for comparison. This may download about 39 MB.');
+    this.set('preparing', 'Preparing the voice model. Only missing files are downloaded (up to 39 MB).');
     try { await this.engine.prepare(operation.signal); operation.signal.throwIfAborted(); this.set('ready', 'Ready to record a comparison.'); }
     catch (error) { if (!operation.signal.aborted) this.set('error', error instanceof Error ? error.message : 'Could not prepare comparison.'); }
     finally { if (this.operation === operation) this.operation = undefined; }

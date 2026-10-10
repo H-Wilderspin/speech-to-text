@@ -4,6 +4,7 @@ import type { ProfileStore, ProfileSummary } from '../../storage/profiles';
 import type { EnrolmentSession } from './enrolment';
 import type { VoiceComparisonSession } from './comparison';
 import { VoiceComparison } from './VoiceComparison';
+import { speakerColour } from './colours';
 
 export type SpeakerServices = { store: ProfileStore; session: EnrolmentSession; comparison: VoiceComparisonSession };
 export function SpeakersDialog({ onClose, createServices, canRecord }: {
@@ -21,8 +22,8 @@ export function SpeakersDialog({ onClose, createServices, canRecord }: {
   const [consent, setConsent] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
   const alive = useRef(true);
-  useEffect(() => { if (!comparing) comparisonButton.current?.focus(); }, [comparing]);
-  const busy = ['preparing', 'recording', 'processing', 'saving'].includes(snapshot.phase);
+  useEffect(() => { if (!comparing) { comparisonButton.current?.focus(); void session.restore(); } }, [comparing, session]);
+  const busy = ['checking', 'preparing', 'recording', 'processing', 'saving'].includes(snapshot.phase);
   const ready = ['ready', 'saved'].includes(snapshot.phase);
   const refresh = useCallback(() => store.list().then(
     (rows) => { if (alive.current) { setProfiles(rows); setStorageError(''); } },
@@ -58,10 +59,10 @@ export function SpeakersDialog({ onClose, createServices, canRecord }: {
       <h3 id="saved-speakers-title">Saved speakers</h3>
       {profiles.length === 0 && !storageError && <p>No saved speakers on this device.</p>}
       <ul className="speaker-list">{profiles.map((profile) => <li key={profile.id}>
-        <span><strong>{profile.displayName}</strong><small>Saved {new Date(profile.createdAt).toLocaleDateString()}</small></span>
+        <span><strong style={{ color: speakerColour(profile.id) }}>{profile.displayName}</strong><small>Saved {new Date(profile.createdAt).toLocaleDateString()}</small></span>
         <button disabled={busy || storageBusy} aria-label={`Delete ${profile.displayName}`} onClick={() => void remove(profile.id)}>Delete</button>
       </li>)}</ul>
-      {profiles.length > 0 && <button ref={comparisonButton} disabled={busy || storageBusy} onClick={() => { session.cancel(); setComparing(true); }}>Compare recordings</button>}
+      {profiles.length > 0 && <button ref={comparisonButton} disabled={['recording', 'processing', 'saving'].includes(snapshot.phase) || storageBusy} onClick={() => { session.cancel(); setComparing(true); }}>Compare recordings</button>}
       {storageError && <p role="alert" className="error">{storageError}</p>}
       {(profiles.length > 0 || storageError) && <>
         {confirmClear ? <div><p>Delete all saved voice profiles on this device?</p>
@@ -73,7 +74,7 @@ export function SpeakersDialog({ onClose, createServices, canRecord }: {
     <section aria-labelledby="add-speaker-title">
       <h3 id="add-speaker-title">Add a speaker</h3>
       <p>Record only one person, with their permission. The recording is processed here and discarded after processing. Only the name, consent details and voiceprint are saved in this browser. They are not synced or uploaded; deleting site data removes them.</p>
-      <p>The English voice model and runtime download about 39 MB when you prepare them. Your browser may cache these public files. Offline enrolment is not guaranteed.</p>
+      <p>The English voice model downloads up to 39 MB once, then loads automatically from this device for new profiles and comparisons. Only missing or damaged files need downloading again. If browser storage is unavailable or cleared, another download may be needed.</p>
       <label className="speaker-name">Display name<input value={displayName} maxLength={60} autoComplete="off" disabled={busy}
         onChange={(event) => setDisplayName(event.target.value)} /></label>
       <label className="consent"><input type="checkbox" checked={consent} disabled={busy} onChange={(event) => setConsent(event.target.checked)} />

@@ -4,6 +4,11 @@ The optional enrolment path uses three public files in `public/speaker/v1/`. Com
 
 `npm run verify:speaker-assets` checks the SHA256 values in `speaker-assets.json` and notice presence; `npm run build` runs that check automatically. Runtime/model downloads are lazy and same-origin. The service worker does not precache this directory.
 
+After the first explicit preparation, a separate model/version cache retains all
+three verified files. Enrolment and comparison detect and load that copy without
+another download prompt, including offline; cache eviction or corruption requires
+explicit repair. See [ADR 0016](decisions/0016-reuse-cached-voice-model.md).
+
 | Asset | Bytes | Provenance |
 |---|---:|---|
 | `embedding.onnx` | 26,485,263 | `3dspeaker_speech_eres2net_sv_en_voxceleb_16k.onnx`, pinned maintainer conversion below |

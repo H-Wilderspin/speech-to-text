@@ -2,6 +2,15 @@
 
 This audit preserves the README's complete scope. Implemented code and passing desktop tests do not satisfy physical-device or human-speaker gates. The goal is not complete.
 
+Latest increment: persistent verified model reuse passes offline real-inference
+browser checks; name/colour rendering is supported but the production adapter
+still emits Unknown. The direct-reference research prototype names most token
+points in generated turn-taking speech, while unequal overlap remains unresolved.
+See [ADR 0016](decisions/0016-reuse-cached-voice-model.md) and
+[ADR 0017](decisions/0017-direct-live-attribution-prototype.md). Current local checks:
+130 unit tests and 32 available Windows browser tests passed, with four existing
+WebKit audio skips. This does not close M3 or replace human calibration.
+
 | Requirement | Current evidence | Remaining proof |
 |---|---|---|
 | FR-01 Listen/Stop | Automated lifecycle/restart/voice-command tests plus user-reported Pixel 8 button Stop and spoken stop working | Explicit pause-continuation result; iPhone result, versions and operating mode |

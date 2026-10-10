@@ -1,5 +1,19 @@
 # Troubleshooting
 
+## 2026-10-10 — Repeated model preparation and lost return focus
+
+- **Cause:** disposable dialog workers only tracked readiness in memory; no persistent complete-model detection existed. Automatic cache restore then exposed a second bug: the comparison launch button lost restored focus when preparation disabled it.
+- **Fix:** versioned CacheStorage for verified public model/runtime files; cache-only automatic restore on both screens, explicit network repair, and cancellation guards. Allow the comparison navigation button during model checking/preparation; navigating cancels that worker safely.
+- **Verification:** Chromium completed real enrolment, offline reload and comparison with no additional model requests. The focused-button regression initially failed and passed after the fix. All 32 available Windows browser checks passed; four WebKit audio checks remain unsupported. Cache corruption, quota, absence and delayed cancellation have unit coverage.
+- **Related:** [ADR 0016](decisions/0016-reuse-cached-voice-model.md). Browser cache eviction remains a legitimate reason to download missing files again.
+
+## 2026-10-10 — Live attribution: progress and remaining overlap failure
+
+- **Context:** local shared-clock ASR plus English embeddings; generated Hazel/Zira reference, calibration and held-out passages. No user recordings or stored profiles are used.
+- **Finding:** the instantaneous VAD gate skipped embedding windows that still contained speech. Optional whole-window energy gating restored coverage. Direct enrolled-reference matching bypasses the previously failed cluster assignments: A/B/A now names 81/93 token points with 12 Unknown in the fixture, versus 10/93 previously.
+- **Unresolved:** energy and agreeing embeddings do not prove one speaker. Unequal overlap still produces solo labels at eight mixed token points; the existing segmentation candidate also misses that quiet voice. Five-second segmentation output fails existing time-bound validation, so the ten-second model cannot simply be shortened.
+- **Next:** follow [ADR 0017](decisions/0017-direct-live-attribution-prototype.md). Do not map browser result arrival time to microphone windows, copy synthetic thresholds into production, or describe playback schedules as annotated word truth.
+
 ## 2026-10-10 — Growing repeated captions (user-reported Pixel 8 fix)
 
 - **Context/symptom:** the user reports that captions repeat the phrase with each new word. Android/browser versions and native event payload remain unknown.

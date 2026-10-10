@@ -1,5 +1,43 @@
 # Speaker runtime experiment
 
+## Direct enrolled-voice attribution prototype
+
+After preparing the existing shared pipeline, run:
+
+```sh
+npm run spike:generate-attribution-fixtures
+npm run spike:attribution
+```
+
+This experiment uses the installed Microsoft Hazel/Zira desktop voices, with
+different profile, calibration and held-out passages. It requests no microphone
+and never reads saved user profiles. WAV fixtures remain ignored under
+`research/private/attribution-fixtures/`. `-- --verbose` prints window scores,
+not audio, vectors or transcripts. Node 22.20.0 is tested (native TypeScript type
+stripping loads the production cosine function).
+
+The actual shared ASR/embedding runtime processes ordered 100 ms audio frames.
+Three-second embeddings at 1.5-second strides are compared directly to references,
+bypassing the failed anonymous-cluster reconciliation. Optional whole-window
+energy gating avoids discarding speech windows when instantaneous VAD is silent;
+it does not prove a window contains speech. A token point needs two agreeing
+windows, a calibrated score/margin, and three seconds of subsequent audio before
+a name can commit. Token timestamps are not fabricated into word durations.
+
+The two-voice synthetic calibration is confined to this runner and is never
+saved or shipped as a production threshold. The leave-one-out case treats Zira
+as unenrolled while retaining calibration that has seen that voice; it is not
+unseen-speaker validation. Counts compare token points to exact playback
+schedules, including pauses, and are not human accuracy or diarization error rate.
+Unequal overlap exposes a remaining failure. See [ADR 0017](../docs/decisions/0017-direct-live-attribution-prototype.md)
+for measurements and the concrete production integration path. The production
+browser recognizer still supplies no identities.
+
+After preparing the existing diarization runtime, `npm run spike:overlap-veto`
+tests it as an independent mixed-speech rejection signal. Equal-level overlap is
+detected, while the 20%-amplitude second voice is missed. `-- --short` reproduces
+the five-second-window output validation failure; do not use that as a live path.
+
 This directory retains the isolated, real-inference experiment for M2. Its page and private data are excluded from the production app. It uses synthetic audio only: valid embeddings and fast inference do not establish speaker accuracy. The app now separately includes an English model and experimental consented enrolment under [ADR 0006](../docs/decisions/0006-experimental-local-enrolment.md).
 
 ## Reproduce on the current Windows build workspace

@@ -1,5 +1,14 @@
 # Feasibility evidence
 
+## 2026-10-10 — Cached model reuse and direct attribution experiment
+
+- **Model reuse:** first explicit preparation now saves all three hash-verified public assets. Offline reload automatically restores enrolment and comparison without another model request. Real synthetic Chromium enrolment/comparison passed; full Windows browser suite passed 32 cases with four existing unsupported-Web-Audio WebKit skips. No phone cache-reuse pass is claimed.
+- **Display:** names and text share stable ID-derived colours, with a neutral Unknown fallback and compact labels only on speaker changes. Automated contrast checks cover every palette entry at 4.5:1 or better. Production browser recognition still supplies no identities. This is presentation support only.
+- **Direct attribution:** new shared-clock reference-window experiment uses different synthetic enrolment/calibration/test passages. Whole-window energy gating increased A/B/A named token-point coverage from 10/93 to 81/93; both runs had zero wrong solo names in their playback-schedule comparison. Gapless turns gave 67/93 named points; an unenrolled reference gave 22/22 Unknown. These are two generated voices, not human calibration or word-alignment accuracy.
+- **Unresolved overlap:** quieter mixed speech still received eight solo-name assignments. The separate segmentation veto detected equal-level overlap but none with the second voice at 20% amplitude. Shorter five-second input failed segment-output bounds validation. Retained reproduction scripts avoid silently hiding these failures.
+- **Performance:** Windows Node 22.20.0 expanded run processed 23.685 s A/B/A in 5.232 s, maximum frame 327 ms; maximum across fixtures 500 ms. Accelerated input is not paced phone capture or end-to-end latency. Detailed measurements, source links and concrete integration steps are in [ADR 0017](decisions/0017-direct-live-attribution-prototype.md).
+- **Checks:** typecheck, lint, 130 unit tests, pinned assets and production build passed. Production JS 263.74 kB / 81.85 kB gzip; research runtime/model assets remain excluded from deployment. Physical iPhone and wider human-speaker checks are still pending.
+
 ## 2026-10-10 — M1 browser adapter
 
 - **Hypothesis:** anonymous captions can be isolated from provider-specific APIs, with reliable app-side interim replacement and lifecycle handling.

@@ -22,7 +22,8 @@ main { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .empty-state p { color: #576651; line-height: 1.5; font-size: .82em; margin: 0; }
 .transcript-text { width: 100%; }
 .transcript-text p { margin: 0 0 .7em; line-height: 1.55; }
-.interim { color: #576651; border-left: 3px solid #87937e; padding-left: .5em; }
+.caption-speaker { display: block; font-weight: 750; font-size: .65em; margin-bottom: .15em; }
+.interim { border-left: 3px dotted currentColor; padding-left: .5em; }
 .listen { background: #153e37; color: #fff; border-color: #153e37; }
 .listen:hover:not(:disabled) { background: #28574c; }
 .listen.is-active { background: #87382f; border-color: #87382f; }

@@ -62,7 +62,7 @@ async function agree(page: Page, name = 'Synthetic test') {
   await page.getByRole('checkbox').check();
 }
 
-test('project-path lazy model, consent, real enrolment, persisted profile and deletion', async ({ page }) => {
+test('project-path lazy model, offline reuse, consent, real enrolment, persisted profile and deletion', async ({ page, context }) => {
   test.setTimeout(90000);
   await syntheticMicrophone(page);
   const modelRequests: string[] = [];
@@ -97,18 +97,24 @@ test('project-path lazy model, consent, real enrolment, persisted profile and de
     keys: ['consentVersion', 'consentedAt', 'createdAt', 'displayName', 'embedding', 'id', 'modelVersion', 'sampleDurationMs', 'schemaVersion'].sort(),
     dimension: 192, normalized: true, consent: 'local-voiceprint-v1', schema: 1,
   }]);
+  const downloads = modelRequests.length;
+  await page.evaluate(() => navigator.serviceWorker.ready.then(() => true));
+  await context.setOffline(true);
   await page.reload(); await page.getByRole('button', { name: 'Settings', exact: true }).click(); await page.getByRole('button', { name: 'Speakers', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Record 8 seconds', exact: true })).toBeVisible({ timeout: 30000 });
+  await expect(page.getByRole('button', { name: 'Prepare voice model' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Compare recordings', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Back to saved speakers' })).toBeFocused();
   await expect(page.getByRole('heading', { name: 'Add a speaker' })).toHaveCount(0);
   await page.getByLabel('Saved voice to compare').selectOption({ label: 'Synthetic test' });
   await page.getByLabel('Who is recording?').selectOption('same');
-  await page.getByRole('button', { name: 'Prepare comparison', exact: true }).click();
   const compare = page.getByRole('button', { name: 'Record comparison (8 seconds)', exact: true });
   await expect(compare).toBeVisible({ timeout: 30000 }); await expect(compare).toBeDisabled();
   expect(await stats(page)).toEqual({ calls: 0, stops: 0 });
   await page.getByRole('checkbox').check(); await compare.click();
   await expect(page.locator('.comparison p[role="status"]')).toHaveText('Comparison complete. No profile was changed.', { timeout: 30000 });
+  expect(modelRequests).toHaveLength(downloads);
+  await context.setOffline(false);
   const score = Number(await page.getByLabel('Similarity score').innerText());
   expect(Number.isFinite(score)).toBe(true); expect(score).toBeGreaterThanOrEqual(-1); expect(score).toBeLessThanOrEqual(1);
   expect(await stats(page)).toEqual({ calls: 1, stops: 1 });
@@ -144,7 +150,7 @@ test('project-path lazy model, consent, real enrolment, persisted profile and de
   await page.reload(); await page.getByRole('button', { name: 'Settings', exact: true }).click(); await page.getByRole('button', { name: 'Speakers', exact: true }).click();
   await expect(page.getByText('No saved speakers on this device.')).toBeVisible();
   const cached = await page.evaluate(async () => (await Promise.all((await caches.keys()).map(async (key) => (await (await caches.open(key)).keys()).map((r) => r.url)))).flat());
-  expect(cached.some((url) => /speaker\/v1\//.test(url))).toBe(false);
+  expect(cached.filter((url) => /speaker\/v1\//.test(url)).map((url) => url.split('/').at(-1)).sort()).toEqual(['embedding.onnx', 'speaker-runtime.mjs', 'speaker-runtime.wasm']);
 });
 
 test('leaving the page during recording stops capture and does not save a profile', async ({ page }) => {

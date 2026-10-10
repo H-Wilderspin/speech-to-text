@@ -2,7 +2,7 @@ import type { VoiceRecorder } from '../../audio/recording';
 import { speakerModel, type EmbeddingEngine } from '../../identification/model';
 import { CONSENT_VERSION, normalizeEmbedding, type ProfileStore } from '../../storage/profiles';
 
-type Phase = 'idle' | 'preparing' | 'ready' | 'recording' | 'processing' | 'saving' | 'saved' | 'error';
+type Phase = 'idle' | 'checking' | 'preparing' | 'ready' | 'recording' | 'processing' | 'saving' | 'saved' | 'error';
 export type EnrolmentSnapshot = { phase: Phase; message: string; seconds: number };
 
 export class EnrolmentSession {
@@ -21,9 +21,22 @@ export class EnrolmentSession {
     if (this.disposed || this.operation) return;
     const controller = new AbortController(); this.operation = controller; return controller;
   }
+  async restore() {
+    if (!this.engine.isCached || this.recorder.unavailableReason) return;
+    const operation = this.start(); if (!operation) return;
+    this.set('checking', 'Checking for a saved voice model…');
+    try {
+      const cached = await this.engine.isCached(); operation.signal.throwIfAborted();
+      if (!cached) { this.set('idle', 'Prepare the voice model once, then record eight seconds of one person speaking.'); return; }
+      this.set('preparing', 'Loading the saved voice model. No download is needed.');
+      await this.engine.prepare(operation.signal, true); operation.signal.throwIfAborted();
+      this.set('ready', 'Ready. Record eight seconds of clear speech in a quiet room.');
+    } catch (error) { if (!operation.signal.aborted) this.set('idle', error instanceof Error ? error.message : 'The saved model could not be loaded. Prepare it again.'); }
+    finally { if (this.operation === operation) this.operation = undefined; }
+  }
   async prepare() {
     const operation = this.start(); if (!operation) return;
-    this.set('preparing', 'Loading the voice model. This may download about 39 MB.');
+    this.set('preparing', 'Preparing the voice model. Only missing files are downloaded (up to 39 MB).');
     try {
       await this.engine.prepare(operation.signal); operation.signal.throwIfAborted();
       this.set('ready', 'Ready. Record eight seconds of clear speech in a quiet room.');

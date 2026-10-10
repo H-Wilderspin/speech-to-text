@@ -3,6 +3,8 @@
 Date: 2026-10-10
 Status: Accepted; supersedes ADR 0004's research-only distribution restriction
 
+Model loading and cache policy superseded by [ADR 0016](0016-reuse-cached-voice-model.md).
+
 ## Context
 
 The isolated runtime produces real embeddings. The English-trained ERes2Net VoxCeleb candidate is smaller than the initial Chinese model and its original ModelScope card identifies English and Apache License 2.0. Phone measurements still require a reachable HTTPS deployment. Keeping all recording and storage code unimplemented until that measurement would prevent testing the intended M2 workflow.

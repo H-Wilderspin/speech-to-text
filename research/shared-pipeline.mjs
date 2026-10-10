@@ -5,7 +5,7 @@ import { SampleWindow } from './sample-window.mjs';
 
 /** Research composition: ASR and speech-region embeddings consume the same PCM.
  * Regions are NOT known single-speaker turns and never produce identity labels. */
-export async function createSharedPipeline(module, createOnlineRecognizer, assets, inspectRegion = () => {}) {
+export async function createSharedPipeline(module, createOnlineRecognizer, assets, inspectRegion = () => {}, options = {}) {
   let recognizer; let stream; let vad; let extractor;
   let accepted = 0; let clockId; let finished = false;
   const history = new SampleWindow(); let nextWindowAt = 48000;
@@ -46,12 +46,17 @@ export async function createSharedPipeline(module, createOnlineRecognizer, asset
     nextWindowAt = accepted + 24000;
     // Detector state gates compute cost only. It does not prove the whole window
     // contains speech, one speaker, or a known identity.
-    if (!vad.isDetected()) return [];
+    if (options.windowGate !== 'energy' && !vad.isDetected()) return [];
     const window = history.latest(); if (!window) return [];
     let embedding;
     try {
+      // Optional experiment: instantaneous VAD can be silent even when this
+      // history window contains a phrase. RMS gates cost, not speech identity.
+      if (options.windowGate === 'energy' && Math.sqrt(window.samples.reduce((sum, value) => sum + value * value, 0) / window.samples.length) < .003) return [];
       inspectRegion(window); const started = performance.now(); embedding = extractor.compute(window.samples);
       if (!embedding.every(Number.isFinite) || Math.hypot(...embedding) === 0) throw new Error('Invalid window embedding.');
+      // Synchronous research observer; the borrowed vector is erased below.
+      options.inspectEmbedding?.({ clockId, startSample: window.startSample, endSample: window.endSample, embedding });
       return [{ clockId, startSample: window.startSample, endSample: window.endSample, embeddingDimension: embedding.length,
         embeddingMs: performance.now() - started, speaker: 'Unknown', singleSpeakerVerified: false }];
     } finally { window.samples.fill(0); embedding?.fill(0); }
@@ -60,7 +65,9 @@ export async function createSharedPipeline(module, createOnlineRecognizer, asset
     while (recognizer.isReady(stream)) recognizer.decode(stream);
     const output = recognizer.getResult(stream); const timing = inspectTiming(output, accepted);
     const isFinal = finishing || recognizer.isEndpoint(stream);
-    const response = { type: 'result', text: output.text, isFinal, timing, clockId, regions, windows,
+    const times = typeof output.timestamps === 'string' ? JSON.parse(output.timestamps) : output.timestamps;
+    const tokenPoints = output.tokens.map((text, index) => ({ text, sample: Math.round((output.start_time + times[index]) * 16000) }));
+    const response = { type: 'result', text: output.text, isFinal, timing, tokenPoints, clockId, regions, windows,
       acceptedSamples: accepted, processingMs: performance.now() - started, wasmLinearMemoryBytes: module.HEAPU8.length };
     if (isFinal && !finishing) recognizer.reset(stream);
     return response;
