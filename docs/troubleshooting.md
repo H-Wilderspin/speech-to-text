@@ -1,5 +1,13 @@
 # Troubleshooting
 
+## 2026-10-11 — Continuous-mode Android repeated-line regression (phone retest pending)
+
+- **Report:** the user reports the latest pause update is "back to spamming out the same line over and over". This fails the physical retest; the earlier generic desktop result simulation was insufficient.
+- **Reproduction:** Android-shaped final-marked slots containing equal copies, a strict extension and a spelling revision produce extra rows with the generic prefix/group logic. Chromium's Android continuous bridge promotes partial callbacks to final; see ADR 0020 for primary implementation references. Exact phone event payloads remain uncollected.
+- **Correction:** Android Chromium uses one provisional current slot, replaced by the latest native hypothesis and committed once on normal native end. No confidence cutoff or blanket transcript-wide duplicate deletion. Previous completed cycles and deliberate in-phrase repetition remain. Error/interruption/timeout cannot confirm a partial.
+- **Checks:** `npm run check` passed typecheck/lint, 151 unit tests, model-asset hashes and production build. Android-specific browser regressions exercise composition via an injected UA, not a real phone engine. Browser/deployment results are recorded in feasibility.
+- **Limit:** the compatibility path assumes cumulative hypotheses within each native cycle. Multi-sentence physical testing and capture across pauses remain pending. Voice Stop waits for provider completion. The missing live-speaker feature is unaffected.
+
 ## 2026-10-11 — Sentence openings lost after pauses (physical retest pending)
 
 - **Context/symptom:** user confirms opening-word loss after pauses, presumed same Pixel 8; OS/browser versions remain unknown.

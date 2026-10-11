@@ -55,6 +55,69 @@ describe('browser recognition lifecycle', () => {
     expect(native.onresult).toBeNull();
     expect(native.onspeechstart).toBeNull();
   });
+  describe('Android continuous result compatibility', () => {
+    const androidResult = (texts: string[]) => latest().onresult?.({ results: texts.map((text) => ({
+      0: { transcript: text, confidence: 0 }, isFinal: true, length: 1,
+    })) });
+    beforeEach(() => {
+      engine.dispose();
+      engine = new BrowserTranscriptionEngine(() => {
+        const instance = new FakeRecognizer(); instances.push(instance); return instance;
+      }, null, 'android-cumulative');
+      engine.start('en-GB'); latest().onstart?.();
+    });
+    it('replaces revisions despite repeated speechstart events and commits the latest line once', () => {
+      const native = latest();
+      const texts = ['We', 'We are', 'We are hear', 'We are here.', 'We are here.'];
+      for (let count = 1; count <= texts.length; count++) {
+        native.onspeechstart?.(); androidResult(texts.slice(0, count));
+        expect(engine.getSnapshot().segments).toEqual([{ id: '1:0', text: texts[count - 1], isFinal: false }]);
+      }
+      vi.advanceTimersByTime(15_000);
+      expect(instances).toHaveLength(1); expect(native.continuous).toBe(true);
+      native.onend?.();
+      expect(engine.getSnapshot().segments).toEqual([{ id: '1:0', text: 'We are here.', isFinal: true }]);
+      vi.advanceTimersByTime(0); latest().onstart?.();
+      androidResult(['We are', 'We are here.']); latest().onend?.();
+      expect(engine.getSnapshot().segments.map((segment) => segment.text)).toEqual(['We are here.', 'We are here.']);
+    });
+    it('keeps words after a pause in a cumulative session and stops on the completed voice command', () => {
+      androidResult(['First sentence.']); vi.advanceTimersByTime(15_000);
+      androidResult(['First sentence.', 'First sentence. Next sentence. Command stop.']);
+      expect(engine.getSnapshot().phase).toBe('listening');
+      latest().onend?.(); vi.runAllTimers();
+      expect(instances).toHaveLength(1);
+      expect(engine.getSnapshot().phase).toBe('idle');
+      expect(engine.getSnapshot().segments.map((segment) => segment.text)).toEqual(['First sentence. Next sentence.']);
+    });
+    it('does not stop on a command that the provider corrects away', () => {
+      androidResult(['command stop']);
+      androidResult(['command stop', 'command stock']); latest().onend?.();
+      expect(engine.getSnapshot().phase).toBe('listening');
+      expect(engine.getSnapshot().segments.map((segment) => segment.text)).toEqual(['command stock']);
+    });
+    it('commits the latest result during a successful button Stop', () => {
+      androidResult(['Some', 'Some words']); engine.stop();
+      androidResult(['Some', 'Some words', 'Some words finished.']); latest().onend?.();
+      vi.runAllTimers(); expect(instances).toHaveLength(1);
+      expect(engine.getSnapshot().segments).toEqual([{ id: '1:0', text: 'Some words finished.', isFinal: true }]);
+    });
+    it.each(['network', 'aborted', 'no-speech'])('does not confirm a partial after %s', (error) => {
+      androidResult(['command stop']); latest().onerror?.({ error }); latest().onend?.();
+      expect(engine.getSnapshot().segments).toEqual([]);
+      expect(engine.getSnapshot().message).not.toBe('Stopped by voice command.');
+    });
+    it.each(['interrupt', 'dispose'] as const)('discards provisional text on %s and ignores late results', (action) => {
+      const native = latest(); const late = native.onresult;
+      androidResult(['unfinished']); engine[action]();
+      late?.({ results: [{ 0: { transcript: 'stale', confidence: .9 }, length: 1, isFinal: true }] });
+      expect(engine.getSnapshot().segments).toEqual([]); expect(native.abort).toHaveBeenCalledOnce();
+    });
+    it('does not confirm an unfinished guess when Stop times out', () => {
+      androidResult(['unfinished']); engine.stop(); vi.advanceTimersByTime(2_000);
+      expect(engine.getSnapshot().segments).toEqual([]); expect(latest().abort).toHaveBeenCalledOnce();
+    });
+  });
   it('keeps native capture through a pause and preserves a new sentence with the same opening', () => {
     engine.start('en-GB'); const native = latest(); native.onstart?.(); native.onspeechstart?.();
     native.result('We are here.');

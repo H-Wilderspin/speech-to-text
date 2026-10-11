@@ -1,5 +1,6 @@
 import { collapseCumulativeResults, reconcileResults, type RecognizedSegment } from './reconcile';
 import { consumeStopCommand } from './stop-command';
+import { reconcileAndroidResults, usesAndroidRecognition } from './android-results';
 import type { BrowserRecognizer, RecognizerFactory, TranscriptionEngine, TranscriptionSnapshot, TranscriptSegment } from './types';
 
 const REQUEST_TIMEOUT_MS = 30_000;
@@ -29,8 +30,10 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
   private language = 'en-GB';
   private restartDelay = 200;
   private commandStartSessionId = 0;
+  private cycleErrored = false;
 
-  constructor(private factory: RecognizerFactory | null, public readonly unavailableReason: string | null = null) {}
+  constructor(private factory: RecognizerFactory | null, public readonly unavailableReason: string | null = null,
+    private resultMode: 'standard' | 'android-cumulative' = 'standard') {}
 
   getSnapshot = () => this.snapshot;
   subscribe = (listener: () => void) => {
@@ -121,6 +124,7 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
   private begin() {
     this.sessionId++;
     this.utterance = 0;
+    this.cycleErrored = false;
     try {
       const recognizer = this.factory!();
       this.recognizer = recognizer;
@@ -141,21 +145,16 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
       };
       recognizer.onresult = ({ results }) => {
         if (this.recognizer !== recognizer) return;
-        this.current = reconcileResults(this.current, results, this.sessionId, true, this.utterance);
+        this.current = this.resultMode === 'android-cumulative'
+          ? reconcileAndroidResults(results, this.sessionId)
+          : reconcileResults(this.current, results, this.sessionId, true, this.utterance);
         if (this.current.length) this.restartDelay = 200;
-        const earlierSessions = this.history.filter((segment) => Number(segment.id.split(':')[0]) < this.commandStartSessionId);
-        const activeSession = this.history.slice(earlierSessions.length);
-        const beforeCommand = consumeStopCommand([...activeSession, ...collapseCumulativeResults(this.current.filter((segment) => segment.isFinal))]);
-        if (beforeCommand) {
-          this.history = [...earlierSessions, ...beforeCommand];
-          this.current = [];
-          this.finish('idle', 'Stopped by voice command.');
-          return;
-        }
+        if (this.stopByCommand()) return;
         this.publish(this.snapshot.phase, this.snapshot.message);
       };
       recognizer.onerror = ({ error }) => {
         if (this.recognizer !== recognizer) return;
+        this.cycleErrored = true;
         if (this.listeningRequested && error === 'no-speech') {
           // Normally followed by onend. Bound the wait for broken providers.
           this.cancelTimer();
@@ -169,6 +168,12 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
       };
       recognizer.onend = () => {
         if (this.recognizer !== recognizer) return;
+        if (this.resultMode === 'android-cumulative' && !this.cycleErrored) {
+          // Android ends the native session after its completed result callback.
+          // Errors/interruptions must not turn a partial guess into confirmed text.
+          this.current = this.current.map((segment) => ({ ...segment, isFinal: true }));
+          if (this.stopByCommand()) return;
+        }
         if (this.listeningRequested) this.restart();
         else this.finish('idle', 'Stopped.', false);
       };
@@ -177,6 +182,17 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
     } catch {
       this.finish('error', 'Listening could not start. Check microphone permission and speech support, then tap Listen.');
     }
+  }
+
+  private stopByCommand(): boolean {
+    const earlierSessions = this.history.filter((segment) => Number(segment.id.split(':')[0]) < this.commandStartSessionId);
+    const activeSession = this.history.slice(earlierSessions.length);
+    const beforeCommand = consumeStopCommand([...activeSession, ...collapseCumulativeResults(this.current.filter((segment) => segment.isFinal))]);
+    if (!beforeCommand) return false;
+    this.history = [...earlierSessions, ...beforeCommand];
+    this.current = [];
+    this.finish('idle', 'Stopped by voice command.');
+    return true;
   }
 
   stop() {
@@ -222,5 +238,6 @@ export function createBrowserEngine(): TranscriptionEngine {
   const Constructor = host.SpeechRecognition ?? host.webkitSpeechRecognition;
   const reason = !window.isSecureContext ? 'Microphone access needs HTTPS (or localhost for development). Open the secure site to listen.'
     : !Constructor ? 'This browser does not offer speech recognition. Try Safari on iPhone or Chrome on Android. Availability also depends on your device settings.' : null;
-  return new BrowserTranscriptionEngine(Constructor ? () => new Constructor() : null, reason);
+  return new BrowserTranscriptionEngine(Constructor ? () => new Constructor() : null, reason,
+    usesAndroidRecognition(navigator.userAgent) ? 'android-cumulative' : 'standard');
 }

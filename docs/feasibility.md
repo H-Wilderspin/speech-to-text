@@ -1,5 +1,13 @@
 # Feasibility evidence
 
+## 2026-10-11 — Android cumulative-result correction after failed phone retest
+
+- **User evidence:** asked to test the deployed pause fix, the user reports renewed repeated-line spam. Record this as a failing retest on the presumed same Pixel 8, not a successful pause or repetition check. OS/browser version and exact raw event pattern remain unknown; no audio/transcript was collected.
+- **Correction:** ADR 0020's Android adapter replaces one native-cycle hypothesis instead of retaining each final-marked revision. Capture stays continuous, with next-task productive restart. Normal completion commits once; errors/interruption/Stop timeout discard provisional speech. Spoken Stop waits for completion. Non-Android reconciliation remains unchanged.
+- **Regression scenarios:** equal copies, strict growth, corrected wording, repeated speech-start events, multiple confidence values, empty revisions, 15-second simulated pause, button Stop, completed/revised voice Stop, failed cycles, late callbacks and deliberate repetition across cycles. Browser tests select the production adapter with an injected Android UA and use Android-shaped snapshots; this does not emulate Google's acoustic service.
+- **Checks:** Windows, Node 22.20.0. `npm run check` passed typecheck, lint, 151 unit tests, asset verification and production build. `npm run test:e2e` passed 40 tests in 44.5 seconds, with four existing Windows WebKit skips for unavailable audio APIs. Both engines passed both new Android-shaped browser regressions; this is not an Android-device pass.
+- **Remaining gate:** physical multi-sentence/pause/command testing. No new word-error, timing, battery or speaker-accuracy measurement is available. A provider emitting independent chunks without native end would require another adapter; do not infer support for every Android provider from these simulations.
+
 ## 2026-10-11 — Continuous recognition for pause-related word loss
 
 - **Report:** user confirms missing opening words occur after pauses between sentences. Same Pixel 8 is assumed from context; Android/browser versions and tab/PWA mode are unreported. This is a new failing phone observation, not a continuation pass from the earlier command-stop/repetition test.

@@ -23,6 +23,16 @@ On 2026-10-10 the user reported that the LAN benchmark URL could not open on the
 
 ## M1 workflow
 
+2026-10-11 Android follow-up: the continuous-mode retest failed with repeated-line
+spam. With the Android compatibility update, close every app copy and reopen.
+Speak a whole sentence, pause, then speak a second sentence. Each current phrase
+should update in place, including word corrections; it becomes confirmed when
+the provider completes it. Also say "very very good" and intentionally repeat a
+sentence after a completed phrase: those repetitions should remain. Say "command
+stop" and pause briefly for provider completion, then verify microphone release.
+Check button Stop separately. Record any missing previous sentence or ongoing
+repeat spam; do not report the repetition or pause gate passed until retested.
+
 2026-10-11 pause regression retest: close all copies of the deployed app and reopen
 to activate the update. Say a short sentence, pause for 2, 5 and 15 seconds in
 separate trials, then say a complete second sentence. Check its opening words

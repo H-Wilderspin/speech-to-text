@@ -138,6 +138,61 @@ test('continuous recognition keeps sentence openings after a pause and honours v
   expect(await page.evaluate(() => (window as Window & { wasAborted?: boolean }).wasAborted)).toBe(true);
 });
 
+test('Android cumulative final-marked revisions update one line, including corrections and identical repeats', async ({ page }) => {
+  await mockRecognition(page);
+  await page.addInitScript(() => Object.defineProperty(navigator, 'userAgent', {
+    value: 'Mozilla/5.0 (Linux; Android 10; K) Chrome/156.0.0.0 Mobile Safari/537.36',
+  }));
+  await page.goto('/'); await page.clock.install();
+  await page.getByRole('button', { name: 'Listen', exact: true }).click();
+  for (let count = 1; count <= 6; count++) {
+    await page.evaluate((count) => {
+      const host = window as Window & { testRecognition?: { continuous: boolean; onspeechstart: () => void; onresult: (event: unknown) => void } };
+      if (!host.testRecognition?.continuous) throw new Error('Android must keep continuous mode.');
+      host.testRecognition.onspeechstart();
+      host.testRecognition.onresult({ results: ['We', 'We', 'We are', 'We are hear', 'We are here.', 'We are here.'].slice(0, count).map((text) => ({
+        0: { transcript: text, confidence: 0 }, length: 1, isFinal: true,
+      })) });
+    }, count);
+    await expect(page.locator('.caption')).toHaveCount(1);
+  }
+  await expect(page.locator('.interim')).toContainText('We are here.');
+  await expect(page.locator('.confirmed')).toHaveCount(0);
+  await page.clock.fastForward(15_000);
+  await page.evaluate(() => {
+    const host = window as Window & { testRecognition?: { onresult: (event: unknown) => void; onend: () => void } };
+    host.testRecognition?.onresult({ results: ['We are here.', 'We are here. Now another sentence. Command stop.'].map((text) => ({
+      0: { transcript: text, confidence: 0 }, length: 1, isFinal: true,
+    })) });
+    host.testRecognition?.onend();
+  });
+  await expect(page.locator('.confirmed')).toHaveText(['We are here. Now another sentence.']);
+  await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
+  expect(await page.evaluate(() => (window as Window & { wasAborted?: boolean }).wasAborted)).toBe(true);
+});
+
+test('Android keeps a deliberately repeated sentence from a later native session', async ({ page }) => {
+  await mockRecognition(page);
+  await page.addInitScript(() => Object.defineProperty(navigator, 'userAgent', {
+    value: 'Mozilla/5.0 (Linux; Android 10; K) Chrome/156.0.0.0 Mobile Safari/537.36',
+  }));
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Listen', exact: true }).click();
+  await result(page, 'Yes, very very good.', true);
+  await page.evaluate(() => {
+    const host = window as Window & { testRecognition?: { onend: () => void }; previousRecognition?: unknown };
+    host.previousRecognition = host.testRecognition;
+    host.testRecognition?.onend();
+  });
+  await expect.poll(() => page.evaluate(() => {
+    const host = window as Window & { testRecognition?: unknown; previousRecognition?: unknown };
+    return host.testRecognition !== host.previousRecognition;
+  })).toBe(true);
+  await result(page, 'Yes, very very good.', true);
+  await page.getByRole('button', { name: 'Stop', exact: true }).click();
+  await expect(page.locator('.confirmed')).toHaveText(['Yes, very very good.', 'Yes, very very good.']);
+});
+
 test('unsupported capability preserves readable UI and accessible speaker dialog', async ({ page }) => {
   await page.addInitScript(() => Object.assign(window, { SpeechRecognition: undefined, webkitSpeechRecognition: undefined }));
   await page.goto('/');

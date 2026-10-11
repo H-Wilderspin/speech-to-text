@@ -3,6 +3,8 @@
 Date: 2026-10-11
 Status: Accepted; supersedes ADR 0014's single-utterance mode and productive restart delay
 
+Update: the user's physical retest reported repeated-line spam. [ADR 0020](0020-android-cumulative-recognition.md) replaces Android result handling while retaining continuous capture.
+
 ## Context
 
 The Pixel 8 user confirms missing opening words specifically after pauses between
