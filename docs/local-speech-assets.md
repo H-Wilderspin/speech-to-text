@@ -1,5 +1,10 @@
 # Optional local speech assets
 
+Current product use: [ADR 0023](decisions/0023-browser-first-delayed-names.md)
+reuses these assets for delayed speaker evidence alongside authoritative browser
+captions. It adds no new model files. Offline model reuse is supported; offline
+browser transcription is not promised.
+
 ## Current ASR upgrade
 
 After the clear-speech accuracy failure, [ADR 0022](decisions/0022-upgrade-local-transcription.md)

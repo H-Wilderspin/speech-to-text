@@ -3,6 +3,10 @@
 Date: 2026-10-11
 Status: Accepted; upgraded phone accuracy/throughput pending
 
+Follow-up: the user reports accuracy is still insufficient. [ADR 0023](0023-browser-first-delayed-names.md)
+restores browser captions and reuses these weights only for optional delayed
+speaker estimates. The phone transcription-accuracy gate did not pass.
+
 ## Context
 
 The user tested with another person and reported mostly wrong words and all-caps

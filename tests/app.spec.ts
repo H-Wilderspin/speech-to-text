@@ -22,6 +22,22 @@ async function result(page: Page, text: string, isFinal: boolean) {
   }, { text, isFinal });
 }
 
+test('upgrading from local-only mode restores browser captions without downloading models', async ({ page }) => {
+  await mockRecognition(page);
+  await page.addInitScript(() => localStorage.setItem('speech-to-text-name-suggestions:/', 'enabled'));
+  const models: string[] = [];
+  page.on('request', (request) => { if (/(local|speaker)\/v[12]\//.test(request.url())) models.push(request.url()); });
+  await page.goto('/'); await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(page.getByLabel('Use experimental names')).not.toBeChecked();
+  await expect(page.getByText('Browser captions appear first.', { exact: false })).toBeVisible();
+  await page.getByRole('button', { name: 'Back to captions' }).click();
+  await page.getByRole('button', { name: 'Listen', exact: true }).click();
+  await result(page, 'Keep these accurately transcribed words.', true);
+  await expect(page.getByRole('region', { name: 'Live transcript' })).toContainText('Keep these accurately transcribed words.');
+  await page.getByRole('button', { name: 'Stop', exact: true }).click();
+  expect(models).toEqual([]);
+});
+
 test('anonymous listening, interim revision, stop, resume, clear, and no persistence', async ({ page }) => {
   await mockRecognition(page); await page.goto('/');
   await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
@@ -66,7 +82,7 @@ test('three top controls leave the viewport to captions and settings preserve an
   expect(box!.y + box!.height).toBeLessThanOrEqual(844);
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await page.getByLabel('Speech language').selectOption('en-US');
-  await expect(page.getByText('may send microphone audio', { exact: false })).toBeVisible();
+  await expect(page.locator('section[aria-labelledby="privacy-title"]').getByText('may send microphone audio', { exact: false })).toBeVisible();
   await page.getByRole('button', { name: 'Back to captions' }).click();
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   await result(page, 'The captions fill this page.', true);

@@ -1,5 +1,12 @@
 # Troubleshooting
 
+## 2026-10-11 — Local upgrade still transcribes poorly (phone retest pending)
+
+- **Evidence:** the user reports that transcription remains inaccurate after the upgraded model. Generated/public test clips did not predict their conversational result. No device audio was collected; a specific acoustic/model cause is unproven.
+- **Change:** browser captions now supply all displayed words. Delayed local estimates may add names only through unique matching phrases; they cannot overwrite spelling, casing, punctuation or corrections. Local processing failure leaves transcription running. Old local-only preferences are not reused for the new provider-processing mode; enable delayed estimates explicitly in Settings, reusing cached assets.
+- **Verification:** new unit tests exercise text preservation, ambiguous/reordered evidence, failure isolation, Stop and session boundaries. The integration uses generated audio plus simulated browser results; it cannot prove physical dual-microphone support or browser-service accuracy. Counts/publication evidence are in feasibility.
+- **Unresolved:** real conversational recognition, matching accuracy, phone microphone coexistence and resource cost. If enabling names affects capture, turn them off to remove local capture while keeping browser transcription. No reliable full diarization is claimed.
+
 ## 2026-10-11 — Intermittent larger-model live test failure on CI (Unresolved)
 
 - **Observed:** first upgrade run [38133551744](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38133551744) passed 49/50 tests. Chromium paced capture timed out waiting for an estimated name; WebKit paced capture and both direct-worker known/other comparisons passed. The failure log omitted the app status, so overload versus failed matching cannot be concluded from this run.

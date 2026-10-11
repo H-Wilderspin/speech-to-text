@@ -1,5 +1,21 @@
 # Manual validation and acceptance gates
 
+## Current retest: transcription first, delayed estimates
+
+The user reports the larger local ASR is still inaccurate. Close all copies and
+reopen the published site. Listen now uses browser recognition immediately, with
+the existing pause/repetition fixes. First check ordinary words, proper nouns,
+pauses and spoken/button Stop without estimates. Then enable Settings → Prepare
+name suggestions (cached models and saved voiceprints are reused), return to
+captions and repeat. Browser wording must stay intact while name/colour estimates
+arrive later, possibly after a pause or Stop. Unknown is expected for short,
+repeated, mismatched or uncertain phrases. Check that both microphone clients stop,
+and report any capture conflict or local-processing message. With a consenting
+second person, compare turn-taking/name errors separately from word errors. Do not
+upload private speech or voiceprints. Browser-provider processing is disclosed;
+this mode no longer promises offline transcription. Record phone versions and
+approximate name delay if available. Earlier local-only steps below are historical.
+
 On 2026-10-10 the user reported that speech appears and Stop releases the microphone on their physical Pixel 8 using the deployed HTTPS app. This is a basic user-reported Listen/Stop pass, not completion of the full device matrix. Android/browser versions and tab/installed mode were not supplied. Desktop WebKit with an iPhone viewport is not iOS Safari.
 
 The user also reported successful Pixel 8 speaker-profile saving, persistence after reload and deletion. Three same-person comparison scores were all approximately 0.8; only the latest processing time was reported, approximately 0.9 seconds. Another person is unavailable, so different-person scores remain pending. Model load times, cancellation/interruption behaviour and deletion persistence after another reload have not been reported. These initial comparisons do not establish accuracy or a threshold.

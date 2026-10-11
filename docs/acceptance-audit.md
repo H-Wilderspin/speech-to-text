@@ -2,7 +2,14 @@
 
 This audit preserves the README's complete scope. Implemented code and passing desktop tests do not satisfy physical-device or human-speaker gates. The goal is not complete.
 
-Latest increment: after trying estimated names with another person, the user
+Latest increment: the larger local recognizer also failed the user's accuracy
+retest. [ADR 0023](decisions/0023-browser-first-delayed-names.md) restores browser
+words and adds optional delayed estimates without replacing text. Existing models
+and voiceprints are reused. This is experimental phrase correspondence, not a
+validated diarization/alignment system; phone accuracy and simultaneous microphone
+operation remain unverified. See feasibility for current checks.
+
+Previous increment: after trying estimated names with another person, the user
 reported mostly wrong words and all-caps text during clear, one-at-a-time speech.
 That local recognition test failed. ADR 0022 upgrades the ASR model and formats
 sentence case; desktop clips improve, but Pixel 8 accuracy and throughput need
@@ -71,7 +78,7 @@ FR-06/07 are explicitly research-dependent in the specification. The Unknown fal
 
 ## Evidence needed next
 
-The user authorized publication. Initial Pixel 8 storage/comparison observations and spoken stop/repetition fixes are recorded; latest feedback confirms opening words are retained. The new local mode needs a separate phone retest: its ASR and capture path differ from browser recognition. Tab/PWA/accessibility results and Android/browser versions remain pending. Both iPhone and another participant were reported unavailable. Follow [manual testing](manual-testing.md). The earlier all-Unknown report identified missing live integration, not a measured false-rejection rate.
+The user authorized publication. Initial Pixel 8 storage/comparison observations and spoken stop/repetition fixes are recorded; opening words were reported retained. Both local recognizers subsequently failed the user's transcription-accuracy expectation. The current browser-first/delayed-name path needs a physical retest, especially simultaneous microphone access. Tab/PWA/accessibility results and Android/browser versions remain pending. iPhone remains unavailable; a second participant subsequently joined a test, but no identity-accuracy counts were reported. Follow [manual testing](manual-testing.md). The earlier all-Unknown report identified missing live integration, not a measured false-rejection rate.
 
 Use Settings → Speakers → Compare recordings with consent for realistic same/different-person trials. Follow the held-out protocol in [feasibility](feasibility.md); retain anonymous score/timing observations, not personal audio or voiceprints. Synthetic voices cannot replace this evidence. The current upstream-example baseline is expressly uncalibrated and limited to estimated suggestions by the user's choice; future reliable identity work must be based on held-out evidence.
 

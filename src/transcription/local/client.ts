@@ -2,7 +2,7 @@ import type { AudioFrame } from '../../audio/streaming';
 import type { LocalResponse, ReferenceVoice } from './types';
 
 export interface LocalProcessor {
-  request(data: { type: string; assets?: Record<string, Uint8Array<ArrayBuffer>>; references?: ReferenceVoice[]; frame?: AudioFrame }, signal: AbortSignal): Promise<LocalResponse>;
+  request(data: { type: string; assets?: Record<string, Uint8Array<ArrayBuffer>>; references?: ReferenceVoice[]; frame?: AudioFrame; voiceCommands?: boolean }, signal: AbortSignal): Promise<LocalResponse>;
   dispose(): void;
 }
 export class LocalWorker implements LocalProcessor {

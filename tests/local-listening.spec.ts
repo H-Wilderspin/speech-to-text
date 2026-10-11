@@ -80,7 +80,7 @@ test('real local worker reuses offline models and suggests a known generated voi
   await page.getByLabel('Use experimental names').uncheck();
   const files = await readdir(new URL('../dist/assets/', import.meta.url));
   const workerFile = files.find((name) => /^local\.worker-.*\.js$/.test(name))!;
-  const result = await page.evaluate(async ({ reference, workerFile, localFiles, asr, known, other }) => {
+  const result = await page.evaluate(async ({ reference, workerFile, localFiles, asr, known, other, command }) => {
     const keys = await caches.keys(); const local = await caches.open(keys.find((key) => key.startsWith('speech-to-text-local:'))!);
     const voice = await caches.open(keys.find((key) => key.startsWith('speech-to-text-model:'))!);
     const assets: Record<string, Uint8Array> = {};
@@ -101,8 +101,8 @@ test('real local worker reuses offline models and suggests a known generated voi
       worker.onmessage = ({ data }) => { if (data.id === id) { if (data.error) reject(new Error(data.error)); else resolve(data); } };
       worker.postMessage({ ...data, id }, 'assets' in data ? Object.values(assets).map((bytes) => bytes.buffer) : []);
     });
-    const transcribe = async (speech: number[], clockId: string) => {
-      await request({ type: 'start', references: [reference] });
+    const transcribe = async (speech: number[], clockId: string, voiceCommands = true) => {
+      await request({ type: 'start', references: [reference], voiceCommands });
       // A 3-second pause, a new sentence, then 3 seconds to settle the endpoint.
       const samples = new Float32Array(48000 + speech.length + 48000); samples.set(speech, 48000);
       let segments: Segment[] = []; const replacements: number[] = [];
@@ -113,9 +113,9 @@ test('real local worker reuses offline models and suggests a known generated voi
       const final = await request({ type: 'finish' }); segments = final.segments ?? segments; samples.fill(0);
       return { segments, updates: replacements.length };
     };
-    try { await request({ type: 'prepare', assets }); return { known: await transcribe(known, 'known'), other: await transcribe(other, 'other') }; }
+    try { await request({ type: 'prepare', assets }); return { known: await transcribe(known, 'known'), other: await transcribe(other, 'other'), command: await transcribe(command, 'command', false) }; }
     finally { reference.embedding.fill(0); worker.terminate(); }
-  }, { reference, workerFile, localFiles, asr, known: await fixtureSamples('voice-a-speech'), other: await fixtureSamples('voice-b-speech') });
+  }, { reference, workerFile, localFiles, asr, known: await fixtureSamples('voice-a-speech'), other: await fixtureSamples('voice-b-speech'), command: await fixtureSamples('voice-a-stop') });
   reference.embedding.fill(0);
   expect(result.known.updates).toBeGreaterThan(3);
   expect(result.known.segments.some((segment) => segment.speakerId === 'generated-test' && segment.speakerEstimated)).toBe(true);
@@ -125,12 +125,14 @@ test('real local worker reuses offline models and suggests a known generated voi
   expect(knownText).not.toBe(knownText.toUpperCase());
   expect(result.other.segments.some((segment) => segment.text)).toBe(true);
   expect(result.other.segments.every((segment) => !segment.speakerId)).toBe(true);
+  // In delayed mode only browser recognition handles the user's spoken command.
+  expect(result.command.segments.map((segment) => segment.text).join(' ')).toMatch(/command stop/i);
   expect(downloads).toHaveLength(initialDownloads);
   // Simulate an enabled older installation with only the shared models retained.
   // Cached-only startup must not silently download the large upgrade.
   await page.evaluate(async () => {
     for (const key of await caches.keys()) if (key.startsWith('speech-to-text-asr:')) await caches.delete(key);
-    localStorage.setItem('speech-to-text-name-suggestions:/', 'enabled');
+    localStorage.setItem('speech-to-text-delayed-names:/', 'enabled');
   });
   await page.reload(); await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await expect(page.getByText('The upgraded speech model needs preparation in Settings. Saved voiceprints are kept.')).toBeVisible({ timeout: 30000 });
@@ -142,7 +144,7 @@ test('real local worker reuses offline models and suggests a known generated voi
   expect(downloads.slice(initialDownloads).every((url) => url.includes('/local/v2/'))).toBe(true);
 });
 
-test('live AudioWorklet captions show coloured estimates and release capture on voice and button Stop', async ({ page }) => {
+test('browser words receive delayed AudioWorklet estimates and both captures stop together', async ({ page }) => {
   test.setTimeout(150000);
   await page.goto('/');
   const supported = await page.evaluate(() => Boolean(globalThis.AudioContext && globalThis.AudioWorkletNode));
@@ -150,6 +152,13 @@ test('live AudioWorklet captions show coloured estimates and release capture on 
   expect(supported).toBe(true);
   const speech = await fixtureSamples('voice-a-speech'); const command = await fixtureSamples('voice-a-stop');
   await page.addInitScript(({ speech, command }) => {
+    class Recognition {
+      onstart?: () => void; onend?: () => void; onresult?: (event: unknown) => void;
+      start() { Object.assign(window, { delayedBrowserRecognition: this }); this.onstart?.(); }
+      stop() { this.onend?.(); }
+      abort() { Object.assign(window, { delayedBrowserStopped: true }); }
+    }
+    Object.assign(window, { SpeechRecognition: Recognition });
     let calls = 0; let stops = 0; const contexts: AudioContext[] = [];
     const NativeAudioContext = globalThis.AudioContext;
     const sources = new WeakMap<MediaStream, { release: () => void }>();
@@ -180,6 +189,14 @@ test('live AudioWorklet captions show coloured estimates and release capture on 
   await page.getByRole('button', { name: 'Back to captions' }).click();
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   const transcript = page.getByRole('region', { name: 'Live transcript' });
+  const browserText = 'The morning is bright and the room is quiet. Please bring a glass of water to the table.';
+  const browserResult = async (stop = false) => page.evaluate(({ text, stop }) => {
+    const recognition = (window as Window & { delayedBrowserRecognition?: { onresult(event: unknown): void } }).delayedBrowserRecognition!;
+    recognition.onresult({ results: [text, ...(stop ? ['command stop'] : [])].map((transcript) => ({ 0: { transcript, confidence: .9 }, length: 1, isFinal: true })) });
+  }, { text: browserText, stop });
+  await browserResult();
+  await expect(transcript.locator('p.confirmed')).toHaveText(browserText);
+  await expect(transcript.getByText('Generated test voice (estimate)', { exact: true })).toHaveCount(0);
   // Include safe diagnostics if inference fails before a label can render.
   // Only generated fixtures run here; do not print transcript or embeddings.
   let captureStatus: unknown;
@@ -196,15 +213,18 @@ test('live AudioWorklet captions show coloured estimates and release capture on 
   const textColour = await known.locator('p').evaluate((element) => getComputedStyle(element).color);
   expect(textColour).toBe(await known.locator('.caption-speaker').evaluate((element) => getComputedStyle(element).color));
   expect(textColour).not.toBe('rgb(67, 83, 74)'); // Unknown's neutral colour.
+  expect((await transcript.locator('p.confirmed').allTextContents()).join('')).toBe(browserText);
+  await browserResult(true);
   await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled({ timeout: 45000 });
   expect(await stats()).toEqual({ calls: 1, stops: 1 });
+  expect(await page.evaluate(() => (window as Window & { delayedBrowserStopped?: boolean }).delayedBrowserStopped)).toBe(true);
   await expect(page.locator('#captions > [role=status]')).toHaveText('Stopped by voice command.');
   const text = await transcript.locator('p').allTextContents(); expect(text.join(' ').match(/morning/gi)).toHaveLength(1);
   expect(text.join(' ')).not.toBe(text.join(' ').toUpperCase());
   expect(text.join(' ')).not.toMatch(/COMMAND STOP/i);
   // A second session reuses initialized models; Stop also releases the track.
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
-  await expect(page.locator('#captions > [role=status]')).toContainText('Listening locally');
+  await expect(page.locator('#captions > [role=status]')).toContainText('Listening.');
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
   expect(await stats()).toEqual({ calls: 2, stops: 2 });

@@ -15,6 +15,7 @@ export interface TranscriptSegment {
 export interface TranscriptionSnapshot {
   phase: SessionPhase;
   message: string;
+  notice?: string;
   segments: readonly TranscriptSegment[];
 }
 

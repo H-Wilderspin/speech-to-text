@@ -14,13 +14,14 @@ let transcript: SuggestedTranscript | undefined;
 let stopped: TranscriptSegment[] | null = null;
 let busy = false;
 let lastOutput = '';
+let voiceCommands = true;
 
 const closeSession = () => {
   pipeline?.close(); pipeline = undefined; transcript = undefined;
   references.forEach((reference) => reference.embedding.fill(0)); references = [];
 };
 
-self.onmessage = async (event: MessageEvent<{ id: number; type: string; assets?: Record<string, Uint8Array<ArrayBuffer>>; references?: ReferenceVoice[]; frame?: AudioFrame }>) => {
+self.onmessage = async (event: MessageEvent<{ id: number; type: string; assets?: Record<string, Uint8Array<ArrayBuffer>>; references?: ReferenceVoice[]; frame?: AudioFrame; voiceCommands?: boolean }>) => {
   const data = event.data;
   if (busy) { data.frame?.samples.fill(0); data.references?.forEach((reference) => reference.embedding.fill(0)); self.postMessage({ id: data.id, error: 'Local speech processing is busy.' }); return; }
   busy = true;
@@ -44,6 +45,7 @@ self.onmessage = async (event: MessageEvent<{ id: number; type: string; assets?:
       for (const name of Object.keys(assets)) if (name !== 'silero_vad.onnx') delete assets[name];
       self.postMessage({ id: data.id });
     } else if (data.type === 'start') {
+      voiceCommands = data.voiceCommands !== false;
       references.forEach((reference) => reference.embedding.fill(0));
       references = data.references ?? [];
       if (!references.length || references.some((reference) => !reference.id || !reference.name || reference.embedding.length !== 192 || !reference.embedding.every(Number.isFinite))) throw new Error('No compatible saved voiceprints are available.');
@@ -53,7 +55,7 @@ self.onmessage = async (event: MessageEvent<{ id: number; type: string; assets?:
     } else if (pipeline && transcript && (data.type === 'frame' || data.type === 'finish')) {
       const result = data.type === 'finish' ? pipeline.finish() : pipeline.accept(data.frame!);
       const segments = stopped ?? transcript.update(result, data.type === 'finish');
-      stopped ??= consumeStopCommand(segments);
+      if (voiceCommands) stopped ??= consumeStopCommand(segments);
       const output = stopped ?? segments;
       const serialized = JSON.stringify(output);
       if (data.type === 'finish') {

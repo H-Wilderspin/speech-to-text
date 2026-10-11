@@ -2,17 +2,16 @@
 
 ## Implementation status — 2026-10-11
 
-**Local recognition upgrade:** the user reported mostly wrong words and all-caps
-captions even with clear, one-at-a-time speech. The experimental local mode now
-uses a larger LibriSpeech/GigaSpeech model and readable sentence casing. Test clips
-improved substantially; conversational accuracy and speed on Pixel 8 still need
-a retest. After reopening the app, use **Settings → Prepare name suggestions**
-once to download about **190 MB of upgraded weights**. Existing voiceprints,
-runtime and voice-model files are reused. See [ADR 0022](docs/decisions/0022-upgrade-local-transcription.md).
+**Transcription first:** the user reports that the larger local model still makes
+too many mistakes and prefers delayed speaker detection. Browser recognition now
+supplies the displayed words. Optional speaker estimates arrive later without
+replacing those words. On reopening, Listen works immediately; select **Settings
+→ Prepare name suggestions** to enable delayed estimates. Existing cached models
+and voiceprints are reused. No new model is introduced. See [ADR 0023](docs/decisions/0023-browser-first-delayed-names.md).
 
-**Android browser captions:** cumulative hypotheses replace one line per native recognition cycle, including equal repeats and corrected wording, then commit once on normal completion. Continuous capture and prompt restart remain enabled; earlier completed cycles retain deliberate repetition. Spoken Stop waits for provider completion, which may require a pause. Latest user feedback confirms that opening words are no longer lost; wider physical retesting remains pending. See [ADR 0020](docs/decisions/0020-android-cumulative-recognition.md). Optional experimental names use a separate local mode described below.
+**Android browser captions:** cumulative hypotheses replace one line per native recognition cycle, including equal repeats and corrected wording, then commit once on normal completion. Continuous capture and prompt restart remain enabled; earlier completed cycles retain deliberate repetition. Spoken Stop waits for provider completion, which may require a pause. Latest user feedback confirms that opening words are no longer lost; wider physical retesting remains pending. See [ADR 0020](docs/decisions/0020-android-cumulative-recognition.md). Optional speaker processing adds delayed estimates to those captions as described below.
 
-The main page contains only **Listen**, **Clear** and **Settings** at the top, with captions filling the remaining viewport. Listen becomes Stop while active. Language, text size, voice profiles, privacy and installation information are in Settings. Estimated names and their text share a consistent profile colour; consecutive captions share one name label. Unknown speech uses a neutral colour. Browser captions supply no identity; estimated names require the optional local mode. See [ADR 0015](docs/decisions/0015-caption-first-layout.md).
+The main page contains only **Listen**, **Clear** and **Settings** at the top, with captions filling the remaining viewport. Listen becomes Stop while active. Language, text size, voice profiles, privacy and installation information are in Settings. Estimated names and their text share a consistent profile colour; consecutive captions share one name label. Unknown speech uses a neutral colour. Browser recognition supplies no identity itself; optional local processing adds delayed estimates. See [ADR 0015](docs/decisions/0015-caption-first-layout.md).
 
 M1's application is implemented: accessible anonymous captions, replaceable interim text, stable final text, explicit Listen/Stop and interruption recovery, adjustable text size, processing disclosure, and a static installable PWA shell. Automated verification and limitations are recorded in [feasibility](docs/feasibility.md).
 
@@ -24,9 +23,9 @@ Listening now restarts across pauses and normal browser recognition endings. Tap
 
 **The full project plan is not complete.** Experimental M2 enrolment is implemented: consented eight-second recordings produce local English-model voiceprints with versioned IndexedDB storage, listing and deletion. The first Prepare downloads about 39 MB of public model/runtime files; subsequent enrolments and comparisons automatically reuse the verified cached model, including after reloading offline. Only missing/damaged assets require another explicit download; browsers can evict stored files. Raw audio is discarded. Broader physical-device performance and speaker accuracy remain unverified. See [ADR 0006](docs/decisions/0006-experimental-local-enrolment.md), [cache policy](docs/decisions/0016-reuse-cached-voice-model.md), [model assets and licences](docs/speaker-assets.md), and the [device test matrix](docs/manual-testing.md).
 
-**Experimental live names:** after saving a voiceprint, open **Settings → Prepare name suggestions**, then return to captions and tap Listen. Preparation enables a separate English-only local recognizer. It compares the same captured audio against saved profiles and shows **Name (estimate)** with matching text colour when successive windows agree. Short, first or uncertain words can remain Unknown; names arrive after the text. Names may be wrong, especially during overlap. The user explicitly chose these estimates while different-person human testing is unavailable; they are not calibrated identities. Turn off **Use experimental names** to return to browser captions. Changing mode clears text. Browser captions remain anonymous and retain the Android pause/repetition fixes.
+**Experimental delayed names:** after saving a voiceprint, open **Settings → Prepare name suggestions**, then return to captions and tap Listen. Browser words appear immediately. Local sample-clock speech/voice evidence supplies name estimates only where unique phrases agree with the browser transcript. Names and matching text colours can arrive after a pause or Stop. Short, repeated, mismatched or uncertain words stay Unknown. Estimates may be wrong and do not establish reliable diarization. Turn off **Use experimental names** for browser captions without the extra speaker workload. Changing this option clears text; the Android pause/repetition fixes remain in use.
 
-This optional mode downloads up to **205 MB** of speech models/runtime for a fresh setup (**190 MB** for the upgrade), reuses the existing voice model (27 MB if missing), and automatically reloads saved models when enabled. It performs speech processing on the device, with no audio/transcript upload or persistence. Stop and “command stop” release capture; interruption or sustained processing overload stops safely. The larger model needs more memory and processing; phone speed/accuracy and iPhone operation need testing. Turn off **Use experimental names** for browser captions if words are inaccurate or the phone cannot keep up. See [ADR 0022](docs/decisions/0022-upgrade-local-transcription.md) and [local model provenance](docs/local-speech-assets.md).
+Delayed estimates reuse up to **205 MB** of speech models/runtime and the existing voice model (27 MB if missing). Only absent/damaged files download. Browser transcription may send audio to its provider and need a connection; voiceprints and speaker processing remain on-device. The app saves neither audio nor transcripts. Stop and “command stop” stop both captures, then pending estimates can finish. A local-processing failure leaves browser captions running. Concurrent browser/local microphone operation and accuracy on Pixel 8/iPhone require retesting. See [ADR 0023](docs/decisions/0023-browser-first-delayed-names.md) and [local model provenance](docs/local-speech-assets.md).
 
 **Settings → Speakers → Compare recordings** now supports local same-person/different-person evaluation against a saved profile. It requires consent and a declared relationship, displays cosine similarity and processing time, and retains at most 20 temporary results until you clear them, leave the screen or interrupt the app. The test recording and voiceprint are discarded; saved profiles are unchanged. Scores are measurements, not probabilities or confirmed identities. See [ADR 0011](docs/decisions/0011-local-voice-comparison.md).
 
@@ -48,7 +47,7 @@ npm ci
 npm run dev
 ```
 
-Open the printed localhost URL. By default Listen selects the browser's speech service, which may send audio to its provider. The optional prepared local mode processes speech on-device. The app saves neither recordings nor transcripts. Remote-device microphone testing requires HTTPS; an ordinary LAN HTTP address is insufficient. Browser speech may need a connection; prepared local models can run offline.
+Open the printed localhost URL. Listen uses the browser's speech service, which may send audio to its provider and require a connection. Optional delayed speaker processing runs on-device using cached models. The app saves neither recordings nor transcripts. Remote-device microphone testing requires HTTPS; an ordinary LAN HTTP address is insufficient. Offline model availability does not imply offline browser transcription.
 
 ### Verify and deploy
 

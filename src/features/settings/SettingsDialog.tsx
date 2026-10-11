@@ -35,7 +35,7 @@ export function SettingsDialog({ active, textSize, onTextSize, language, onLangu
     </section>
     <section aria-labelledby="voices-title">
       <h3 id="voices-title">Voice profiles</h3>
-      <p>Saved profiles can be used for experimental name suggestions and Compare recordings. Browser captions remain anonymous.</p>
+      <p>Saved profiles can be used for delayed name estimates and Compare recordings. Captions appear before speaker estimates are ready.</p>
       <button ref={speakersButton} onClick={onSpeakers}>Speakers</button>
     </section>
     {localEngine && onLocalEnabled && <NameSuggestions engine={localEngine} enabled={localEnabled} active={active} onEnabled={onLocalEnabled} />}
@@ -46,9 +46,9 @@ export function SettingsDialog({ active, textSize, onTextSize, language, onLangu
     </section>
     <section aria-labelledby="privacy-title">
       <h3 id="privacy-title">Privacy &amp; installation</h3>
-      <p>Browser captions use your browser’s speech service, which may send microphone audio to its provider. The provider’s processing and retention rules apply. Experimental name suggestions use local speech models instead.</p>
+      <p>Browser captions use your browser’s speech service, which may send microphone audio to its provider. The provider’s processing and retention rules apply. Optional delayed speaker estimates run locally alongside those captions.</p>
       <p>No account, analytics, saved audio or saved transcripts. Captions disappear when cleared or reloaded. Optional consented voice profiles stay in this browser and can be deleted in Speakers.</p>
-      <p>App files and prepared models are cached. Browser captions may need a connection; prepared local listening can work offline. Browsers may evict cached files.</p>
+      <p>App files and prepared speaker models are cached. Transcription may need a connection, including when speaker estimates are enabled. Browsers may evict cached files.</p>
       <p>On iPhone, use Safari’s Share menu → Add to Home Screen. On Android, use Chrome’s menu → Install app or Add to Home screen.</p>
       {installFailed && <p>Offline installation was unavailable. Check your browser’s storage settings. Live captions can still work online.</p>}
     </section>

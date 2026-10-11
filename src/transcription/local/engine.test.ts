@@ -9,7 +9,7 @@ import { notifyProfileChange } from '../../storage/profile-changes';
 
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
 async function flush() { for (let i = 0; i < 20; i++) await Promise.resolve(); }
-function fixture() {
+function fixture(voiceCommands = true) {
   vi.stubGlobal('isSecureContext', true); vi.stubGlobal('AudioContext', class {}); vi.stubGlobal('AudioWorkletNode', class {});
   vi.stubGlobal('navigator', { mediaDevices: { getUserMedia() {} } }); vi.stubGlobal('BroadcastChannel', undefined);
   const events = new EventTarget();
@@ -31,7 +31,7 @@ function fixture() {
     signal.addEventListener('abort', () => reject(signal.reason), { once: true });
     return { done, stop };
   });
-  const engine = new LocalEngine('https://example.com/app/', () => store, processor, capture, loader);
+  const engine = new LocalEngine('https://example.com/app/', () => store, processor, capture, loader, voiceCommands);
   return { engine, store, profile, processor, requests, loader, capture, stop, ready: () => ready(), reject: (error: Error) => reject(error),
     signal: () => signal, send: (response: LocalResponse) => { nextResponse = response; return consume({ clockId: 'test', startSample: 0, sampleRate: 16000, samples: new Float32Array(1600) }); } };
 }
@@ -54,6 +54,13 @@ it('cancels a pending permission request and ignores late callbacks', async () =
   const f = fixture(); await f.engine.prepare(); f.engine.start('en-GB'); f.engine.stop(); await flush(); f.ready();
   expect(f.signal().aborted).toBe(true); expect(f.processor.dispose).toHaveBeenCalled();
   expect(f.engine.getSnapshot().phase).toBe('idle'); expect(f.engine.getPreparationSnapshot().phase).toBe('idle'); f.engine.dispose();
+});
+
+it('leaves command handling to the browser when running as delayed evidence', async () => {
+  const f = fixture(false); await f.engine.prepare(); f.engine.start('en-GB'); await flush(); f.ready();
+  expect(f.requests.find((request) => request.type === 'start')?.voiceCommands).toBe(false);
+  await f.send({ id: 1, commandStop: true }); await flush();
+  expect(f.stop).not.toHaveBeenCalled(); expect(f.engine.getSnapshot().phase).toBe('listening'); f.engine.dispose();
 });
 
 it('releases capture on missing profiles, storage failure, and capture failure', async () => {

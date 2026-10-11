@@ -21,7 +21,8 @@ export class LocalEngine implements LocalListeningEngine {
   constructor(private readonly appUrl: string, private readonly createStore: () => ProfileStore,
     private readonly processor: LocalProcessor = new LocalWorker(),
     private readonly captureAudio = startAudioCapture,
-    private readonly assetsLoader = loadLocalAssets) {}
+    private readonly assetsLoader = loadLocalAssets,
+    private readonly voiceCommands = true) {}
   get unavailableReason() { return streamingUnavailableReason() ?? (this.preparation.phase !== 'ready' ? 'Prepare experimental names in Settings before listening.' : null); }
   getSnapshot = () => this.snapshot;
   getPreparationSnapshot = () => this.preparation;
@@ -71,7 +72,7 @@ export class LocalEngine implements LocalListeningEngine {
         } finally { profile.embedding.fill(0); }
       }
       if (!references.length) throw new Error('Save a compatible voiceprint in Settings → Speakers before enabling names.');
-      await this.processor.request({ type: 'start', references }, signal);
+      await this.processor.request({ type: 'start', references, voiceCommands: this.voiceCommands }, signal);
     } finally { references.forEach((reference) => reference.embedding.fill(0)); store.close(); }
   }
   start(language: string) {
@@ -124,7 +125,7 @@ export class LocalEngine implements LocalListeningEngine {
       }
       this.publish(this.snapshot.phase, this.snapshot.message, segments);
     }
-    if (response.commandStop && !this.voiceStopped) { this.voiceStopped = true; this.stop(); }
+    if (this.voiceCommands && response.commandStop && !this.voiceStopped) { this.voiceStopped = true; this.stop(); }
   }
   stop() {
     if (!this.operation || this.snapshot.phase === 'stopping') return;

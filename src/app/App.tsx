@@ -9,7 +9,9 @@ import type { LocalListeningEngine } from '../transcription/local/types';
 export function App({ engine: browserEngine, createSpeakers, localEngine }: {
   engine: TranscriptionEngine; createSpeakers: () => SpeakerServices; localEngine?: LocalListeningEngine;
 }) {
-  const preferenceKey = `speech-to-text-name-suggestions:${new URL(import.meta.env.BASE_URL, document.baseURI).pathname}`;
+  // The previous option used local-only ASR. Require selecting this new browser
+  // + delayed-name mode explicitly, with its updated processing disclosure.
+  const preferenceKey = `speech-to-text-delayed-names:${new URL(import.meta.env.BASE_URL, document.baseURI).pathname}`;
   const [localEnabled, setLocalEnabled] = useState(() => {
     try { return Boolean(localEngine) && localStorage.getItem(preferenceKey) === 'enabled'; } catch { return false; }
   });
@@ -55,12 +57,12 @@ export function App({ engine: browserEngine, createSpeakers, localEngine }: {
       <button ref={settingsButton} onClick={() => { setFocusSpeakers(false); setSettingsOpen(true); }}>Settings</button>
     </header>
     <main id="captions">
-      <p className={snapshot.phase === 'error' ? 'notice error' : 'sr-only'} role="status" aria-live="polite" aria-atomic="true">{snapshot.message}</p>
+      <p className={snapshot.phase === 'error' ? 'notice error' : snapshot.notice ? 'notice' : 'sr-only'} role="status" aria-live="polite" aria-atomic="true">{snapshot.message}</p>
       {engine.unavailableReason && <p className="notice" role="alert">{engine.unavailableReason}</p>}
-      {offline && <p className="notice">{localEnabled ? 'You’re offline. Local listening uses the saved models.' : 'You’re offline. Your browser’s speech service may need a connection.'}</p>}
+      {offline && <p className="notice">You’re offline. Your browser’s speech service may need a connection.</p>}
       <Transcript segments={snapshot.segments} textSize={textSize} />
     </main>
-    <p className="sr-only" id="processing-note">{localEnabled ? 'Local listening processes speech on this device. Names are estimates.' : 'Listen uses your browser’s speech service, which may send audio to its provider.'} Captions are kept only until you clear or reload. Details are in Settings.</p>
+    <p className="sr-only" id="processing-note">Listen uses your browser’s speech service, which may send audio to its provider. {localEnabled && 'Delayed name estimates use saved voiceprints on this device.'} Captions are kept only until you clear or reload. Details are in Settings.</p>
     {settingsOpen && !speakersOpen && <SettingsDialog active={active} textSize={textSize} onTextSize={setTextSize}
       localEngine={localEngine} localEnabled={localEnabled} onLocalEnabled={(enabled) => {
         if (active) return;
