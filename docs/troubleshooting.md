@@ -1,5 +1,14 @@
 # Troubleshooting
 
+## 2026-10-11 — Sentence openings lost after pauses (physical retest pending)
+
+- **Context/symptom:** user confirms opening-word loss after pauses, presumed same Pixel 8; OS/browser versions remain unknown.
+- **Diagnosis:** the previous adapter sets `continuous=false` and schedules a restart at least 200 ms after native end. That application-created gap is proven by code and regression fixtures. It is the leading explanation, not a captured trace of the phone's acoustic loss.
+- **Change:** continuous native recognition; productive native endings restart on the next task without the extra 200 ms. Speech-start groups constrain cumulative-prefix collapse so separate prefix-extending sentences survive. Empty-cycle backoff and all Stop/interruption cleanup remain.
+- **Verification:** `npm run check` passed 136 tests plus typecheck/lint/asset checks/build. Windows Chromium/WebKit browser suite passed 36 tests with four existing unavailable-WebAudio skips. The new simulated 15-second pause/second-sentence/voice-Stop regression passed in both. Sandbox Vite preview again required the previously documented outside-sandbox run.
+- **Unresolved:** physical Pixel 8 pause retest; browsers may still terminate native capture. No audio buffering is claimed. Live Unknown labels are also unresolved: production recognition never reads saved profiles, and ADR 0017's prototype is not ready for reliable human attribution.
+- **Prevention/related:** browser and reconciliation regression tests; ADR 0019; manual-testing pause trials. Do not treat the automated recognizer simulation as a physical-device pass.
+
 ## 2026-10-10 — Publishing selected the wrong GitHub account
 
 - **Symptom:** `git push origin main` returned HTTP 403, denied to `labiraus`, for `H-Wilderspin/speech-to-text`.

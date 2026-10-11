@@ -1,4 +1,4 @@
-import { collapseCumulativeResults, reconcileResults } from './reconcile';
+import { collapseCumulativeResults, reconcileResults, type RecognizedSegment } from './reconcile';
 import { consumeStopCommand } from './stop-command';
 import type { BrowserRecognizer, RecognizerFactory, TranscriptionEngine, TranscriptionSnapshot, TranscriptSegment } from './types';
 
@@ -22,7 +22,8 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
   private recognizer: BrowserRecognizer | null = null;
   private timer: ReturnType<typeof setTimeout> | undefined;
   private history: TranscriptSegment[] = [];
-  private current: TranscriptSegment[] = [];
+  private current: RecognizedSegment[] = [];
+  private utterance = 0;
   private sessionId = 0;
   private listeningRequested = false;
   private language = 'en-GB';
@@ -67,6 +68,7 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
     this.recognizer = null;
     if (recognizer) {
       recognizer.onstart = recognizer.onend = recognizer.onerror = recognizer.onresult = null;
+      recognizer.onspeechstart = null;
     }
     return recognizer;
   }
@@ -102,6 +104,7 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
   }
 
   private restart(abort = false) {
+    const delay = this.current.length ? 0 : this.restartDelay;
     const recognizer = this.detach();
     if (abort) this.abort(recognizer);
     this.history.push(...collapseCumulativeResults(this.current.filter((segment) => segment.isFinal)));
@@ -111,21 +114,25 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
     this.timer = setTimeout(() => {
       this.timer = undefined;
       if (this.listeningRequested) this.begin();
-    }, this.restartDelay);
+    }, delay);
     this.restartDelay = Math.min(this.restartDelay * 2, 2_000);
   }
 
   private begin() {
     this.sessionId++;
+    this.utterance = 0;
     try {
       const recognizer = this.factory!();
       this.recognizer = recognizer;
       recognizer.lang = this.language;
-      // Keep the app session running ourselves. A single native utterance avoids
-      // mobile providers accumulating successive hypotheses as final phrases.
-      recognizer.continuous = false;
+      // Keep native capture alive across pauses. Restart only if the provider
+      // ends anyway; repeated single-utterance starts leave gaps in the audio.
+      recognizer.continuous = true;
       recognizer.interimResults = true;
       recognizer.maxAlternatives = 1;
+      recognizer.onspeechstart = () => {
+        if (this.recognizer === recognizer) this.utterance++;
+      };
       recognizer.onstart = () => {
         if (this.recognizer !== recognizer) { this.abort(recognizer); return; }
         if (this.snapshot.phase === 'stopping') return;
@@ -134,7 +141,7 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
       };
       recognizer.onresult = ({ results }) => {
         if (this.recognizer !== recognizer) return;
-        this.current = reconcileResults(this.current, results, this.sessionId, true);
+        this.current = reconcileResults(this.current, results, this.sessionId, true, this.utterance);
         if (this.current.length) this.restartDelay = 200;
         const earlierSessions = this.history.filter((segment) => Number(segment.id.split(':')[0]) < this.commandStartSessionId);
         const activeSession = this.history.slice(earlierSessions.length);

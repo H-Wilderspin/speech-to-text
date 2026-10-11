@@ -1,5 +1,12 @@
 # Feasibility evidence
 
+## 2026-10-11 — Continuous recognition for pause-related word loss
+
+- **Report:** user confirms missing opening words occur after pauses between sentences. Same Pixel 8 is assumed from context; Android/browser versions and tab/PWA mode are unreported. This is a new failing phone observation, not a continuation pass from the earlier command-stop/repetition test.
+- **Hypothesis/change:** single-utterance recognition and its explicit restart delay can miss speech. Request continuous capture, remove productive-cycle delay, retain bounded empty-cycle recovery, and scope prefix normalization with native speech-start groups. These groups are not audio timestamps or speaker labels.
+- **Automated evidence:** Windows, Node 22.20.0, existing Playwright Chromium/WebKit installation. `npm run check` passed typecheck/lint, 136 unit tests, pinned asset checks and production build. `npm run test:e2e` passed 36 tests in 38.8 seconds; four existing WebKit audio tests skipped for unavailable APIs. Both engines passed the new simulated 15-second pause, independent repeated-opening sentence and voice-command test. No actual microphone was used by that regression.
+- **Limits/next:** no new acoustic word-error, first-word latency, battery or human identity measurements. Physical pause trials at 2/5/15 seconds are pending. Continuous mode is a request to the browser and cannot guarantee provider continuity. Saved voices still do not label live text; common-clock production integration, human calibration and mixed-speaker rejection remain unresolved under ADR 0017.
+
 ## 2026-10-11 — WebKit cache persistence regression fixed
 
 - A microphone-independent test found worker-created model caches empty after worker disposal in Windows WebKit 27.2. Page-owned cache loading and verified buffer transfer now pass UI preparation, offline reload, automatic reuse and real native inference in Chromium and WebKit. Only the initial three model requests occur. This does not verify a physical iPhone.

@@ -42,4 +42,17 @@ describe('complete recognition snapshots', () => {
     const segments = reconcileResults([], [result('Very very good.', true), result('Very very good.', true), result('Good evening.', true)], 1, true);
     expect(segments.map((segment) => segment.text)).toEqual(['Very very good.', 'Very very good.', 'Good evening.']);
   });
+  it('collapses cumulative slots inside a speech group without erasing an earlier sentence', () => {
+    const first = reconcileResults([], [result('We', true)], 1, true, 1);
+    const next = reconcileResults(first, [result('We', true), result('We are', true)], 1, true, 1);
+    const later = reconcileResults(next, [result('We', true), result('We are', true), result('We are here', true)], 1, true, 2);
+    expect(collapseCumulativeResults(later).map((segment) => segment.text)).toEqual(['We are', 'We are here']);
+  });
+  it('keeps a delayed final in its original speech group and freezes previous finals', () => {
+    const first = reconcileResults([], [result('First.', true), result('still pending')], 1, true, 1);
+    const next = reconcileResults(first, [result('First. Changed.', true), result('Still pending.', true), result('Next.')], 1, true, 2);
+    expect(next.map((segment) => [segment.text, segment.utterance])).toEqual([
+      ['First.', 1], ['Still pending.', 1], ['Next.', 2],
+    ]);
+  });
 });

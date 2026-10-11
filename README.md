@@ -1,6 +1,8 @@
 # Speech-to-Text PWA
 
-## Implementation status — 2026-10-10
+## Implementation status — 2026-10-11
+
+**Pause-related word loss:** the Pixel 8 user reports missing sentence openings after pauses. The adapter now requests continuous native recognition and removes the added restart delay after a cycle containing text. Cumulative-result handling respects native speech groups so a later sentence with the same opening is retained. This addresses the deliberate capture gap; physical retesting is pending, and providers can still end recognition. See [ADR 0019](docs/decisions/0019-continuous-recognition-across-pauses.md). Live speaker identification remains unfinished as described below.
 
 The main page contains only **Listen**, **Clear** and **Settings** at the top, with captions filling the remaining viewport. Listen becomes Stop while active. Language, text size, voice profiles, privacy and installation information are in Settings. The caption renderer supports a name and consistent colour for attributed speech; consecutive captions share one name label. The production recognizer still supplies no identities, so captions currently show **Unknown speaker** in a neutral colour. Saved profile names use the same colour mapping. Display support does not enable voice recognition. See [ADR 0015](docs/decisions/0015-caption-first-layout.md).
 

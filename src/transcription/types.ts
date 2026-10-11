@@ -46,6 +46,7 @@ export interface BrowserRecognizer {
   interimResults: boolean;
   maxAlternatives: number;
   onstart: (() => void) | null;
+  onspeechstart?: (() => void) | null;
   onend: (() => void) | null;
   onerror: ((event: { error: string }) => void) | null;
   onresult: ((event: { results: RecognitionResults }) => void) | null;

@@ -8,6 +8,7 @@ class FakeRecognizer implements BrowserRecognizer {
   interimResults = false;
   maxAlternatives = 0;
   onstart: BrowserRecognizer['onstart'] = null;
+  onspeechstart: BrowserRecognizer['onspeechstart'] = null;
   onend: BrowserRecognizer['onend'] = null;
   onerror: BrowserRecognizer['onerror'] = null;
   onresult: BrowserRecognizer['onresult'] = null;
@@ -37,7 +38,7 @@ describe('browser recognition lifecycle', () => {
     expect(instances).toHaveLength(1);
     expect(latest().start).toHaveBeenCalledOnce();
     expect(latest().lang).toBe('en-GB');
-    expect(latest().continuous).toBe(false);
+    expect(latest().continuous).toBe(true);
     expect(latest().interimResults).toBe(true);
     expect(engine.getSnapshot().phase).toBe('requesting-permission');
     latest().onstart?.();
@@ -52,6 +53,28 @@ describe('browser recognition lifecycle', () => {
     expect(engine.getSnapshot().segments.map((s) => s.text)).toEqual(['Finished.']);
     expect(native.stop).toHaveBeenCalledOnce();
     expect(native.onresult).toBeNull();
+    expect(native.onspeechstart).toBeNull();
+  });
+  it('keeps native capture through a pause and preserves a new sentence with the same opening', () => {
+    engine.start('en-GB'); const native = latest(); native.onstart?.(); native.onspeechstart?.();
+    native.result('We are here.');
+    vi.advanceTimersByTime(15_000);
+    expect(instances).toHaveLength(1);
+    expect(native.stop).not.toHaveBeenCalled(); expect(native.abort).not.toHaveBeenCalled();
+    native.onspeechstart?.();
+    native.onresult?.({ results: ['We are here.', 'We are here again.'].map((text) => ({
+      0: { transcript: text, confidence: .9 }, isFinal: true, length: 1,
+    })) });
+    expect(engine.getSnapshot().segments.map((segment) => segment.text)).toEqual(['We are here.', 'We are here again.']);
+    engine.stop(); native.onend?.();
+    expect(engine.getSnapshot().segments.map((segment) => segment.text)).toEqual(['We are here.', 'We are here again.']);
+  });
+  it('restarts a productive provider ending on the next task without adding a 200ms gap', () => {
+    engine.start('en-GB'); latest().onstart?.(); latest().result('First sentence.'); latest().onend?.();
+    expect(instances).toHaveLength(1);
+    vi.advanceTimersByTime(0);
+    expect(instances).toHaveLength(2);
+    expect(latest().continuous).toBe(true);
   });
   it('aborts when an engine never acknowledges Stop', () => {
     engine.start('en-GB'); const native = latest(); native.onstart?.();

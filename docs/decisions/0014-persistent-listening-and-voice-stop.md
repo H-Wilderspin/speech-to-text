@@ -3,6 +3,8 @@
 Date: 2026-10-10
 Status: Accepted; supersedes ADR 0001's natural-end, retention-limit and cumulative-result policies
 
+Update: [ADR 0019](0019-continuous-recognition-across-pauses.md) supersedes single-utterance mode and the productive restart delay after reported opening-word loss.
+
 ## Context
 
 The user reports captions repeating the whole growing phrase with each new word. The native result payload was not collected, so the phone-specific cause remains unconfirmed. The user explicitly requests listening until button Stop or the spoken phrase “command stop”. ADR 0001's natural-end behaviour does not meet that requirement.

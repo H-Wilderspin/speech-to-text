@@ -113,6 +113,31 @@ test('growing hypotheses render once, listening restarts, and a spoken command s
   expect(await page.evaluate(() => (window as Window & { wasAborted?: boolean }).wasAborted)).toBe(true);
 });
 
+test('continuous recognition keeps sentence openings after a pause and honours voice Stop', async ({ page }) => {
+  await mockRecognition(page); await page.goto('/');
+  await page.clock.install();
+  await page.getByRole('button', { name: 'Listen', exact: true }).click();
+  await page.evaluate(() => {
+    const host = window as Window & { testRecognition?: { continuous: boolean; onspeechstart: () => void }; pausedRecognition?: unknown };
+    if (!host.testRecognition?.continuous) throw new Error('Single-utterance recognition leaves a capture gap.');
+    host.pausedRecognition = host.testRecognition;
+    host.testRecognition.onspeechstart();
+  });
+  await result(page, 'We are here.', true);
+  await page.clock.fastForward(15_000);
+  await page.evaluate(() => {
+    const host = window as Window & { testRecognition?: { onspeechstart: () => void; onresult: (event: unknown) => void }; pausedRecognition?: unknown };
+    if (!host.testRecognition || host.testRecognition !== host.pausedRecognition) throw new Error('Native capture restarted during the pause.');
+    host.testRecognition.onspeechstart();
+    host.testRecognition.onresult({ results: ['We are here.', 'We are here again. Command stop.'].map((text) => ({
+      0: { transcript: text, confidence: .9 }, length: 1, isFinal: true,
+    })) });
+  });
+  await expect(page.locator('.confirmed')).toHaveText(['We are here.', 'We are here again.']);
+  await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
+  expect(await page.evaluate(() => (window as Window & { wasAborted?: boolean }).wasAborted)).toBe(true);
+});
+
 test('unsupported capability preserves readable UI and accessible speaker dialog', async ({ page }) => {
   await page.addInitScript(() => Object.assign(window, { SpeechRecognition: undefined, webkitSpeechRecognition: undefined }));
   await page.goto('/');

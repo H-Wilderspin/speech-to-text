@@ -23,6 +23,14 @@ On 2026-10-10 the user reported that the LAN benchmark URL could not open on the
 
 ## M1 workflow
 
+2026-10-11 pause regression retest: close all copies of the deployed app and reopen
+to activate the update. Say a short sentence, pause for 2, 5 and 15 seconds in
+separate trials, then say a complete second sentence. Check its opening words
+remain. Include two sentences with the same opening to detect over-deduplication.
+Finish with "command stop" and verify microphone release. The user confirmed the
+previous word loss occurs after pauses; this new continuous-mode fix has not yet
+passed a physical Pixel 8 retest. Speaker identification remains unavailable.
+
 1. Open fresh site data. Confirm the normal page has only Listen, Clear and Settings above the transcript. Listen is available without enrolment or accounts. Open Settings and verify the browser-provider processing disclosure is available without requesting microphone access. Opening the page alone must not activate the microphone.
 2. Tap Listen. Grant permission; speak at least 10 short phrases including corrections/repetitions. Observe interim replacements, stable confirmed text, and no duplicated phrase when a result finalises. Pause for at least 15 seconds, then speak without tapping Listen: Stop should remain available and captions should resume. Check “very very good” and deliberately repeating a phrase after a pause are preserved. Measure approximate first-word latency for each phrase; record median/range without promising a one-second result.
 3. Tap Stop while speaking. Verify the browser/OS microphone indicator ends and no new capture continues. Repeat Listen/Stop 10 times, including cancelling a pending permission prompt. Confirm existing final text remains readable.
