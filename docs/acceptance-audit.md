@@ -9,6 +9,11 @@ and voiceprints are reused. This is experimental phrase correspondence, not a
 validated diarization/alignment system; phone accuracy and simultaneous microphone
 operation remain unverified. See feasibility for current checks.
 
+Published as `0082197`, [run 38136056686](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38136056686):
+183 unit tests and all 52 Linux browser tests passed before deployment. Browser
+speech results in those integration tests are simulated; actual generated local
+inference is exercised. Phone accuracy and dual-microphone operation remain pending.
+
 Previous increment: after trying estimated names with another person, the user
 reported mostly wrong words and all-caps text during clear, one-at-a-time speech.
 That local recognition test failed. ADR 0022 upgrades the ASR model and formats
