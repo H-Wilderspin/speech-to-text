@@ -8,6 +8,11 @@ That local recognition test failed. ADR 0022 upgrades the ASR model and formats
 sentence case; desktop clips improve, but Pixel 8 accuracy and throughput need
 a fresh retest. This is not a confirmed phone fix or identity-accuracy result.
 
+The upgrade deployed at `32d0494`: [run 38134351664](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38134351664)
+passed 171 unit tests and all 50 Linux browser checks. Two prior runs failed the
+Chromium estimated-label test; the final diagnostic-only change did not establish
+a root cause. This intermittent CI issue remains recorded in troubleshooting.
+
 The user previously authorized **experimental name suggestions**
 while only one person was available. The optional English local engine uses shared
 sample-clock ASR/reference windows and shows coloured **Name (estimate)** captions.

@@ -1,10 +1,12 @@
 # Troubleshooting
 
-## 2026-10-11 — Larger-model live test failed on the shared CI runner
+## 2026-10-11 — Intermittent larger-model live test failure on CI (Unresolved)
 
 - **Observed:** first upgrade run [38133551744](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38133551744) passed 49/50 tests. Chromium paced capture timed out waiting for an estimated name; WebKit paced capture and both direct-worker known/other comparisons passed. The failure log omitted the app status, so overload versus failed matching cannot be concluded from this run.
 - **Investigation:** model preparation and accelerated inference can run concurrently with paced capture under the two-worker configuration. Resource contention is a hypothesis, not a proven production bug. Run all CI browser checks with one worker to isolate the real-time experiment; keep the production queue bound, timeout, required label and Stop assertions unchanged. Add status/caption-count/microphone diagnostics to the failed assertion without printing speech or vectors.
-- **Verification:** record the subsequent run in feasibility. A serial pass establishes this isolated workload only; it does not prove phone throughput or eliminate the need to investigate any recurring failure.
+- **Follow-up:** the first serial run [38133975638](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38133975638) also failed that label check (49/50 passed), so parallel-test contention alone is not established. `toMatchObject` printed only the failed field; diagnostics now explicitly print the safe status/count/track summary on failure. The next run [38134351664](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38134351664) passed all 50 tests without a production-code change. This intermittent failure is unexplained, not fixed by the diagnostic change. Keep the assertion and investigate the status if it recurs.
+- **Local Linux check:** the real paced Chromium workflow passed in the official `mcr.microsoft.com/playwright:v1.64.0-noble` container (digest `sha256:06a9939e57531807f8d5fd76ce44b53165ffb7d7501d87ab10e285c20b1e971f`). The repository mount was read-only; copied build/tests and Linux dependencies lived in the disposable container. Initial npm installation failed with `UNABLE_TO_GET_ISSUER_CERT_LOCALLY`; supplying exported public Windows trusted-root certificates through container-only `NODE_EXTRA_CA_CERTS` allowed installation without disabling TLS checks. No private keys were exported or committed.
+- **Limit:** a serial pass establishes this isolated workload only; it does not prove phone throughput or eliminate the need to investigate recurrence.
 
 ## 2026-10-11 — Large model push reset during upload
 
