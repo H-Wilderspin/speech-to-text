@@ -2,6 +2,14 @@
 
 ## Implementation status — 2026-10-11
 
+**Local recognition upgrade:** the user reported mostly wrong words and all-caps
+captions even with clear, one-at-a-time speech. The experimental local mode now
+uses a larger LibriSpeech/GigaSpeech model and readable sentence casing. Test clips
+improved substantially; conversational accuracy and speed on Pixel 8 still need
+a retest. After reopening the app, use **Settings → Prepare name suggestions**
+once to download about **190 MB of upgraded weights**. Existing voiceprints,
+runtime and voice-model files are reused. See [ADR 0022](docs/decisions/0022-upgrade-local-transcription.md).
+
 **Android browser captions:** cumulative hypotheses replace one line per native recognition cycle, including equal repeats and corrected wording, then commit once on normal completion. Continuous capture and prompt restart remain enabled; earlier completed cycles retain deliberate repetition. Spoken Stop waits for provider completion, which may require a pause. Latest user feedback confirms that opening words are no longer lost; wider physical retesting remains pending. See [ADR 0020](docs/decisions/0020-android-cumulative-recognition.md). Optional experimental names use a separate local mode described below.
 
 The main page contains only **Listen**, **Clear** and **Settings** at the top, with captions filling the remaining viewport. Listen becomes Stop while active. Language, text size, voice profiles, privacy and installation information are in Settings. Estimated names and their text share a consistent profile colour; consecutive captions share one name label. Unknown speech uses a neutral colour. Browser captions supply no identity; estimated names require the optional local mode. See [ADR 0015](docs/decisions/0015-caption-first-layout.md).
@@ -10,7 +18,7 @@ M1's application is implemented: accessible anonymous captions, replaceable inte
 
 The user reports that captions appear and Stop releases the microphone on a physical Pixel 8. This basic Listen/Stop check passed; browser/OS versions, installed-PWA behaviour and the wider device checks remain unconfirmed. The iPhone is currently unavailable for testing.
 
-Pixel 8 speaker enrolment also passed a user-reported check: a profile saved, survived reloading and was deleted successfully. Three initial same-person comparisons were reported as approximately 0.8 similarity; the latest showed approximately 0.9 seconds of voice processing. Different-person testing awaits another participant. These observations do not establish accuracy or a matching threshold.
+Pixel 8 speaker enrolment also passed a user-reported check: a profile saved, survived reloading and was deleted successfully. Three initial same-person comparisons were reported as approximately 0.8 similarity; the latest showed approximately 0.9 seconds of voice processing. The user subsequently tested local captions with another person and reported poor transcription; per-speaker counts and different-person comparison scores remain unavailable. These observations do not establish identification accuracy or a matching threshold.
 
 Listening now restarts across pauses and normal browser recognition endings. Tap Stop or say **“command stop”** to finish; the confirmed command is removed from captions. Keep the app open: leaving it or a microphone/provider failure still interrupts capture. The newest 100,000 characters are retained without stopping a long session. Growing cumulative hypotheses within one native utterance are displayed once; repeated phrases in separate utterances remain. The user has confirmed on Pixel 8 that the command works and text appears once; continuation after the requested 15-second pause was not explicitly reported. See [ADR 0014](docs/decisions/0014-persistent-listening-and-voice-stop.md).
 
@@ -18,7 +26,7 @@ Listening now restarts across pauses and normal browser recognition endings. Tap
 
 **Experimental live names:** after saving a voiceprint, open **Settings → Prepare name suggestions**, then return to captions and tap Listen. Preparation enables a separate English-only local recognizer. It compares the same captured audio against saved profiles and shows **Name (estimate)** with matching text colour when successive windows agree. Short, first or uncertain words can remain Unknown; names arrive after the text. Names may be wrong, especially during overlap. The user explicitly chose these estimates while different-person human testing is unavailable; they are not calibrated identities. Turn off **Use experimental names** to return to browser captions. Changing mode clears text. Browser captions remain anonymous and retain the Android pause/repetition fixes.
 
-This optional mode downloads up to **58 MB extra**, reuses the existing voice model (27 MB if missing), and automatically reloads saved models when enabled. It performs speech processing on the device, with no audio/transcript upload or persistence. Stop and “command stop” release capture; interruption or sustained processing overload stops safely. Phone speed/accuracy and iPhone operation still need testing. See [ADR 0021](docs/decisions/0021-experimental-local-name-suggestions.md) and [local model provenance](docs/local-speech-assets.md).
+This optional mode downloads up to **205 MB** of speech models/runtime for a fresh setup (**190 MB** for the upgrade), reuses the existing voice model (27 MB if missing), and automatically reloads saved models when enabled. It performs speech processing on the device, with no audio/transcript upload or persistence. Stop and “command stop” release capture; interruption or sustained processing overload stops safely. The larger model needs more memory and processing; phone speed/accuracy and iPhone operation need testing. Turn off **Use experimental names** for browser captions if words are inaccurate or the phone cannot keep up. See [ADR 0022](docs/decisions/0022-upgrade-local-transcription.md) and [local model provenance](docs/local-speech-assets.md).
 
 **Settings → Speakers → Compare recordings** now supports local same-person/different-person evaluation against a saved profile. It requires consent and a declared relationship, displays cosine similarity and processing time, and retains at most 20 temporary results until you clear them, leave the screen or interrupt the app. The test recording and voiceprint are discarded; saved profiles are unchanged. Scores are measurements, not probabilities or confirmed identities. See [ADR 0011](docs/decisions/0011-local-voice-comparison.md).
 

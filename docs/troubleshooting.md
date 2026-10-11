@@ -1,5 +1,14 @@
 # Troubleshooting
 
+## 2026-10-11 — All-caps and inaccurate local captions (phone retest pending)
+
+- **Context:** optional local name mode; user confirms clear speech with people taking turns. The recognizer emits raw uppercase words; the previous renderer showed them unchanged. Desktop fixtures also reproduce omissions with the original 20M model. The exact contribution of that model versus phone acoustics to the user's wrong words is unmeasured.
+- **Correction:** upgrade the local speech recognizer and apply sentence casing after token/identity grouping. Existing voiceprints are reused. Uppercase source text contains no trustworthy proper-noun casing or punctuation to restore; the formatter does not invent them. Turn off experimental names for browser captions if local recognition remains poor.
+- **Rejected change:** four-path beam decoding on the small model improved clip accuracy but lost `COMMAND` in the spoken Stop fixture. Other beam widths and the FP32 decoder did not provide a satisfactory fix. Keep the real command regression; do not accept a near-match command to hide recognition errors.
+- **Verification:** the larger model reduces generated/public example word edits and passes actual worker/capture Stop tests. Unit tests preserve speaker metadata and words through casing. Browser tests verify no silent upgrade download and reuse of cached shared files; full counts and deployment results are in feasibility.
+- **Upgrade recovery:** Settings → Prepare name suggestions downloads about 190 MB once. Existing runtime and voice files are reused; completed downloads survive cancellation/retry. Missing upgraded weights produce an explicit preparation message without requesting the microphone. More processing/memory is required; phone throughput and conversational accuracy remain unresolved until retested.
+- **Related:** [ADR 0022](decisions/0022-upgrade-local-transcription.md), [reproduction](../research/README.md), [asset provenance](local-speech-assets.md).
+
 ## 2026-10-11 — Saved voiceprints still show Unknown
 
 - **Context:** user-reported Pixel 8, OS/browser versions unknown; one saved speaker, no other consenting participant available. Opening-word loss is now reported resolved.

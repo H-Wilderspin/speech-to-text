@@ -35,7 +35,7 @@ export class LocalEngine implements LocalListeningEngine {
   async prepare(cachedOnly = false) {
     if (this.preparationOperation || this.operation || this.preparation.phase === 'ready') return;
     const operation = new AbortController(); this.preparationOperation = operation;
-    const timer = setTimeout(() => operation.abort(new Error('Local model preparation timed out. Retry on a faster connection.')), 180000);
+    const timer = setTimeout(() => operation.abort(new Error('Local model preparation timed out. Retry on a faster connection; completed files will be reused.')), 600000);
     this.setPreparation('preparing', cachedOnly ? 'Loading the saved local speech model…' : 'Preparing local speech. Only missing files are downloaded…');
     try {
       const assets = await this.assetsLoader(this.appUrl, cachedOnly, operation.signal);

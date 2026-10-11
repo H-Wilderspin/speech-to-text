@@ -53,6 +53,13 @@ passed a physical Pixel 8 retest. Speaker identification remains unavailable.
 
 ## Experimental live name suggestions (2026-10-11; physical retest pending)
 
+**Upgrade retest:** the original small recognizer failed user-reported clear,
+one-at-a-time speech. The replacement requires one explicit ~190 MB model upgrade
+(up to 205 MB for a fresh setup), reusing saved voiceprints and shared files. Test
+word correctness separately from name correctness. Confirm ordinary sentence case,
+opening words both immediately after Listen and after pauses, and no overload/error.
+The heavier model's phone memory, latency and battery are not yet measured.
+
 1. Close all app tabs and reopen the published site. Save a consented voiceprint or keep an existing compatible one. In Settings, choose **Prepare name suggestions**. Confirm the model-size/local-processing disclosure; no microphone should open during preparation. Only missing public model files should download. Return to captions.
 2. Tap Listen, speak several different English sentences, pause 5–15 seconds, and continue. Check exact text once, retained opening words, **Name (estimate)** labels and corresponding text colour. Names can arrive several seconds after words; first/short/uncertain words may stay Unknown. Record model/device/browser, errors, approximate delay and whether processing keeps up. Do not treat an estimate as a confirmed identity.
 3. Say “command stop”, pause and check that capture ends and the command disappears. Repeat with button Stop. Start a second session without downloading again. Test permission denial/cancellation, backgrounding, lock and returning. Errors should release capture; prepare cached models again after an interruption, or disable experimental names for browser captions.

@@ -1,5 +1,24 @@
 # Feasibility evidence
 
+## 2026-10-11 — Local clear-speech accuracy failure and larger model
+
+- **User evidence:** a second participant joined the test. The user reported mostly wrong words and all-caps captions, then confirmed clear, one-at-a-time speech. Record a failed recognition test, not overlap or measured identity accuracy. Device assumed to remain Pixel 8; OS/browser versions remain unreported. No personal audio, text or voiceprints were collected.
+- **Decision:** [ADR 0022](decisions/0022-upgrade-local-transcription.md) replaces the local 20M LibriSpeech ASR with the pinned June 2023 LibriSpeech/GigaSpeech streaming Zipformer, modified beam search with four paths. Sentence casing is display-only. Embeddings, matching thresholds and capture clocks are unchanged; saved profiles remain compatible. A small-model beam-only change improved words but failed the real spoken Stop fixture and was rejected.
+- **Reproducible experiment:** Windows desktop, Node 22.20.0, shipped single-threaded WASM. `npm run spike:asr-decoders -- <upstream-test_wavs-directory>` compares greedy/beam4 for both models. Three checked-in generated passages, each with zero and one second of preceding silence, total 118 reference words. Two upstream human example recordings total 66 words. Samples were used during model selection, not held out for a claim of conversational accuracy.
+
+| Model / decoding | Generated word edits / 118 | Public example edits / 66 |
+|---|---:|---:|
+| Original 20M / greedy | 28 | 6 |
+| Original 20M / beam4 | 6 | 5 |
+| Larger / greedy | 0 | 1 |
+| Larger / beam4 (selected) | 0 | 0 |
+
+- **Independent startup experiment:** six generated passages (two installed voices, three texts), no leading padding, 132 reference words: original greedy 33 edits, larger beam4 one edit. The larger recognizer retained the spoken Stop fixture. These are small desktop fixtures, not user speech or a general word-error estimate.
+- **Resource observations:** larger ASR-only compute approximately 0.12–0.14 seconds per second of audio, versus about 0.05 for the original. ASR-only WASM linear memory 240,582,656 bytes; this is not peak memory. Reproducible comparison timings were collected alongside browser tests and are not an isolated performance benchmark. No new phone latency, battery, memory, throughput or matching-rate measurement exists.
+- **Upgrade:** 190,175,893 bytes of new weights, 204,461,235 bytes including reusable runtime/VAD/tokens for a fresh setup, plus the 26,485,263-byte embedding if missing. Verified encoder parts stay below GitHub's per-file limit. Existing enabled installations request explicit preparation; cached-only startup does not download the upgrade. Runtime/voice files and profiles are reused. Native initialization releases large JS weight copies; capture still visibly stops sustained overload instead of dropping samples.
+- **Checks:** typecheck/lint, 171 unit tests, asset hashes and production build pass. Full Windows browser suite passed 45 tests; five WebKit audio checks skipped because that port lacks Web Audio. Real inference, offline reuse and generated known/other voices passed in Chromium 156.0.8078.4 and WebKit 27.2; Chromium paced AudioWorklet tests passed sentence casing, name/text colour and spoken/button Stop. After adding the cached-only upgrade message/repair regression, all five supported local-listening checks passed again in 53.7 seconds, with one Windows WebKit audio skip. Both engines verified that absent upgraded weights cause no silent download, then explicit repair downloads only the five new files. Final bundle: 284.20 kB JS / 87.77 kB gzip, optional worker 15.10 kB; large models are outside shell precaching.
+- **Remaining acceptance:** reopen and explicitly prepare the upgrade on Pixel 8; retest clear speech, casing, initial words, pause continuation, Stop and sustained processing. Two-person name correctness remains experimental, with no calibrated threshold or overlap pass. iPhone remains unavailable. Prior phone results do not validate these heavier weights.
+
 ## 2026-10-11 — Opt-in local estimated names
 
 - **User evidence/decision:** the user reports opening words are no longer missing, but saved profiles still show Unknown. One person is enrolled; no second participant is available. The user explicitly chose experimental estimated names before human negative calibration. This does not establish identification accuracy or remove the remaining iPhone gate.

@@ -7,7 +7,9 @@ export function streamingConfig() {
       // its default avoids requiring an unused SentencePiece vocabulary file.
       tokens: '/tokens.txt', numThreads: 1, provider: 'cpu', debug: 0, modelType: 'zipformer', modelingUnit: 'cjkchar', bpeVocab: '',
     },
-    decodingMethod: 'greedy_search', maxActivePaths: 4, enableEndpoint: 1,
+    // Keep competing hypotheses instead of committing to the first-best token.
+    // See ADR 0022 and the reproducible decoder comparison for accuracy/cost.
+    decodingMethod: 'modified_beam_search', maxActivePaths: 4, enableEndpoint: 1,
     rule1MinTrailingSilence: 2.4, rule2MinTrailingSilence: 1.2, rule3MinUtteranceLength: 20,
   };
 }

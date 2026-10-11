@@ -2,8 +2,14 @@
 
 This audit preserves the README's complete scope. Implemented code and passing desktop tests do not satisfy physical-device or human-speaker gates. The goal is not complete.
 
-Latest increment: the user explicitly authorized **experimental name suggestions**
-while only one person is available. The optional English local engine uses shared
+Latest increment: after trying estimated names with another person, the user
+reported mostly wrong words and all-caps text during clear, one-at-a-time speech.
+That local recognition test failed. ADR 0022 upgrades the ASR model and formats
+sentence case; desktop clips improve, but Pixel 8 accuracy and throughput need
+a fresh retest. This is not a confirmed phone fix or identity-accuracy result.
+
+The user previously authorized **experimental name suggestions**
+while only one person was available. The optional English local engine uses shared
 sample-clock ASR/reference windows and shows coloured **Name (estimate)** captions.
 Browser captions remain anonymous. Generated known/other voices, offline model
 reuse and paced AudioWorklet/Stop tests verify the integration; human calibration,
@@ -14,7 +20,9 @@ executed checks in [feasibility](feasibility.md). This does not close M3.
 The experimental integration is published as app commit `096c184`: [run 38131541828](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38131541828)
 passed 165 unit tests and all 50 Linux browser tests. Published Chromium/WebKit
 model preparation, offline reuse and existing browser-result regressions passed.
-These checks do not substitute for physical device or human accuracy acceptance.
+These earlier checks do not validate the larger ASR upgrade or substitute for
+physical device or human accuracy acceptance. See [ADR 0022](decisions/0022-upgrade-local-transcription.md)
+and feasibility for the latest executed checks.
 
 The initial publication attempt selected `labiraus` and was rejected with HTTP
 403. The user subsequently signed in as `H-Wilderspin`; the owner account is now
@@ -49,7 +57,7 @@ FR-06/07 are explicitly research-dependent in the specification. The Unknown fal
 ## Milestones and validation checklist
 
 - **M1:** implementation and automated checks exist; a basic physical Pixel 8 Listen/Stop pass is now reported by the user. Full workflow/accessibility/installed-PWA checks remain pending. The user reports that the iPhone is unavailable.
-- **M2:** enrolment and same/different comparison UI exist. The user reports successful Pixel 8 profile save/reload/delete, three same-person scores around 0.8 and approximately 0.9 s processing for the latest comparison. Another participant is unavailable. Different-person scores, repeated timings, separate-session human trials, false-match measurements and iPhone testing remain pending.
+- **M2:** enrolment and same/different comparison UI exist. The user reports successful Pixel 8 profile save/reload/delete, three same-person scores around 0.8 and approximately 0.9 s processing for the latest comparison. Another participant subsequently joined a local-caption test, which exposed poor transcription. Different-person scores, repeated timings, separate-session human trials, false-match measurements and iPhone testing remain pending.
 - **M3:** common-clock capture/ASR now powers the user-authorized experimental estimates. Human calibration, reliable overlap/turn handling, phone throughput and two-person acceptance remain pending. Estimated labels do not satisfy confirmed identification accuracy.
 - **Interruptions and conditions:** desktop tests cover denial, silence, late permission, pagehide, model failure and bounded overruns. Real noisy-room behaviour, switching/unknown/overlapping human voices, phone network loss, incoming calls, lock screen and return remain unverified.
 - **Long sessions/resources:** accelerated fifteen-minute generated input passed with stable observed WASM memory. Fifteen minutes of actual live phone capture, thermals, battery and peak device memory are unverified.

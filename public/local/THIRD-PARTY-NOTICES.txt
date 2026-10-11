@@ -1,3 +1,9 @@
+Upgraded English streaming Zipformer ASR (local/v2)
+Export: https://huggingface.co/csukuangfj/sherpa-onnx-streaming-zipformer-en-2023-06-21/tree/9a65b6ea94c311ca770c2bf895b30f456a22d703
+Original model: https://huggingface.co/marcoyang/icefall-libri-giga-pruned-transducer-stateless7-streaming-2023-04-04
+Training code: https://github.com/k2-fsa/icefall/pull/984
+License: Apache License 2.0 (full text below).
+The encoder is split into ordered files for static hosting, then reassembled byte-for-byte before inference; model weights are unmodified.
 Speech to Text: optional local speech and experimental name suggestions
 
 Zipformer English 20M streaming ASR: Apache License 2.0 (exported model card).

@@ -1,6 +1,7 @@
 import { cosine } from '../../identification/similarity';
 import type { TranscriptSegment } from '../types';
 import type { EmbeddingWindow, ReferenceVoice, VoiceWindow, PipelineResult, TokenPoint } from './types';
+import { readableLocalCaptions } from './readable-text';
 
 // Experimental baseline from sherpa's speaker-identification-with-vad example,
 // NOT calibrated human accuracy. User explicitly opted into estimated names.
@@ -66,7 +67,8 @@ export class SuggestedTranscript {
       const lastSample = entry.tokenPoints.at(-1)?.sample ?? entry.acceptedSamples;
       // Wait for all covering future windows before suggesting names.
       const settled = entry.isFinal && (finished || result.acceptedSamples >= lastSample + 48000);
-      const captions = suggestedCaptions(entry, settled ? this.windows : [], this.references);
+      // Match original tokens first; casing must not affect evidence or grouping.
+      const captions = readableLocalCaptions(suggestedCaptions(entry, settled ? this.windows : [], this.references));
       if (settled) { this.history.push(...captions); this.pending.delete(id); this.committedThrough = Math.max(this.committedThrough, id); }
       else pendingText.push(...captions);
     }

@@ -1,6 +1,33 @@
 # Optional local speech assets
 
-The name-suggestions mode uses the eight checksum-pinned public files in
+## Current ASR upgrade
+
+After the clear-speech accuracy failure, [ADR 0022](decisions/0022-upgrade-local-transcription.md)
+replaces the small ASR weights with English streaming LibriSpeech/GigaSpeech
+Zipformer. The Apache-2.0 export is pinned to
+[revision 9a65b6ea94c311ca770c2bf895b30f456a22d703](https://huggingface.co/csukuangfj/sherpa-onnx-streaming-zipformer-en-2023-06-21/tree/9a65b6ea94c311ca770c2bf895b30f456a22d703).
+`local-asr-assets.json` records source, complete encoder SHA256 and each asset's
+hash/size. The source weights match the upstream LFS hashes.
+
+- Encoder: `encoder-epoch-99-avg-1.int8.onnx`, 187,823,992 bytes, split into three
+  ordered `public/local/v2/encoder.part*.bin` files, each at most 64 MiB.
+- Decoder: `decoder-epoch-99-avg-1.onnx`, 2,092,566 bytes, retained as FP32.
+- Joiner: `joiner-epoch-99-avg-1.int8.onnx`, 259,335 bytes.
+
+`node scripts/prepare-local-asr.mjs <source-directory>` checks the expected upstream
+weights and reproduces these parts/manifest. Assembly is lossless; build checks
+verify the complete encoder hash and runtime checks verify each part. No file
+exceeds GitHub's per-file limit. The five runtime/VAD/vocabulary files in v1 and
+the speaker embedding are reused; the embedding model/version is unchanged.
+Current local ASR/runtime totals 204,461,235 bytes, of which 190,175,893 are new
+weights. Add the 26,485,263-byte voice model only if absent. Enabled startup remains
+cached-only, requiring explicit preparation for an uncached upgrade. Models are
+not shell-precached. The original small ASR files below remain for reproducible
+comparisons and old clients; the upgraded app does not download them.
+
+## Original v1 assets and shared runtime
+
+The original name-suggestions mode used the eight checksum-pinned public files in
 `public/local/v1/` plus the existing speaker embedding model. `local-assets.json`
 records exact byte counts and SHA256 values; `npm run verify:speaker-assets`
 checks them before every build. Keep these files in Git, not Git LFS pointers.

@@ -39,14 +39,15 @@ self.onmessage = async (event: MessageEvent<{ id: number; type: string; assets?:
       pipeline = await createSharedPipeline(module, createRecognizer, assets, undefined, { windowGate: 'energy', inspectEmbedding: (window) => {
         transcript?.addWindow(suggestWindow(window, references));
       } });
+      // Native models own their initialized weights. Reset only needs the small
+      // VAD file; release JS copies of the large ASR and embedding files.
+      for (const name of Object.keys(assets)) if (name !== 'silero_vad.onnx') delete assets[name];
       self.postMessage({ id: data.id });
     } else if (data.type === 'start') {
       references.forEach((reference) => reference.embedding.fill(0));
       references = data.references ?? [];
       if (!references.length || references.some((reference) => !reference.id || !reference.name || reference.embedding.length !== 192 || !reference.embedding.every(Number.isFinite))) throw new Error('No compatible saved voiceprints are available.');
-      if (!pipeline) pipeline = await createSharedPipeline(module, createRecognizer, assets, undefined, { windowGate: 'energy', inspectEmbedding: (window) => {
-        transcript?.addWindow(suggestWindow(window, references));
-      } });
+      if (!pipeline) throw new Error('Prepare local listening before starting.');
       transcript = new SuggestedTranscript(references); stopped = null; lastOutput = '';
       self.postMessage({ id: data.id });
     } else if (pipeline && transcript && (data.type === 'frame' || data.type === 'finish')) {

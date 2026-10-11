@@ -141,3 +141,14 @@ The four fixtures are silence, one repeated voice, A/B/A and an overlapping mixt
 Observed misassignment and batch latency prevent promotion to live attribution. See [ADR 0013](../docs/decisions/0013-offline-diarization-candidate.md) and [feasibility](../docs/feasibility.md). These models, generated WAVs and pages are absent from the production build; physical-device and human-speaker validation remain outstanding.
 
 `npm run spike:diarization -- --local-windows` isolates independent ten-second segmentation calls at five-second strides, plus an exact end-aligned window. No input is padded; reported coordinates are translated back to the fixture sample clock, while cluster IDs remain independent for every call. The native implementation bypasses embedding/clustering for one model window. This is substantially faster, but the alternating synthetic voices still collapse into one local label. It is not a working replacement for the full diarizer.
+
+## Local ASR accuracy comparison (2026-10-11)
+
+`npm run spike:asr-decoders` compares the original small and upgraded local ASR
+weights with greedy/four-path beam decoding, using the generated fixtures in
+`tests/fixtures`. Add a path to the upstream model's `test_wavs` directory to
+include its `0.wav`, `1.wav` and `trans.txt` public references. The script uses
+shipped assets, has no network/microphone access and prints aggregate edit counts
+and timings. It does not save recognized words or evaluate human conversational
+accuracy. See ADR 0022 and feasibility for results and the rejected small-model
+beam-search command regression.

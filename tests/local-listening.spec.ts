@@ -1,6 +1,7 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { expect, test, type Page } from '@playwright/test';
 import localFiles from '../local-assets.json' with { type: 'json' };
+import asr from '../local-asr-assets.json' with { type: 'json' };
 import speakerModel from '../speaker-assets.json' with { type: 'json' };
 
 async function fixtureSamples(name: string) {
@@ -67,10 +68,10 @@ test('real local worker reuses offline models and suggests a known generated voi
     Object.defineProperty(navigator, 'mediaDevices', { value: { getUserMedia: () => { throw new Error('Unexpected microphone'); } } });
   });
   const downloads: string[] = [];
-  page.on('request', (request) => { if (/(local|speaker)\/v1\//.test(request.url())) downloads.push(request.url()); });
+  page.on('request', (request) => { if (/(local|speaker)\/v[12]\//.test(request.url())) downloads.push(request.url()); });
   await page.goto('/'); expect(downloads).toHaveLength(0); await prepareModels(page);
   const reference = await createGeneratedProfile(page, true);
-  const initialDownloads = downloads.length; expect(initialDownloads).toBe(11);
+  const initialDownloads = downloads.length; expect(initialDownloads).toBe(13);
   await page.evaluate(() => navigator.serviceWorker.ready.then(() => true)); await context.setOffline(true); await page.reload();
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await expect(page.getByText('Ready. Names are estimates;', { exact: false })).toBeVisible({ timeout: 60000 });
@@ -79,18 +80,26 @@ test('real local worker reuses offline models and suggests a known generated voi
   await page.getByLabel('Use experimental names').uncheck();
   const files = await readdir(new URL('../dist/assets/', import.meta.url));
   const workerFile = files.find((name) => /^local\.worker-.*\.js$/.test(name))!;
-  const result = await page.evaluate(async ({ reference, workerFile, localFiles, known, other }) => {
+  const result = await page.evaluate(async ({ reference, workerFile, localFiles, asr, known, other }) => {
     const keys = await caches.keys(); const local = await caches.open(keys.find((key) => key.startsWith('speech-to-text-local:'))!);
     const voice = await caches.open(keys.find((key) => key.startsWith('speech-to-text-model:'))!);
     const assets: Record<string, Uint8Array> = {};
-    for (const file of localFiles) assets[file.name] = new Uint8Array(await (await local.match(new URL(`local/v1/${file.name}`, location.href).href))!.arrayBuffer());
+    for (const file of localFiles.filter((file) => !['encoder.onnx', 'decoder.onnx', 'joiner.onnx'].includes(file.name))) assets[file.name] = new Uint8Array(await (await local.match(new URL(`local/v1/${file.name}`, location.href).href))!.arrayBuffer());
+    const upgraded = await caches.open(keys.find((key) => key.startsWith('speech-to-text-asr:'))!);
+    const encoder = new Uint8Array(asr.encoder.bytes); let at = 0;
+    for (const part of asr.encoder.parts) {
+      const bytes = new Uint8Array(await (await upgraded.match(new URL(`local/v2/${part.name}`, location.href).href))!.arrayBuffer());
+      encoder.set(bytes, at); at += bytes.length;
+    }
+    assets['encoder.onnx'] = encoder;
+    for (const file of asr.files) assets[file.name] = new Uint8Array(await (await upgraded.match(new URL(`local/v2/${file.name}`, location.href).href))!.arrayBuffer());
     assets['embedding.onnx'] = new Uint8Array(await (await voice.match(new URL('speaker/v1/embedding.onnx', location.href).href))!.arrayBuffer());
     const worker = new Worker(`/assets/${workerFile}`, { type: 'module' }); let sequence = 0;
     type Segment = { text: string; speakerId?: string; speakerEstimated?: boolean; isFinal: boolean };
     const request = (data: object) => new Promise<{ segments?: Segment[]; commandStop?: boolean }>((resolve, reject) => {
       const id = ++sequence; worker.onerror = () => reject(new Error('Local worker failed'));
       worker.onmessage = ({ data }) => { if (data.id === id) { if (data.error) reject(new Error(data.error)); else resolve(data); } };
-      worker.postMessage({ ...data, id });
+      worker.postMessage({ ...data, id }, 'assets' in data ? Object.values(assets).map((bytes) => bytes.buffer) : []);
     });
     const transcribe = async (speech: number[], clockId: string) => {
       await request({ type: 'start', references: [reference] });
@@ -106,16 +115,31 @@ test('real local worker reuses offline models and suggests a known generated voi
     };
     try { await request({ type: 'prepare', assets }); return { known: await transcribe(known, 'known'), other: await transcribe(other, 'other') }; }
     finally { reference.embedding.fill(0); worker.terminate(); }
-  }, { reference, workerFile, localFiles, known: await fixtureSamples('voice-a-speech'), other: await fixtureSamples('voice-b-speech') });
+  }, { reference, workerFile, localFiles, asr, known: await fixtureSamples('voice-a-speech'), other: await fixtureSamples('voice-b-speech') });
   reference.embedding.fill(0);
   expect(result.known.updates).toBeGreaterThan(3);
   expect(result.known.segments.some((segment) => segment.speakerId === 'generated-test' && segment.speakerEstimated)).toBe(true);
   expect(result.known.segments.every((segment) => segment.isFinal)).toBe(true);
   const knownText = result.known.segments.map((segment) => segment.text).join(' ');
-  expect(knownText).toContain('MORNING'); expect(knownText.match(/MORNING/g)).toHaveLength(1);
+  expect(knownText).toContain('morning'); expect(knownText.match(/morning/gi)).toHaveLength(1);
+  expect(knownText).not.toBe(knownText.toUpperCase());
   expect(result.other.segments.some((segment) => segment.text)).toBe(true);
   expect(result.other.segments.every((segment) => !segment.speakerId)).toBe(true);
   expect(downloads).toHaveLength(initialDownloads);
+  // Simulate an enabled older installation with only the shared models retained.
+  // Cached-only startup must not silently download the large upgrade.
+  await page.evaluate(async () => {
+    for (const key of await caches.keys()) if (key.startsWith('speech-to-text-asr:')) await caches.delete(key);
+    localStorage.setItem('speech-to-text-name-suggestions:/', 'enabled');
+  });
+  await page.reload(); await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(page.getByText('The upgraded speech model needs preparation in Settings. Saved voiceprints are kept.')).toBeVisible({ timeout: 30000 });
+  expect(downloads).toHaveLength(initialDownloads);
+  await context.setOffline(false);
+  await page.getByRole('button', { name: 'Prepare name suggestions' }).click();
+  await expect(page.getByText('Ready. Names are estimates;', { exact: false })).toBeVisible({ timeout: 60000 });
+  expect(downloads.slice(initialDownloads)).toHaveLength(5);
+  expect(downloads.slice(initialDownloads).every((url) => url.includes('/local/v2/'))).toBe(true);
 });
 
 test('live AudioWorklet captions show coloured estimates and release capture on voice and button Stop', async ({ page }) => {
@@ -164,7 +188,8 @@ test('live AudioWorklet captions show coloured estimates and release capture on 
   await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled({ timeout: 45000 });
   expect(await stats()).toEqual({ calls: 1, stops: 1 });
   await expect(page.locator('#captions > [role=status]')).toHaveText('Stopped by voice command.');
-  const text = await transcript.locator('p').allTextContents(); expect(text.join(' ').match(/MORNING/g)).toHaveLength(1);
+  const text = await transcript.locator('p').allTextContents(); expect(text.join(' ').match(/morning/gi)).toHaveLength(1);
+  expect(text.join(' ')).not.toBe(text.join(' ').toUpperCase());
   expect(text.join(' ')).not.toMatch(/COMMAND STOP/i);
   // A second session reuses initialized models; Stop also releases the track.
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
@@ -176,14 +201,14 @@ test('live AudioWorklet captions show coloured estimates and release capture on 
 
 test('local model download failure stays recoverable and cancellation opens no microphone', async ({ page }) => {
   await page.goto('/'); await page.getByRole('button', { name: 'Settings', exact: true }).click();
-  await page.route('**/local/v1/encoder.onnx', (route) => route.abort());
+  await page.route('**/local/v2/encoder.part1.bin', (route) => route.abort());
   await page.getByRole('button', { name: 'Prepare name suggestions' }).click();
   await expect(page.getByRole('button', { name: 'Prepare name suggestions' })).toBeEnabled();
   await expect(page.getByLabel('Use experimental names')).not.toBeChecked();
-  await page.unroute('**/local/v1/encoder.onnx');
+  await page.unroute('**/local/v2/encoder.part1.bin');
   let release!: () => void;
   const waiting = new Promise<void>((resolve) => { release = resolve; });
-  await page.route('**/local/v1/encoder.onnx', async (route) => { await waiting; await route.abort(); });
+  await page.route('**/local/v2/encoder.part1.bin', async (route) => { await waiting; await route.abort(); });
   await page.getByRole('button', { name: 'Prepare name suggestions' }).click();
   await page.getByRole('button', { name: 'Cancel model preparation' }).click();
   await expect(page.getByText('Preparation cancelled.', { exact: false })).toBeVisible(); release();

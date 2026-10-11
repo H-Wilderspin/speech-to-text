@@ -3,6 +3,10 @@
 Date: 2026-10-11
 Status: Accepted for experimental estimates; reliable human identification remains unverified
 
+Follow-up: [ADR 0022](0022-upgrade-local-transcription.md) replaces the small ASR
+model and adds readable casing after a clear-speech phone accuracy failure.
+Speaker matching and its experimental status remain unchanged.
+
 ## Context
 
 The user confirmed that browser captions now retain opening words after pauses,

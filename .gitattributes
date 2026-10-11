@@ -8,5 +8,6 @@ public/speaker/v1/speaker-runtime.mjs binary
 public/speaker/THIRD-PARTY-NOTICES.txt -whitespace
 # Preserve every checksum-pinned public local asset exactly across Windows/Linux.
 public/local/v1/* binary
+public/local/v2/* binary
 public/local/THIRD-PARTY-NOTICES.txt -whitespace
 *.wav binary
