@@ -182,12 +182,16 @@ test('live AudioWorklet captions show coloured estimates and release capture on 
   const transcript = page.getByRole('region', { name: 'Live transcript' });
   // Include safe diagnostics if inference fails before a label can render.
   // Only generated fixtures run here; do not print transcript or embeddings.
-  await expect.poll(async () => ({
+  let captureStatus: unknown;
+  await expect.poll(async () => (captureStatus = {
     known: await transcript.getByText('Generated test voice (estimate)', { exact: true }).first().isVisible(),
     status: await page.locator('#captions > [role=status]').textContent(),
     captionCount: await transcript.locator('.caption').count(),
     microphone: await stats(),
-  }), { timeout: 45000 }).toMatchObject({ known: true });
+  }), { timeout: 45000 }).toMatchObject({ known: true }).catch((error: unknown) => {
+    console.error('Generated capture failure:', JSON.stringify(captureStatus));
+    throw error;
+  });
   const known = transcript.locator('.caption').filter({ hasText: 'Generated test voice (estimate)' }).first();
   const textColour = await known.locator('p').evaluate((element) => getComputedStyle(element).color);
   expect(textColour).toBe(await known.locator('.caption-speaker').evaluate((element) => getComputedStyle(element).color));
