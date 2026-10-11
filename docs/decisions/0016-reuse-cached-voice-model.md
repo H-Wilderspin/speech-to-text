@@ -3,6 +3,9 @@
 Date: 2026-10-10
 Status: Accepted; supersedes ADR 0006's model-loading/cache policy
 
+Follow-up: [ADR 0018](0018-page-owned-public-model-cache.md) moves persistent
+cache access to the page after a reproduced worker-lifetime failure in WebKit.
+
 ## Context
 
 Each speaker dialog creates disposable model workers. Their in-memory ready flag

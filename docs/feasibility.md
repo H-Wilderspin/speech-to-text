@@ -1,5 +1,10 @@
 # Feasibility evidence
 
+## 2026-10-11 — WebKit cache persistence regression fixed
+
+- A microphone-independent test found worker-created model caches empty after worker disposal in Windows WebKit 27.2. Page-owned cache loading and verified buffer transfer now pass UI preparation, offline reload, automatic reuse and real native inference in Chromium and WebKit. Only the initial three model requests occur. This does not verify a physical iPhone.
+- `npm run check` passed typecheck, lint, 132 unit tests, asset verification and build. The full 38-case browser suite passed 34 cases in 38.4 s and retained four existing unsupported-Web-Audio WebKit skips. The two new cache tests run in both engines without those APIs. JS 265.57 kB / 82.29 kB gzip. See [ADR 0018](decisions/0018-page-owned-public-model-cache.md).
+
 ## 2026-10-10 — Cached model reuse and direct attribution experiment
 
 - **Model reuse:** first explicit preparation now saves all three hash-verified public assets. Offline reload automatically restores enrolment and comparison without another model request. Real synthetic Chromium enrolment/comparison passed; full Windows browser suite passed 32 cases with four existing unsupported-Web-Audio WebKit skips. No phone cache-reuse pass is claimed.

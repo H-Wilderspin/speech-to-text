@@ -37,6 +37,12 @@ describe('verified persistent model files', () => {
     await expect(loadModelAsset(base, file, false)).rejects.toThrow('incomplete or incompatible');
     expect(cache.put).not.toHaveBeenCalled();
   });
+  it('does not fetch or cache work cancelled during a cache lookup', async () => {
+    const { file, cache, fetcher } = await fixture(); const controller = new AbortController();
+    cache.match.mockImplementation(async () => { controller.abort(); return undefined; });
+    await expect(loadModelAsset(base, file, false, undefined, controller.signal)).rejects.toMatchObject({ name: 'AbortError' });
+    expect(fetcher).not.toHaveBeenCalled(); expect(cache.put).not.toHaveBeenCalled();
+  });
   it('allows online processing when cache storage is blocked or full', async () => {
     const { file, cache } = await fixture(); cache.put.mockRejectedValue(new Error('quota'));
     expect(await loadModelAsset(base, file, false)).toEqual(bytes);

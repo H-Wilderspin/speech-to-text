@@ -1,5 +1,18 @@
 # Troubleshooting
 
+## 2026-10-10 — Publishing selected the wrong GitHub account
+
+- **Symptom:** `git push origin main` returned HTTP 403, denied to `labiraus`, for `H-Wilderspin/speech-to-text`.
+- **Verified state:** Git Credential Manager lists only `labiraus`; an explicit `credential.username=H-Wilderspin` noninteractive push found no saved credentials. No token values were printed or stored.
+- **Resolved sign-in:** the user requested another login and `git credential-manager github login --username H-Wilderspin --browser` completed. GCM then listed both accounts. Use the owner's account explicitly for this repository; do not silently change its remote.
+
+## 2026-10-11 — WebKit lost model files after worker disposal
+
+- **Context:** Windows WebKit 27.2, no Web Audio dependency. A new test prepares the actual model and closes its worker before an offline retry.
+- **Observed:** CacheStorage writes resolved and immediate worker reads succeeded, but the named cache was empty after worker termination. Retaining network responses and avoiding concurrent cache creation did not fix it. The underlying WebKit cause was not established.
+- **Verified fix:** move public asset download/hash/cache work into the page and transfer verified buffers to the worker. Chromium and WebKit now pass UI preparation, dialog disposal, offline reload, automatic preparation and real inference with exactly three initial model requests and no further requests.
+- **Prevention:** `tests/model-cache.spec.ts` runs on both engines even where microphone capture is unsupported. Cancellation tests ensure aborted preparation cannot create a late worker and does not prevent an immediate retry. See [ADR 0018](decisions/0018-page-owned-public-model-cache.md).
+
 ## 2026-10-10 — Repeated model preparation and lost return focus
 
 - **Cause:** disposable dialog workers only tracked readiness in memory; no persistent complete-model detection existed. Automatic cache restore then exposed a second bug: the comparison launch button lost restored focus when preparation disabled it.

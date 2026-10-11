@@ -8,8 +8,13 @@ still emits Unknown. The direct-reference research prototype names most token
 points in generated turn-taking speech, while unequal overlap remains unresolved.
 See [ADR 0016](decisions/0016-reuse-cached-voice-model.md) and
 [ADR 0017](decisions/0017-direct-live-attribution-prototype.md). Current local checks:
-130 unit tests and 32 available Windows browser tests passed, with four existing
+132 unit tests and 34 available Windows browser tests passed, with four existing
 WebKit audio skips. This does not close M3 or replace human calibration.
+
+The initial publication attempt selected `labiraus` and was rejected with HTTP
+403. The user subsequently signed in as `H-Wilderspin`; the owner account is now
+available. A further WebKit cache-lifetime regression was fixed before retrying
+publication; see [ADR 0018](decisions/0018-page-owned-public-model-cache.md).
 
 | Requirement | Current evidence | Remaining proof |
 |---|---|---|

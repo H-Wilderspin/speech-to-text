@@ -22,18 +22,28 @@ export async function hasCachedModel(base: string): Promise<boolean> {
     if (!cache) return false;
     const entries = await Promise.all(modelFiles.map(async (file) => {
       const response = await cache.match(new URL(file.name, base).href);
-      return response?.headers.get('X-Voice-Asset-SHA256') === file.hash;
+      return Boolean(response?.ok);
     }));
     return entries.every(Boolean);
   } catch { return false; }
 }
 
-export async function loadModelAsset(base: string, file: { name: string; hash: string }, cachedOnly: boolean): Promise<Uint8Array<ArrayBuffer>> {
-  const url = new URL(file.name, base).href;
+export async function loadModelAssets(base: string, cachedOnly: boolean, signal?: AbortSignal) {
+  signal?.throwIfAborted();
   const cache = await openCache(base);
+  signal?.throwIfAborted();
+  return Promise.all(modelFiles.map((file) => loadModelAsset(base, file, cachedOnly, cache ?? null, signal)));
+}
+
+export async function loadModelAsset(base: string, file: { name: string; hash: string }, cachedOnly: boolean, openedCache?: Cache | null, signal?: AbortSignal): Promise<Uint8Array<ArrayBuffer>> {
+  signal?.throwIfAborted();
+  const url = new URL(file.name, base).href;
+  const cache = openedCache === undefined ? await openCache(base) : openedCache;
   const verify = async (response: Response) => {
     const data = await response.arrayBuffer();
+    signal?.throwIfAborted();
     const digest = await crypto.subtle.digest('SHA-256', data);
+    signal?.throwIfAborted();
     const actual = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
     return actual === file.hash ? new Uint8Array(data) : undefined;
   };
@@ -45,18 +55,17 @@ export async function loadModelAsset(base: string, file: { name: string; hash: s
       await cache?.delete(url);
     }
   } catch { /* Treat unreadable cache entries as missing; never execute them. */ }
+  signal?.throwIfAborted();
   if (cachedOnly) throw new Error('The saved voice model is unavailable or damaged. Prepare it again while online.');
   let response: Response;
-  try { response = await fetch(url); }
-  catch { throw new Error('Voice model download failed. Check the connection and retry.'); }
+  try { response = await fetch(url, { signal }); }
+  catch { signal?.throwIfAborted(); throw new Error('Voice model download failed. Check the connection and retry.'); }
   if (!response.ok) throw new Error('Voice model download failed. Check the connection and retry.');
-  const bytes = await verify(response);
+  const bytes = await verify(response.clone());
   if (!bytes) throw new Error('The voice model download is incomplete or incompatible. Retry online.');
   try {
-    await cache?.put(url, new Response(bytes, { headers: {
-      'Content-Type': file.name.endsWith('.mjs') ? 'text/javascript' : 'application/octet-stream',
-      'X-Voice-Asset-SHA256': file.hash,
-    } }));
+    await cache?.put(url, response);
   } catch { /* Inference can proceed even if this browser cannot retain the files. */ }
+  signal?.throwIfAborted();
   return bytes;
 }
