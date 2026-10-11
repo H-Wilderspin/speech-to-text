@@ -11,6 +11,11 @@ overlap handling and physical-device throughput remain unverified. See
 [ADR 0021](decisions/0021-experimental-local-name-suggestions.md) and the latest
 executed checks in [feasibility](feasibility.md). This does not close M3.
 
+The experimental integration is published as app commit `096c184`: [run 38131541828](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38131541828)
+passed 165 unit tests and all 50 Linux browser tests. Published Chromium/WebKit
+model preparation, offline reuse and existing browser-result regressions passed.
+These checks do not substitute for physical device or human accuracy acceptance.
+
 The initial publication attempt selected `labiraus` and was rejected with HTTP
 403. The user subsequently signed in as `H-Wilderspin`; the owner account is now
 available. A further WebKit cache-lifetime regression was fixed before retrying
