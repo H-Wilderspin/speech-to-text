@@ -30,19 +30,19 @@ it('preserves sample order across render quanta and flushes the final partial fr
 });
 it('bounds stalled consumer memory and fails instead of silently dropping frames', () => {
   const f = fixture();
-  for (let i = 0; i < 8; i++) expect(f.feed(1600)).toBe(true);
+  for (let i = 0; i < 32; i++) expect(f.feed(1600)).toBe(true);
   expect(f.feed(1600)).toBe(false);
-  expect(f.messages.filter((message) => message.type === 'frame')).toHaveLength(8);
+  expect(f.messages.filter((message) => message.type === 'frame')).toHaveLength(32);
   expect(f.messages.at(-1)?.message).toContain('could not keep up');
   expect(f.recorder.samples.every((sample) => sample === 0)).toBe(true);
 });
 it('waits for a processing acknowledgement before flushing a full queue on Stop', () => {
-  const f = fixture(); for (let i = 0; i < 8; i++) f.feed(1600); f.feed(128);
+  const f = fixture(); for (let i = 0; i < 32; i++) f.feed(1600); f.feed(128);
   f.port.onmessage({ data: { type: 'stop' } });
-  expect(f.messages).toHaveLength(8);
+  expect(f.messages).toHaveLength(32);
   f.port.onmessage({ data: { type: 'ack', startSample: 0 } });
   expect(f.messages.at(-2)?.samples?.length).toBe(128);
-  expect(f.messages.at(-1)).toEqual({ type: 'end', totalSamples: 12928 });
+  expect(f.messages.at(-1)).toEqual({ type: 'end', totalSamples: 51328 });
 });
 it('rejects interrupted render clocks, disappearing input, invalid samples and wrong sample rates', () => {
   const gap = fixture(); gap.feed(128); gap.scope.currentFrame += 128;

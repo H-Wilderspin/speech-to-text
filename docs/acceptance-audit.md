@@ -1,15 +1,15 @@
-# Project-plan acceptance audit — 2026-10-10
+# Project-plan acceptance audit — 2026-10-11
 
 This audit preserves the README's complete scope. Implemented code and passing desktop tests do not satisfy physical-device or human-speaker gates. The goal is not complete.
 
-Latest increment: persistent verified model reuse passes offline real-inference
-browser checks; name/colour rendering is supported but the production adapter
-still emits Unknown. The direct-reference research prototype names most token
-points in generated turn-taking speech, while unequal overlap remains unresolved.
-See [ADR 0016](decisions/0016-reuse-cached-voice-model.md) and
-[ADR 0017](decisions/0017-direct-live-attribution-prototype.md). Current local checks:
-132 unit tests and 34 available Windows browser tests passed, with four existing
-WebKit audio skips. This does not close M3 or replace human calibration.
+Latest increment: the user explicitly authorized **experimental name suggestions**
+while only one person is available. The optional English local engine uses shared
+sample-clock ASR/reference windows and shows coloured **Name (estimate)** captions.
+Browser captions remain anonymous. Generated known/other voices, offline model
+reuse and paced AudioWorklet/Stop tests verify the integration; human calibration,
+overlap handling and physical-device throughput remain unverified. See
+[ADR 0021](decisions/0021-experimental-local-name-suggestions.md) and the latest
+executed checks in [feasibility](feasibility.md). This does not close M3.
 
 The initial publication attempt selected `labiraus` and was rejected with HTTP
 403. The user subsequently signed in as `H-Wilderspin`; the owner account is now
@@ -29,8 +29,8 @@ verification does not enable automatic identification or establish phone accurac
 | FR-03 Accessible display | Large relative text, focus/scroll controls; 320 px and enlarged-text browser checks | VoiceOver, TalkBack, phone text scaling, contrast/readability observations |
 | FR-04 Immediate anonymous use | Browser ASR composition/tests plus user-reported speech appearing on the deployed app on Pixel 8 | Confirm fresh-site/no-enrolment conditions and iPhone behaviour |
 | FR-05 Consented enrolment | Automated enrolment/storage tests plus user-reported Pixel 8 profile save, reload persistence and deletion | iPhone flow; phone interruption/cancellation and performance measurements |
-| FR-06 Enrolled identity | Conservative research matcher requires calibration; production captions remain anonymous | Consented held-out human scores, acceptance threshold evidence, compatible live alignment and device results |
-| FR-07 Speaker grouping | Research alignment rejects ambiguous spans; candidate turn/overlap errors documented | Reliable live grouping and clear transitions on two-person device tests; currently absent from production |
+| FR-06 Enrolled identity | Optional estimates use existing profiles, a shared audio clock and explicitly uncalibrated baseline; generated known/other voices pass integration | Consented held-out human scores, validated threshold evidence and physical-device results |
+| FR-07 Speaker grouping | Optional local captions group whole words by estimated name/colour; unknown/ambiguous evidence preserved | Reliable grouping, overlap rejection and clear transitions on two-person device tests |
 | FR-08 Graceful degradation | Unsupported recognizer/audio/storage/model failure and cancellation paths have browser coverage; enrolment failure preserves captions | Target-device failure/recovery observations |
 | FR-09 Installable cross-platform PWA | Successful Pages deployment; live HTTPS manifest/icons, scoped worker and offline shell verified in Chromium/WebKit | iOS and Android tab/installed-PWA checks |
 | FR-10 Data minimisation | Browser-provider disclosure; local enrolment and temporary comparisons; no app audio/transcript persistence; tested cleanup | Observe phone network/storage behaviour for the selected processing path |
@@ -45,7 +45,7 @@ FR-06/07 are explicitly research-dependent in the specification. The Unknown fal
 
 - **M1:** implementation and automated checks exist; a basic physical Pixel 8 Listen/Stop pass is now reported by the user. Full workflow/accessibility/installed-PWA checks remain pending. The user reports that the iPhone is unavailable.
 - **M2:** enrolment and same/different comparison UI exist. The user reports successful Pixel 8 profile save/reload/delete, three same-person scores around 0.8 and approximately 0.9 s processing for the latest comparison. Another participant is unavailable. Different-person scores, repeated timings, separate-session human trials, false-match measurements and iPhone testing remain pending.
-- **M3:** common-clock capture/ASR and conservative alignment experiments exist. The evaluated turn detector fails synthetic counterexamples; human calibration, reliable grouping, live integration and two-person target-device acceptance remain pending. No identities are enabled.
+- **M3:** common-clock capture/ASR now powers the user-authorized experimental estimates. Human calibration, reliable overlap/turn handling, phone throughput and two-person acceptance remain pending. Estimated labels do not satisfy confirmed identification accuracy.
 - **Interruptions and conditions:** desktop tests cover denial, silence, late permission, pagehide, model failure and bounded overruns. Real noisy-room behaviour, switching/unknown/overlapping human voices, phone network loss, incoming calls, lock screen and return remain unverified.
 - **Long sessions/resources:** accelerated fifteen-minute generated input passed with stable observed WASM memory. Fifteen minutes of actual live phone capture, thermals, battery and peak device memory are unverified.
 - **Accessibility:** desktop layout/keyboard/focus tests exist; VoiceOver/TalkBack and physical readability checks remain pending.
@@ -53,8 +53,8 @@ FR-06/07 are explicitly research-dependent in the specification. The Unknown fal
 
 ## Evidence needed next
 
-The user authorized the push; GitHub now has `main`, and the [first successful deployment](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38051991375) is verified. Initial Pixel 8 storage/comparison observations and user-reported spoken stop/repetition-fix passes are recorded. Pause continuation was not explicitly confirmed; tab/PWA/accessibility results and Android/browser versions remain pending. Both the iPhone and another participant were reported unavailable; their tests remain pending until access is possible. Follow [manual testing](manual-testing.md). The user's observation of Unknown with saved profiles confirms the current fallback display, not a matching failure: live identification remains unimplemented.
+The user authorized publication. Initial Pixel 8 storage/comparison observations and spoken stop/repetition fixes are recorded; latest feedback confirms opening words are retained. The new local mode needs a separate phone retest: its ASR and capture path differ from browser recognition. Tab/PWA/accessibility results and Android/browser versions remain pending. Both iPhone and another participant were reported unavailable. Follow [manual testing](manual-testing.md). The earlier all-Unknown report identified missing live integration, not a measured false-rejection rate.
 
-Use Settings → Speakers → Compare recordings with consent for realistic same/different-person trials. Follow the held-out protocol in [feasibility](feasibility.md); retain anonymous score/timing observations, not personal audio or voiceprints. Synthetic signals and two generated voices cannot replace this evidence. Additional production attribution work should be based on those results rather than a guessed threshold.
+Use Settings → Speakers → Compare recordings with consent for realistic same/different-person trials. Follow the held-out protocol in [feasibility](feasibility.md); retain anonymous score/timing observations, not personal audio or voiceprints. Synthetic voices cannot replace this evidence. The current upstream-example baseline is expressly uncalibrated and limited to estimated suggestions by the user's choice; future reliable identity work must be based on held-out evidence.
 
 Authoritative code/tests: [application composition](../src/main.tsx), [browser adapter](../src/transcription/browser.ts), [transcript](../src/features/listening/Transcript.tsx), [speaker services](../src/app/speaker-services.ts), [app browser tests](../tests/app.spec.ts), [speaker browser tests](../tests/speakers.spec.ts), [Pages workflow](../.github/workflows/pages.yml). Detailed measurements and limitations are in [feasibility](feasibility.md).

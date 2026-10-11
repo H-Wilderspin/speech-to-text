@@ -108,7 +108,7 @@ export function startAudioCapture(signal: AbortSignal, consume: (frame: AudioFra
         }
         const samples = message.samples;
         if (message.type !== 'frame' || !(samples instanceof Float32Array) || !samples.length || samples.length > 1600
-          || message.startSample !== receivedSamples || ended || queue.length + Number(pumping) >= 8) {
+          || message.startSample !== receivedSamples || ended || queue.length + Number(pumping) >= 32) {
           if (samples?.byteLength) samples.fill(0);
           fail(new Error('Audio capture lost continuity. Start again.')); return;
         }

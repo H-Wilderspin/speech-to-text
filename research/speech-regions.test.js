@@ -2,7 +2,7 @@ import { expect, it } from 'vitest';
 import { createSpeechDetector } from './speech-regions.mjs';
 
 it('requests a runtime rebuild before capturing with an older native module', () => {
-  expect(() => createSpeechDetector({}, new Uint8Array(1))).toThrow('spike:build-pipeline');
+  expect(() => createSpeechDetector({}, new Uint8Array(1))).toThrow('runtime is incompatible');
 });
 
 function fixture() {

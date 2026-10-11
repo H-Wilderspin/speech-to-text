@@ -1,5 +1,6 @@
 /* global AudioWorkletProcessor, registerProcessor, sampleRate, currentFrame */
-// Eight unacknowledged 100 ms frames plus one partial frame: bounded even if the
+// 32 unacknowledged 100 ms frames plus one partial frame (about 211 KB): allows
+// short inference bursts, while remaining bounded even if the
 // main thread or inference worker stalls. Never drop audio and pretend continuity.
 class StreamRecorder extends AudioWorkletProcessor {
   constructor() {
@@ -36,7 +37,7 @@ class StreamRecorder extends AudioWorkletProcessor {
   }
   finish() {
     if (this.used) {
-      if (this.pending.size === 8) return;
+      if (this.pending.size === 32) return;
       this.emit();
     }
     this.samples.fill(0); this.done = true;
@@ -57,7 +58,7 @@ class StreamRecorder extends AudioWorkletProcessor {
       this.samples.set(input.subarray(offset, offset + count), this.used);
       this.used += count; offset += count;
       if (this.used === this.samples.length) {
-        if (this.pending.size === 8) return this.fail('Audio processing could not keep up. Stop and try again.');
+        if (this.pending.size === 32) return this.fail('Local speech processing could not keep up. Switch to browser captions in Settings.');
         this.emit();
       }
     }

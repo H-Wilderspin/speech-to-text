@@ -1,0 +1,24 @@
+import type { TranscriptSegment, TranscriptionEngine } from '../types';
+import type { AudioFrame } from '../../audio/streaming';
+
+export interface ReferenceVoice { id: string; name: string; embedding: number[] }
+export interface TokenPoint { text: string; sample: number }
+export interface PipelineResult {
+  text: string; isFinal: boolean; tokenPoints: TokenPoint[]; clockId: string;
+  timing: { segment: number }; acceptedSamples: number;
+}
+export interface VoiceWindow { clockId: string; startSample: number; endSample: number; speakerId?: string }
+export interface EmbeddingWindow extends Omit<VoiceWindow, 'speakerId'> { embedding: Float32Array }
+export interface Pipeline {
+  accept(frame: AudioFrame): PipelineResult;
+  finish(): PipelineResult;
+  reset(): void;
+  close(): void;
+}
+export interface LocalResponse { id: number; error?: string; segments?: TranscriptSegment[]; commandStop?: boolean }
+export interface PreparationSnapshot { phase: 'idle' | 'preparing' | 'ready' | 'error'; message: string }
+export interface LocalListeningEngine extends TranscriptionEngine {
+  getPreparationSnapshot(): PreparationSnapshot;
+  prepare(cachedOnly?: boolean): Promise<void>;
+  cancelPreparation(): void;
+}

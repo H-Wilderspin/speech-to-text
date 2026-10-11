@@ -6,3 +6,7 @@
 public/speaker/v1/speaker-runtime.mjs binary
 # Preserve upstream notice formatting without whitespace lint noise.
 public/speaker/THIRD-PARTY-NOTICES.txt -whitespace
+# Preserve every checksum-pinned public local asset exactly across Windows/Linux.
+public/local/v1/* binary
+public/local/THIRD-PARTY-NOTICES.txt -whitespace
+*.wav binary

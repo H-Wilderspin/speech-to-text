@@ -1,0 +1,42 @@
+[
+    {
+        "name":  "asr-api.mjs",
+        "bytes":  56792,
+        "hash":  "c36ec651f635ef6495f365248d594832d9ebdc0f8f9810675ab3d8cb06b6c13e"
+    },
+    {
+        "name":  "decoder.onnx",
+        "bytes":  539499,
+        "hash":  "21e2a2acd961b3ac72f55be2f10f1a285e1b0b0ba010d7c0b6eab141411b163c"
+    },
+    {
+        "name":  "encoder.onnx",
+        "bytes":  42845182,
+        "hash":  "3810755ce7c3ab26b42a8bcf39d191308fa27fb0f53358823ba46141d03b7eb3"
+    },
+    {
+        "name":  "joiner.onnx",
+        "bytes":  259572,
+        "hash":  "e085d73b593cf9b0707f370dbd656d58327d3fe36d80d849202ef81df02cb01e"
+    },
+    {
+        "name":  "pipeline-runtime.mjs",
+        "bytes":  78398,
+        "hash":  "2b0ef4213706b9e5b9e75dc4b76ab45f474e1de132700ad70a9510e72ab18135"
+    },
+    {
+        "name":  "pipeline-runtime.wasm",
+        "bytes":  13501250,
+        "hash":  "1163d12da20827b15d4db0b03cc70f44c0095b01680bf06d305ea772eee4948e"
+    },
+    {
+        "name":  "silero_vad.onnx",
+        "bytes":  643854,
+        "hash":  "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6"
+    },
+    {
+        "name":  "tokens.txt",
+        "bytes":  5048,
+        "hash":  "49e3c2646595fd907228b3c6787069658f67b17377c60aeb8619c4551b2316fb"
+    }
+]

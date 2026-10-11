@@ -1,5 +1,14 @@
 # Troubleshooting
 
+## 2026-10-11 — Saved voiceprints still show Unknown
+
+- **Context:** user-reported Pixel 8, OS/browser versions unknown; one saved speaker, no other consenting participant available. Opening-word loss is now reported resolved.
+- **Root cause:** the production browser adapter never compared live audio with stored profiles and lacks usable sample-clock alignment. This report was not evidence of a rejected similarity score. Separately, the first new local integration reproduced all-Unknown output because its word parser expected `▁` while the real sherpa API emitted spaces; the exact-text guard correctly refused malformed attribution.
+- **Solution:** after explicit user authorization, add opt-in English local name suggestions using common-clock ASR and reference windows. Recognize both tokenizer boundary forms, preserve words, and mark names `(estimate)`. Enrolment alone does not select this mode: prepare/enable it in Settings. Cached models are reused. Browser captions stay anonymous.
+- **Verification:** Chromium generated-audio integration passes known/other voice, coloured captions, no repeated sentence, offline model reuse, paced capture, command/button Stop and second-session reset. Unit tests cover ambiguity, window agreement, word integrity, lifecycle failures and erased temporary vectors. Full suite/deployment results are recorded in feasibility.
+- **Unresolved:** human accuracy, especially overlap/short turns, physical Pixel throughput and iPhone capture. An estimate is not confirmed identity; Unknown can still be appropriate. Turn off experimental names for browser captions if local processing cannot keep up.
+- **Related:** [ADR 0021](decisions/0021-experimental-local-name-suggestions.md), [manual protocol](manual-testing.md), [local asset manifest](../local-assets.json).
+
 ## 2026-10-11 — Continuous-mode Android repeated-line regression (phone retest pending)
 
 - **Report:** the user reports the latest pause update is "back to spamming out the same line over and over". This fails the physical retest; the earlier generic desktop result simulation was insufficient.

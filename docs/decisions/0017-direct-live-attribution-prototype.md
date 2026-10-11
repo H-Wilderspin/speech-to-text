@@ -3,6 +3,10 @@
 Date: 2026-10-10
 Status: Accepted research direction; production integration pending
 
+Follow-up: [ADR 0021](0021-experimental-local-name-suggestions.md) implements a
+separately opted-in mode after the user explicitly authorized estimated names
+before human negative calibration. The measurements below remain historical.
+
 ## Context
 
 The user wants live names and colours from enrolled voices. Browser recognition

@@ -51,6 +51,15 @@ passed a physical Pixel 8 retest. Speaker identification remains unavailable.
 
 8. While listening, say “command stop”. Confirm listening ends, the microphone indicator turns off, preceding speech remains and the command is omitted. Repeat with a pause between “command” and “stop”. Say “stop” alone and “command stopping” to check that neither ends listening. Check both the button and spoken command after an automatic restart. Commands act only when confirmed by the provider; record any recognition failure or delay.
 
+## Experimental live name suggestions (2026-10-11; physical retest pending)
+
+1. Close all app tabs and reopen the published site. Save a consented voiceprint or keep an existing compatible one. In Settings, choose **Prepare name suggestions**. Confirm the model-size/local-processing disclosure; no microphone should open during preparation. Only missing public model files should download. Return to captions.
+2. Tap Listen, speak several different English sentences, pause 5–15 seconds, and continue. Check exact text once, retained opening words, **Name (estimate)** labels and corresponding text colour. Names can arrive several seconds after words; first/short/uncertain words may stay Unknown. Record model/device/browser, errors, approximate delay and whether processing keeps up. Do not treat an estimate as a confirmed identity.
+3. Say “command stop”, pause and check that capture ends and the command disappears. Repeat with button Stop. Start a second session without downloading again. Test permission denial/cancellation, backgrounding, lock and returning. Errors should release capture; prepare cached models again after an interruption, or disable experimental names for browser captions.
+4. Reload, including offline after installation: the remembered enabled mode should automatically load verified models without a new download. Captions must disappear; consented profiles should remain. Changing mode clears captions. Test missing/corrupt cache, explicit retry and Cancel. Browser cache eviction can require downloading missing files again.
+5. Delete a profile in Speakers and retry listening. A stale/deleted profile must not be used. During local capture in one tab, delete its profile from a second tab; the active session should stop and discard temporary matching references. No raw audio, temporary live embedding or transcript should be in storage or network requests.
+6. With another consenting person when available, test the enrolled person, unenrolled person, two enrolled voices, rapid turns and equal/unequal-volume overlap using different phrases from enrolment. Report wrong name and Unknown separately, without sending personal recordings/embeddings. Current generated-voice checks do not establish human accuracy. iPhone and these different-person checks remain pending.
+
 ## M2 enrolment (experimental)
 
 1. Open Settings → Speakers while listening: live captions must stop before Record becomes enabled. Opening Speakers alone must not ask for microphone access or download the large voice model.

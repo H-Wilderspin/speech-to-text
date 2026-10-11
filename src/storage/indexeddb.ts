@@ -1,4 +1,5 @@
 import { profileSummary, validateProfile, type ProfileStore, type SpeakerProfile } from './profiles';
+import { notifyProfileChange } from './profile-changes';
 
 /** A distinct database per app path avoids collisions with other GitHub Pages projects. */
 export class IndexedDbProfiles implements ProfileStore {
@@ -67,7 +68,7 @@ export class IndexedDbProfiles implements ProfileStore {
 
   async save(profile: SpeakerProfile, signal: AbortSignal) {
     const safe = validateProfile(profile);
-    try { await this.transact('readwrite', (store) => store.add(safe), signal); }
+    try { await this.transact('readwrite', (store) => store.add(safe), signal); notifyProfileChange(this.name); }
     finally { safe.embedding.fill(0); }
   }
   async read(id: string, signal: AbortSignal) {
@@ -76,7 +77,7 @@ export class IndexedDbProfiles implements ProfileStore {
     try { signal.throwIfAborted(); return validateProfile(profile); }
     finally { if (Array.isArray(profile.embedding)) profile.embedding.fill(0); }
   }
-  async remove(id: string) { await this.transact('readwrite', (store) => store.delete(id)); }
-  async clear() { await this.transact('readwrite', (store) => store.clear()); }
+  async remove(id: string) { await this.transact('readwrite', (store) => store.delete(id)); notifyProfileChange(this.name); }
+  async clear() { await this.transact('readwrite', (store) => store.clear()); notifyProfileChange(this.name); }
   close() { this.closed = true; void this.database?.then((db) => db.close(), () => {}); }
 }

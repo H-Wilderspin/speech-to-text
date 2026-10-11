@@ -9,6 +9,7 @@ export interface TranscriptSegment {
   speakerId?: string;
   // Set together only by an attribution engine with sufficient voice evidence.
   speakerName?: string;
+  speakerEstimated?: boolean;
 }
 
 export interface TranscriptionSnapshot {

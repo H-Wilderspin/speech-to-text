@@ -4,8 +4,16 @@ import { Transcript } from '../features/listening/Transcript';
 import { SettingsDialog } from '../features/settings/SettingsDialog';
 import { SpeakersDialog, type SpeakerServices } from '../features/speakers/SpeakersDialog';
 import type { TranscriptionEngine } from '../transcription/types';
+import type { LocalListeningEngine } from '../transcription/local/types';
 
-export function App({ engine, createSpeakers }: { engine: TranscriptionEngine; createSpeakers: () => SpeakerServices }) {
+export function App({ engine: browserEngine, createSpeakers, localEngine }: {
+  engine: TranscriptionEngine; createSpeakers: () => SpeakerServices; localEngine?: LocalListeningEngine;
+}) {
+  const preferenceKey = `speech-to-text-name-suggestions:${new URL(import.meta.env.BASE_URL, document.baseURI).pathname}`;
+  const [localEnabled, setLocalEnabled] = useState(() => {
+    try { return Boolean(localEngine) && localStorage.getItem(preferenceKey) === 'enabled'; } catch { return false; }
+  });
+  const engine = localEnabled && localEngine ? localEngine : browserEngine;
   const snapshot = useSyncExternalStore(engine.subscribe, engine.getSnapshot);
   const [textSize, setTextSize] = useState(32);
   const [language, setLanguage] = useState('en-GB');
@@ -16,6 +24,8 @@ export function App({ engine, createSpeakers }: { engine: TranscriptionEngine; c
   const [offline, setOffline] = useState(!navigator.onLine);
   const [installFailed, setInstallFailed] = useState(false);
   const active = ['requesting-permission', 'listening', 'stopping'].includes(snapshot.phase);
+
+  useEffect(() => { if (localEnabled) void localEngine?.prepare(true); }, [localEngine, localEnabled]);
 
   useEffect(() => {
     const unwatch = watchInterruptions(() => engine.interrupt());
@@ -47,11 +57,16 @@ export function App({ engine, createSpeakers }: { engine: TranscriptionEngine; c
     <main id="captions">
       <p className={snapshot.phase === 'error' ? 'notice error' : 'sr-only'} role="status" aria-live="polite" aria-atomic="true">{snapshot.message}</p>
       {engine.unavailableReason && <p className="notice" role="alert">{engine.unavailableReason}</p>}
-      {offline && <p className="notice">You’re offline. Your browser’s speech service may need a connection.</p>}
+      {offline && <p className="notice">{localEnabled ? 'You’re offline. Local listening uses the saved models.' : 'You’re offline. Your browser’s speech service may need a connection.'}</p>}
       <Transcript segments={snapshot.segments} textSize={textSize} />
     </main>
-    <p className="sr-only" id="processing-note">Listen uses your browser’s speech service, which may send audio to its provider. Captions are kept only until you clear or reload. Details are in Settings.</p>
+    <p className="sr-only" id="processing-note">{localEnabled ? 'Local listening processes speech on this device. Names are estimates.' : 'Listen uses your browser’s speech service, which may send audio to its provider.'} Captions are kept only until you clear or reload. Details are in Settings.</p>
     {settingsOpen && !speakersOpen && <SettingsDialog active={active} textSize={textSize} onTextSize={setTextSize}
+      localEngine={localEngine} localEnabled={localEnabled} onLocalEnabled={(enabled) => {
+        if (active) return;
+        engine.clear(); setLocalEnabled(enabled);
+        try { if (enabled) localStorage.setItem(preferenceKey, 'enabled'); else localStorage.removeItem(preferenceKey); } catch { /* Session-only preference if storage is blocked. */ }
+      }}
       language={language} onLanguage={setLanguage} installFailed={installFailed} focusSpeakers={focusSpeakers}
       onSpeakers={() => { engine.stop(); setSpeakersOpen(true); }} onClose={() => {
         setSettingsOpen(false); settingsButton.current?.focus();

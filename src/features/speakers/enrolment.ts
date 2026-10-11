@@ -70,7 +70,7 @@ export class EnrolmentSession {
         sampleDurationMs: samples.length / 16, embedding: normalized,
       }, operation.signal);
       // A completed transaction wins a later cancellation; the saved list is authoritative.
-      if (!operation.signal.aborted) this.set('saved', 'Voice profile saved on this device. Use Compare recordings to test it; live speaker identification is not available yet.');
+      if (!operation.signal.aborted) this.set('saved', 'Voice profile saved on this device. Use Compare recordings to test it, or enable experimental name suggestions in Settings.');
     } catch (error) { if (!operation.signal.aborted) this.set('error', error instanceof Error ? error.message : 'Could not save this voice profile.'); }
     finally {
       samples?.fill(0); embedding?.fill(0); normalized?.fill(0);
