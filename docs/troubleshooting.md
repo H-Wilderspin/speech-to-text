@@ -5,6 +5,7 @@
 - **Symptom:** `git push origin main` returned HTTP 403, denied to `labiraus`, for `H-Wilderspin/speech-to-text`.
 - **Verified state:** Git Credential Manager lists only `labiraus`; an explicit `credential.username=H-Wilderspin` noninteractive push found no saved credentials. No token values were printed or stored.
 - **Resolved sign-in:** the user requested another login and `git credential-manager github login --username H-Wilderspin --browser` completed. GCM then listed both accounts. Use the owner's account explicitly for this repository; do not silently change its remote.
+- **Publication verified:** configured the repository-local GitHub username as `H-Wilderspin`, pushed successfully, and [Actions run 38125696202](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38125696202) deployed `bc8991b` after all 38 Linux browser tests passed. Global credentials and other repository remotes were not changed.
 
 ## 2026-10-11 — WebKit lost model files after worker disposal
 

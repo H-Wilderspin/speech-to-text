@@ -16,6 +16,12 @@ The initial publication attempt selected `labiraus` and was rejected with HTTP
 available. A further WebKit cache-lifetime regression was fixed before retrying
 publication; see [ADR 0018](decisions/0018-page-owned-public-model-cache.md).
 
+Publication succeeded on 2026-10-11: [run 38125696202](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38125696202)
+passed all 38 Linux browser tests without test skips and deployed code commit
+`bc8991b`. The live site passed model preparation, offline reload/automatic reuse
+and simulated listening/layout checks in desktop Chromium and WebKit. This
+verification does not enable automatic identification or establish phone accuracy.
+
 | Requirement | Current evidence | Remaining proof |
 |---|---|---|
 | FR-01 Listen/Stop | Automated lifecycle/restart/voice-command tests plus user-reported Pixel 8 button Stop and spoken stop working | Explicit pause-continuation result; iPhone result, versions and operating mode |

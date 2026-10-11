@@ -4,6 +4,7 @@
 
 - A microphone-independent test found worker-created model caches empty after worker disposal in Windows WebKit 27.2. Page-owned cache loading and verified buffer transfer now pass UI preparation, offline reload, automatic reuse and real native inference in Chromium and WebKit. Only the initial three model requests occur. This does not verify a physical iPhone.
 - `npm run check` passed typecheck, lint, 132 unit tests, asset verification and build. The full 38-case browser suite passed 34 cases in 38.4 s and retained four existing unsupported-Web-Audio WebKit skips. The two new cache tests run in both engines without those APIs. JS 265.57 kB / 82.29 kB gzip. See [ADR 0018](decisions/0018-page-owned-public-model-cache.md).
+- **Published:** code commit `bc8991b28fdd649a67693d74e859cc0428c89d6a`, [Actions run 38125696202](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38125696202), passed all 38 Linux browser tests in 1.1 minutes with no test skips; build and Pages deployment succeeded. On the live HTTPS site, Windows Chromium 156.0.8078.4 and WebKit 27.2 each made three initial model requests, then reloaded offline and automatically prepared the saved model with zero additional requests or microphone access. Published three-control layout, 771 px transcript height at 390 × 844, Settings navigation, cumulative-text replacement, restart and spoken stop passed using simulated recognition. No physical-device or automatic-identity pass is claimed.
 
 ## 2026-10-10 — Cached model reuse and direct attribution experiment
 
