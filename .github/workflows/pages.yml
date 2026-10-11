@@ -33,7 +33,9 @@ jobs:
       - name: Install test browsers
         run: npx playwright install --with-deps chromium webkit
       - name: Test production app at root and project paths
-        run: npm run test:e2e
+        # Real-time audio must not compete with another test's accelerated ML
+        # inference/model preparation on the shared runner. Keep every test.
+        run: npm run test:e2e -- --workers=1
       - name: Upload static site
         if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5

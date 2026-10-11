@@ -1,5 +1,17 @@
 # Troubleshooting
 
+## 2026-10-11 — Larger-model live test failed on the shared CI runner
+
+- **Observed:** first upgrade run [38133551744](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38133551744) passed 49/50 tests. Chromium paced capture timed out waiting for an estimated name; WebKit paced capture and both direct-worker known/other comparisons passed. The failure log omitted the app status, so overload versus failed matching cannot be concluded from this run.
+- **Investigation:** model preparation and accelerated inference can run concurrently with paced capture under the two-worker configuration. Resource contention is a hypothesis, not a proven production bug. Run all CI browser checks with one worker to isolate the real-time experiment; keep the production queue bound, timeout, required label and Stop assertions unchanged. Add status/caption-count/microphone diagnostics to the failed assertion without printing speech or vectors.
+- **Verification:** record the subsequent run in feasibility. A serial pass establishes this isolated workload only; it does not prove phone throughput or eliminate the need to investigate any recurring failure.
+
+## 2026-10-11 — Large model push reset during upload
+
+- **Symptom:** the first push of the 190 MB ASR upgrade failed with curl 55 / connection reset, including a buffered HTTP/1.1 retry. `ls-remote` confirmed main had not advanced despite Git printing “Everything up-to-date”. The connection's underlying failure was not isolated.
+- **Recovery:** create a temporary asset-only branch using a separate Git index; upload the first two 64 MiB encoder parts in separate commits/pushes, then push the original complete app commit to main. The smaller uploads and final push succeeded. Remove the temporary branch after confirming main contains the complete change. No main history rewrite or Git LFS pointer was introduced.
+- **Verification:** remote main advanced to `96692b8` and its Actions run started. GitHub warned about files over its recommended 50 MB size but accepted them below the enforced per-file limit. This is one successful workaround, not proof of the network root cause; verify the actual remote ref after ambiguous push output.
+
 ## 2026-10-11 — All-caps and inaccurate local captions (phone retest pending)
 
 - **Context:** optional local name mode; user confirms clear speech with people taking turns. The recognizer emits raw uppercase words; the previous renderer showed them unchanged. Desktop fixtures also reproduce omissions with the original 20M model. The exact contribution of that model versus phone acoustics to the user's wrong words is unmeasured.
