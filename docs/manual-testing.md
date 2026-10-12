@@ -7,9 +7,9 @@ reopen the published site. Listen now uses browser recognition immediately, with
 the existing pause/repetition fixes. First check ordinary words, proper nouns,
 pauses and spoken/button Stop without estimates. Then enable Settings → Prepare
 name suggestions (cached models and saved voiceprints are reused), return to
-captions and repeat. Browser wording must stay intact while name/colour estimates
-arrive later, possibly after a pause or Stop. Unknown is expected for short,
-repeated, mismatched or uncertain phrases. Check that both microphone clients stop,
+captions and repeat. Browser wording must stay intact below while name/colour estimates
+arrive above later, possibly after a pause or Stop. Short, repeated, mismatched or
+uncertain phrases remain only in the lower live pane. Check that both microphone clients stop,
 and report any capture conflict or local-processing message. With a consenting
 second person, compare turn-taking/name errors separately from word errors. Do not
 upload private speech or voiceprints. Browser-provider processing is disclosed;

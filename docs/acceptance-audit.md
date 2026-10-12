@@ -4,6 +4,8 @@ This audit preserves the README's complete scope. Implemented code and passing d
 
 Latest interface increment: [ADR 0025](decisions/0025-dark-two-pane-family-interface.md) adds dark two-pane captions, assigned speech only above, all live words below, persistent high-contrast colours/text preferences, and simplified personal registration. It changes presentation, not recognition accuracy or identity calibration. See the 2026-10-12 feasibility entry for checks.
 
+Published as `f48e18d`, [run 38258052858](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38258052858): all build checks and the full Linux browser suite passed. Published Chromium/WebKit checks passed with simulated recognition and no microphone; phone acceptance remains pending.
+
 Previous recognition increment: the larger local recognizer also failed the user's accuracy
 retest. [ADR 0023](decisions/0023-browser-first-delayed-names.md) restores browser
 words and adds optional delayed estimates without replacing text. Existing models
