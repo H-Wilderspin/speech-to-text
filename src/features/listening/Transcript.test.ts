@@ -8,6 +8,20 @@ import type { TranscriptSegment } from '../../transcription/types';
 import { unknownColour } from '../speakers/colours';
 
 describe('two caption streams', () => {
+  it('shows completed speaker evidence before Android finalization, hides inactive people only above', () => {
+    const original = [{ id: 'android', text: 'Please bring the blue book home tomorrow.', isFinal: false }];
+    const matched = delayedNames(original, [{ ...original[0]!, id: 'local', isFinal: true, speakerId: 'one', speakerName: 'Alex', speakerEstimated: true }]);
+    expect(assignedSegments(matched)).toHaveLength(1);
+    expect(assignedSegments(matched, ['one'])).toEqual([]);
+    const other = { id: 'other', text: 'Another person.', isFinal: true, speakerId: 'two', speakerName: 'Sam' };
+    expect(assignedSegments([...matched, other], ['one'])).toEqual([other]);
+    expect(liveSegments(matched)).toEqual(original);
+    const top = renderToStaticMarkup(createElement(Transcript, { segments: matched, textSize: 32, assigned: true, hiddenSpeakers: ['one'] }));
+    expect(top).not.toContain('Alex'); expect(top).not.toContain(original[0]!.text);
+    const bottom = renderToStaticMarkup(createElement(Transcript, { segments: matched, textSize: 32, hiddenSpeakers: ['one'] }));
+    expect(bottom).toContain(original[0]!.text); expect(bottom).not.toContain('Alex');
+    expect(assignedSegments(matched, [])).toHaveLength(1);
+  });
   it('keeps only completed assigned speech above, preserving all words below', () => {
     const segments: TranscriptSegment[] = [
       { id: 'a', text: 'Unknown words.', isFinal: true },

@@ -25,10 +25,40 @@ it('does not guess from short, repeated or reordered phrases', () => {
     expect(delayedNames([segment(browser!)], [segment(local!, 'local', true)]).every((part) => !part.speakerId)).toBe(true);
   }
 });
-it('keeps interim and anonymous local evidence anonymous and preserves actual speaker splits', () => {
+it('requires final local evidence, preserves browser provisional state and actual speaker splits', () => {
   const a = 'please bring the blue book to the table';
-  expect(delayedNames([{ ...segment(a), isFinal: false }], [segment(a, 'local', true)])[0]!.speakerId).toBeUndefined();
+  expect(delayedNames([{ ...segment(a), isFinal: false }], [segment(a, 'local', true)])[0]).toMatchObject({ isFinal: false, speakerId: 'voice', speakerEvidenceFinal: true });
   expect(delayedNames([segment(a)], [{ ...segment(a, 'local', true), isFinal: false }])[0]!.speakerId).toBeUndefined();
   const result = delayedNames([segment(a)], [segment('please bring the', 'one'), segment('blue book to the table', 'two', true)]);
   expect(text(result)).toBe(a); expect(result[0]!.speakerId).toBeUndefined(); expect(result.at(-1)!.speakerId).toBe('voice');
+});
+it('bridges one recognition difference with six uniquely agreeing words without labelling the difference', () => {
+  for (const [browser, local] of [
+    ['Please bring my blue book home tomorrow.', 'Please bring my new book home tomorrow.'],
+    ['Please bring my blue book home tomorrow.', 'Please bring my book home tomorrow.'],
+    ['Please bring my book home tomorrow.', 'Please bring my blue book home tomorrow.'],
+  ]) {
+    const result = delayedNames([segment(browser!)], [segment(local!, 'local', true)]);
+    expect(text(result)).toBe(browser);
+    expect(result[0]!.speakerId).toBe('voice'); expect(result.at(-1)!.speakerId).toBe('voice');
+    if (browser!.includes('blue')) expect(result.find((piece) => piece.text.includes('blue'))!.speakerId).toBeUndefined();
+  }
+});
+it('does not bridge short agreement, multiple errors, repetition or speaker changes', () => {
+  for (const local of ['Please bring my new book home.', 'Please bring my very different book home tomorrow.',
+    'Please bring my new book home tomorrow. Please bring my new book home tomorrow.']) {
+    expect(delayedNames([segment('Please bring my blue book home tomorrow.')], [segment(local, 'local', true)]).some((piece) => piece.speakerId)).toBe(false);
+  }
+  const result = delayedNames([segment('Please bring my blue book home tomorrow.')], [segment('Please bring my new', 'one', true),
+    { ...segment('book home tomorrow.', 'two', true), speakerId: 'different', speakerName: 'Different' }]);
+  expect(result.some((piece) => piece.speakerId)).toBe(false);
+});
+it('revises attributed provisional text in place and withdraws unsupported evidence', () => {
+  const local = [segment('Please bring my blue book home tomorrow.', 'local', true)];
+  const first = delayedNames([{ ...segment('Please bring my blue book home tomorrow.'), isFinal: false }], local);
+  const revised = delayedNames([{ ...segment('Please bring my blue book home tomorrow. Another sentence.'), isFinal: false }], local);
+  expect(first[0]!.id).toBe(revised[0]!.id);
+  expect(revised[0]!.speakerEvidenceFinal).toBe(true);
+  expect(revised.at(-1)!.speakerId).toBeUndefined();
+  expect(delayedNames([{ ...segment('Something completely different.'), isFinal: false }], local).some((piece) => piece.speakerId)).toBe(false);
 });

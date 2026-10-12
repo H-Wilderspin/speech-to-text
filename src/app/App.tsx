@@ -13,9 +13,9 @@ export function App({ engine: browserEngine, createSpeakers, localEngine }: {
   const engine = localEngine ?? browserEngine;
   const snapshot = useSyncExternalStore(engine.subscribe, engine.getSnapshot);
   const [preferences, setPreferences] = useState(readPreferences);
-  const { textSize, language, colours } = preferences;
+  const { textSize, language, colours, hiddenSpeakers } = preferences;
   const changePreferences = (changes: Partial<typeof preferences>) => {
-    const next = { ...preferences, ...changes }; setPreferences(next); savePreferences(next);
+    setPreferences((current) => { const next = { ...current, ...changes }; savePreferences(next); return next; });
   };
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsButton = useRef<HTMLButtonElement>(null);
@@ -55,13 +55,14 @@ export function App({ engine: browserEngine, createSpeakers, localEngine }: {
       {engine.unavailableReason && <p className="notice" role="alert">{engine.unavailableReason}</p>}
       {offline && <p className="notice">You’re offline. Your browser’s speech service may need a connection.</p>}
       <div className="caption-panes">
-        <Transcript segments={snapshot.segments} textSize={textSize} assigned colours={colours} />
+        <Transcript segments={snapshot.segments} textSize={textSize} assigned colours={colours} hiddenSpeakers={hiddenSpeakers} />
         <Transcript segments={snapshot.segments} textSize={textSize} />
       </div>
     </main>
     <p className="sr-only" id="processing-note">Listen uses your browser’s speech service, which may send audio to its provider. Delayed name estimates use saved voiceprints on this device. Captions are kept only until you clear or reload. Details are in Settings.</p>
     {settingsOpen && <SettingsDialog active={active} textSize={textSize} onTextSize={(textSize) => changePreferences({ textSize })}
       localEngine={localEngine} createSpeakers={createSpeakers} colours={colours} onColours={(colours) => changePreferences({ colours })}
+      hiddenSpeakers={hiddenSpeakers} onHiddenSpeakers={(hiddenSpeakers) => changePreferences({ hiddenSpeakers })}
       language={language} onLanguage={(language) => changePreferences({ language })} installFailed={installFailed}
       onStop={() => engine.stop()} onClose={() => { setSettingsOpen(false); settingsButton.current?.focus(); }} />}
   </div>;

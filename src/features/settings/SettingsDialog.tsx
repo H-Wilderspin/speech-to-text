@@ -5,12 +5,13 @@ import { SpeakerSettings, type SpeakerServices } from '../speakers/SpeakerSettin
 import type { SpeakerColourChoices } from '../speakers/colours';
 import { Icon } from '../../shared/Icon';
 
-export function SettingsDialog({ active, textSize, onTextSize, language, onLanguage, installFailed, onClose, localEngine, createSpeakers, colours, onColours, onStop }: {
+export function SettingsDialog({ active, textSize, onTextSize, language, onLanguage, installFailed, onClose, localEngine, createSpeakers, colours, onColours, onStop, hiddenSpeakers, onHiddenSpeakers }: {
   active: boolean; textSize: number; onTextSize: (size: number) => void;
   language: string; onLanguage: (language: string) => void; installFailed: boolean;
   onClose: () => void; onStop: () => void;
   localEngine?: LocalListeningEngine; createSpeakers: () => SpeakerServices;
   colours: SpeakerColourChoices; onColours: (colours: SpeakerColourChoices) => void;
+  hiddenSpeakers: string[]; onHiddenSpeakers: (ids: string[]) => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -37,7 +38,8 @@ export function SettingsDialog({ active, textSize, onTextSize, language, onLangu
         </select>
       </label>
     </section>
-    <SpeakerSettings createServices={createSpeakers} canRecord={!active} onStop={onStop} colours={colours} onColours={onColours} />
+    <SpeakerSettings createServices={createSpeakers} canRecord={!active} onStop={onStop} colours={colours} onColours={onColours}
+      hiddenSpeakers={hiddenSpeakers} onHiddenSpeakers={onHiddenSpeakers} />
     {localEngine && <NameSuggestions engine={localEngine} />}
     {installFailed && <p role="status">Offline installation unavailable.</p>}
     <details><summary>About</summary>

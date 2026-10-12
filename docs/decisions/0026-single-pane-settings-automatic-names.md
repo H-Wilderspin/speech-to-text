@@ -5,6 +5,9 @@ Status: Accepted; supersedes the name toggle and nested Settings flow in ADRs 00
 
 ## Context
 
+Profile pills gain an activity button in [ADR 0027](0027-speaker-visibility-and-provisional-attribution.md),
+which also separates local evidence completion from browser finalization.
+
 The user requests full-viewport, vertically scrolling Settings with registration,
 colours and text controls on one page. They want names automatically for registered
 people in the upper transcript, with no labels in the live lower transcript.

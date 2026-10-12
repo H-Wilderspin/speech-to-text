@@ -34,6 +34,11 @@ inline registration and protected colour/delete speaker pills. Names automatical
 prepare for registered profiles and only appear in the upper assigned transcript;
 the live lower transcript never shows names. No enable checkbox. See ADR 0026.
 
+**Speaker activity (2026-10-12):** each pill also toggles visibility in Who said what.
+Keep hidden people's voiceprints in matching; filter only the upper display and
+persist the choice. Completed local evidence may label provisional browser words
+without changing their finalization state. See ADR 0027.
+
 - Use **TypeScript** with React and Vite unless an approved ADR changes the choice. Keep the output statically deployable.
 - Keep separate modules for `audio`, `transcription`, `diarization`, `identification`, `storage`, and UI features. UI must not directly depend on a specific inference vendor or model runtime.
 - Put interfaces and pure transformation / decision logic at boundaries; use adapters for browser APIs and external providers. Prefer composition and dependency injection over global singletons.

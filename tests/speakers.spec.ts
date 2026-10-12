@@ -295,7 +295,13 @@ test('settings fills the viewport with inline protected speaker pills and a retu
   });
   await page.reload(); await page.getByRole('button', { name: 'Settings', exact: true }).click();
   const pill = page.locator('.speaker-pill').filter({ hasText: 'Alex' });
-  await expect(pill.getByRole('button')).toHaveCount(2);
+  await expect(pill.getByRole('button')).toHaveCount(3);
+  const activity = pill.getByRole('button', { name: 'Show Alex in Who said what', exact: true });
+  await expect(activity).toHaveAttribute('aria-pressed', 'true'); await activity.click();
+  await expect(activity).toHaveAttribute('aria-pressed', 'false');
+  await page.reload(); await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(activity).toHaveAttribute('aria-pressed', 'false');
+  await expect(pill.getByRole('button')).toHaveCount(3);
   await pill.getByRole('button', { name: 'Change colour for Alex' }).click();
   await page.getByRole('group', { name: 'Colour for Alex' }).getByRole('button', { name: 'Gold', exact: true }).click();
   await expect(pill.locator('strong')).toHaveCSS('color', 'rgb(255, 224, 138)');
@@ -306,6 +312,7 @@ test('settings fills the viewport with inline protected speaker pills and a retu
   await pill.getByRole('button', { name: 'Delete Alex', exact: true }).click();
   await page.getByRole('button', { name: 'Confirm delete Alex', exact: true }).click();
   await expect(pill).toHaveCount(0);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('speech-to-text-display:/')!).hiddenSpeakers)).toEqual([]);
   await page.locator('#add-speaker-title').scrollIntoViewIfNeeded();
   expect(await page.getByRole('dialog').evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
   await page.screenshot({ path: `test-results/settings-single-pane-${test.info().project.name}.png` });

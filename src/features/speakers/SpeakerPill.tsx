@@ -3,9 +3,10 @@ import type { ProfileSummary } from '../../storage/profiles';
 import { Icon } from '../../shared/Icon';
 import { colourNames, speakerColour, speakerColours, type SpeakerColourChoices } from './colours';
 
-export function SpeakerPill({ profile, colours, disabled, onColour, onDelete }: {
+export function SpeakerPill({ profile, colours, disabled, onColour, onDelete, active, onToggle }: {
   profile: ProfileSummary; colours: SpeakerColourChoices; disabled: boolean;
   onColour(colour: string): void; onDelete(): void;
+  active: boolean; onToggle(): void;
 }) {
   const [action, setAction] = useState<'colour' | 'delete' | null>(null);
   const deleteButton = useRef<HTMLButtonElement>(null);
@@ -13,6 +14,9 @@ export function SpeakerPill({ profile, colours, disabled, onColour, onDelete }: 
   return <li className="speaker-entry">
     <div className="speaker-pill" style={{ borderColor: colour }}>
       <strong style={{ color: colour }}>{profile.displayName}</strong>
+      <button className="icon-button speaker-activity" aria-label={`Show ${profile.displayName} in Who said what`} aria-pressed={active}
+        title={active ? 'Hide from Who said what' : 'Show in Who said what'} disabled={disabled} onClick={onToggle}>
+        <Icon name={active ? 'visible' : 'hidden'} /></button>
       <button className="icon-button" aria-label={`Change colour for ${profile.displayName}`} aria-expanded={action === 'colour'}
         disabled={disabled} onClick={() => setAction(action === 'colour' ? null : 'colour')}><Icon name="colour" /></button>
       <button className="icon-button" ref={deleteButton} aria-label={`Delete ${profile.displayName}`} aria-expanded={action === 'delete'}

@@ -1,7 +1,7 @@
 import { validColour, type SpeakerColourChoices } from '../speakers/colours';
 
-export type Preferences = { textSize: number; language: string; colours: SpeakerColourChoices };
-const defaults: Preferences = { textSize: 32, language: 'en-GB', colours: {} };
+export type Preferences = { textSize: number; language: string; colours: SpeakerColourChoices; hiddenSpeakers: string[] };
+const defaults: Preferences = { textSize: 32, language: 'en-GB', colours: {}, hiddenSpeakers: [] };
 const key = () => `speech-to-text-display:${new URL(import.meta.env.BASE_URL, document.baseURI).pathname}`;
 export function readPreferences(): Preferences {
   try {
@@ -11,6 +11,7 @@ export function readPreferences(): Preferences {
       textSize: Number.isInteger(data.textSize) && data.textSize >= 28 && data.textSize <= 56 ? data.textSize : 32,
       language: ['en-GB', 'en-US', 'fr-FR', 'de-DE', 'es-ES'].includes(data.language) ? data.language : 'en-GB',
       colours: Object.fromEntries(Object.entries(data.colours ?? {}).filter((entry): entry is [string, string] => validColour(entry[1]))),
+      hiddenSpeakers: Array.isArray(data.hiddenSpeakers) ? [...new Set(data.hiddenSpeakers.filter((id: unknown): id is string => typeof id === 'string' && id.length > 0 && id.length <= 100))] as string[] : [],
     };
   } catch { return defaults; }
 }

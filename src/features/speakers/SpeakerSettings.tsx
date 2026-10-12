@@ -8,9 +8,10 @@ import type { SpeakerColourChoices } from './colours';
 import { SpeakerPill } from './SpeakerPill';
 
 export type SpeakerServices = { store: ProfileStore; session: EnrolmentSession; comparison: VoiceComparisonSession };
-export function SpeakerSettings({ onStop, createServices, canRecord, colours, onColours }: {
+export function SpeakerSettings({ onStop, createServices, canRecord, colours, onColours, hiddenSpeakers, onHiddenSpeakers }: {
   onStop: () => void; createServices: () => SpeakerServices; canRecord: boolean;
   colours: SpeakerColourChoices; onColours: (colours: SpeakerColourChoices) => void;
+  hiddenSpeakers: string[]; onHiddenSpeakers: (ids: string[]) => void;
 }) {
   const comparisonButton = useRef<HTMLButtonElement>(null);
   const [{ store, session, comparison }] = useState(createServices);
@@ -40,6 +41,7 @@ export function SpeakerSettings({ onStop, createServices, canRecord, colours, on
     try {
       if (id) await store.remove(id); else await store.clear();
       onColours(id ? Object.fromEntries(Object.entries(colours).filter(([key]) => key !== id)) : {});
+      onHiddenSpeakers(id ? hiddenSpeakers.filter((key) => key !== id) : []);
       await refresh();
     }
     catch (error) { if (alive.current) setStorageError(error instanceof Error ? error.message : 'Could not delete speaker profiles.'); }
@@ -57,6 +59,8 @@ export function SpeakerSettings({ onStop, createServices, canRecord, colours, on
       <h3 id="saved-speakers-title">People &amp; colours</h3>
       {profiles.length === 0 && !storageError && <p>No speakers yet.</p>}
       <ul className="speaker-list">{profiles.map((profile) => <SpeakerPill key={profile.id} profile={profile} colours={colours}
+        active={!hiddenSpeakers.includes(profile.id)} onToggle={() => onHiddenSpeakers(hiddenSpeakers.includes(profile.id)
+          ? hiddenSpeakers.filter((id) => id !== profile.id) : [...hiddenSpeakers, profile.id])}
         disabled={busy || storageBusy} onColour={(colour) => onColours({ ...colours, [profile.id]: colour })} onDelete={() => void remove(profile.id)} />)}</ul>
       {storageError && <p role="alert" className="error">{storageError}</p>}
       {(profiles.length > 0 || storageError) && <details open={moreOpen} onToggle={(event) => setMoreOpen(event.currentTarget.open)}><summary>More</summary>

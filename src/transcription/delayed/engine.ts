@@ -95,7 +95,8 @@ export class DelayedNamesEngine implements LocalListeningEngine {
       this.notice = `Speaker estimates unavailable: ${local.message}${active(browser) ? ' Browser captions continue.' : ''}`;
     }
     const finishing = !active(browser) && active(local);
-    const segments = [...this.history, ...delayedNames(browser.segments, this.namesStarted ? local.segments : [])];
+    const currentSegments = delayedNames(browser.segments, this.namesStarted ? local.segments : []);
+    const segments = [...this.history, ...currentSegments];
     let excess = segments.reduce((total, segment) => total + segment.text.length, 0) - 100000;
     while (excess > 0 && segments.length) {
       const first = segments[0]!;
@@ -109,9 +110,16 @@ export class DelayedNamesEngine implements LocalListeningEngine {
       ? !this.language.startsWith('en') ? 'Names currently support English.'
         : preparation.phase === 'error' ? 'Names unavailable. Retry in Settings.'
           : preparation.phase === 'ready' && this.local.unavailableReason ? 'Names unavailable on this browser.' : 'Preparing names…' : undefined);
+    const speakerStatus = this.profileError ?? (this.namesStarted
+      ? local.phase === 'error' ? local.message
+        : currentSegments.some((segment) => segment.speakerId) ? 'Names are matching.'
+          : local.segments.some((segment) => segment.speakerId) ? 'Voice matched; waiting for matching words.'
+            : local.segments.some((segment) => segment.text.trim()) ? 'Speech received; no saved voice matched yet.'
+              : 'No local speech recognized yet.'
+      : this.hasSpeakers && preparation.phase === 'ready' ? 'Names ready.' : undefined);
     this.snapshot = { phase: finishing ? 'stopping' : browser.phase,
       message: browser.phase === 'error' ? browser.message : finishing ? 'Finishing speaker estimates…' : notice ?? browser.message,
-      ...(notice && browser.phase !== 'error' ? { notice } : {}), segments };
+      ...(notice && browser.phase !== 'error' ? { notice } : {}), ...(speakerStatus ? { speakerStatus } : {}), segments };
     this.listeners.forEach((listener) => listener());
   }
   start(language: string) {

@@ -32,6 +32,18 @@ it('shows browser words immediately, then estimates; local recognition never ove
   f.local.emit({ segments: [{ ...evidence[0]!, text: 'Incorrect local words that must never replace the browser text.' }] });
   expect(f.engine.getSnapshot().segments).toEqual(words);
 });
+it('reports which stage is waiting without revealing speech in the diagnostic', () => {
+  const f = fixture();
+  expect(f.engine.getSnapshot().speakerStatus).toBe('No local speech recognized yet.');
+  f.local.emit({ segments: words });
+  expect(f.engine.getSnapshot().speakerStatus).toBe('Speech received; no saved voice matched yet.');
+  f.local.emit({ segments: evidence });
+  expect(f.engine.getSnapshot().speakerStatus).toBe('Voice matched; waiting for matching words.');
+  f.browser.emit({ segments: words.map((word) => ({ ...word, isFinal: false })) });
+  expect(f.engine.getSnapshot().speakerStatus).toBe('Names are matching.');
+  expect(f.engine.getSnapshot().segments[0]).toMatchObject({ isFinal: false, speakerEvidenceFinal: true, speakerId: 'a' });
+  f.engine.dispose();
+});
 it('keeps browser captions running when local processing fails', () => {
   const f = fixture(); f.local.emit({ phase: 'error', message: 'Too slow.' }); f.browser.emit({ segments: words });
   expect(f.engine.getSnapshot()).toMatchObject({ phase: 'listening', notice: expect.stringContaining('Too slow.'), segments: words });
@@ -56,6 +68,7 @@ it('browser voice Stop releases local capture and accepts delayed labels while d
 it('isolates evidence across manual sessions and Clear', () => {
   const f = fixture(); f.browser.emit({ segments: words }); f.local.emit({ segments: evidence }); f.engine.stop();
   f.engine.start('en-GB'); f.browser.emit({ segments: words });
+  expect(f.engine.getSnapshot().speakerStatus).toBe('No local speech recognized yet.');
   expect(f.engine.getSnapshot().segments).toHaveLength(2);
   expect(f.engine.getSnapshot().segments[0]!.speakerId).toBe('a'); expect(f.engine.getSnapshot().segments[1]!.speakerId).toBeUndefined();
   f.engine.stop(); f.engine.clear(); f.local.emit({ segments: evidence }); expect(f.engine.getSnapshot().segments).toEqual([]);

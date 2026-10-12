@@ -1,5 +1,25 @@
 # Manual validation and acceptance gates
 
+## Speaker activity and empty Who said what retest
+
+1. Close every app copy and reopen the published site with a saved English profile.
+   In Settings its eye button should be on. Speak a few distinct full sentences,
+   pausing between them. Check for delayed upper text while Listen is still active,
+   a single updating sentence below, and retained opening words after pauses.
+2. Toggle the matching person's eye off while listening. Their existing and new
+   assigned speech should disappear above, while lower text and capture continue.
+   Toggle on to restore retained upper text. Reload and verify the choice persists.
+   Include another speaker when available to ensure only the selected person hides.
+3. If the upper pane stays empty during listening and after Stop, open Settings
+   and report the short matching status verbatim. It distinguishes no local words,
+   no voice match, and a matched voice with no matching phrase. Do not send private
+   audio or transcript content. Also note Android/Chrome versions if available.
+4. Check spoken and button Stop release the microphone. Test the three pill buttons
+   with enlarged text/TalkBack or VoiceOver; delete must still require confirmation.
+
+The current report is empty after Stop with no message. Desktop/generated tests
+cannot confirm the complete cause or resolution on the physical Pixel 8.
+
 ## Current retest: transcription first, delayed estimates
 
 The user reports the larger local ASR is still inaccurate. Close all copies and
@@ -22,7 +42,7 @@ approximate name delay if available. Earlier local-only steps below are historic
    scroll vertically, and keep a return icon beside the title. Return/Escape goes
    straight to captions and restores focus to Settings without clearing text.
 2. Text controls, People & colours and Add a speaker are on the same page. Each
-   profile has exactly two pill buttons. Change its colour, reload and confirm it
+   profile has exactly three pill buttons (activity, colour and delete). Change its colour, reload and confirm it
    persists. Tap delete then Cancel: the profile must remain. Only confirming
    deletion removes it. Check with TalkBack/VoiceOver when a device is available.
 3. With an existing English voiceprint, reopen the app and Listen. Names should

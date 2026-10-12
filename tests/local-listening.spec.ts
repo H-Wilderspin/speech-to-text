@@ -150,7 +150,7 @@ test('real local worker reuses offline models and suggests a known generated voi
   expect(downloads.slice(repairStart).every((url) => url.includes('/local/v2/'))).toBe(true);
 });
 
-test('browser words receive delayed AudioWorklet estimates and both captures stop together', async ({ page }) => {
+test('Android provisional words receive delayed names and activity filters only the upper pane', async ({ page }) => {
   test.setTimeout(150000);
   await page.goto('/');
   const supported = await page.evaluate(() => Boolean(globalThis.AudioContext && globalThis.AudioWorkletNode));
@@ -165,6 +165,7 @@ test('browser words receive delayed AudioWorklet estimates and both captures sto
       abort() { Object.assign(window, { delayedBrowserStopped: true }); }
     }
     Object.assign(window, { SpeechRecognition: Recognition });
+    Object.defineProperty(navigator, 'userAgent', { value: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) Chrome/130.0.0.0 Mobile Safari/537.36' });
     let calls = 0; let stops = 0; const contexts: AudioContext[] = [];
     const NativeAudioContext = globalThis.AudioContext;
     const sources = new WeakMap<MediaStream, { release: () => void }>();
@@ -198,11 +199,12 @@ test('browser words receive delayed AudioWorklet estimates and both captures sto
   const assigned = page.getByRole('region', { name: 'Assigned transcript' });
   const browserText = 'The morning is bright and the room is quiet. Please bring a glass of water to the table.';
   const browserResult = async (stop = false) => page.evaluate(({ text, stop }) => {
-    const recognition = (window as Window & { delayedBrowserRecognition?: { onresult(event: unknown): void } }).delayedBrowserRecognition!;
-    recognition.onresult({ results: [text, ...(stop ? ['command stop'] : [])].map((transcript) => ({ 0: { transcript, confidence: .9 }, length: 1, isFinal: true })) });
+    const recognition = (window as Window & { delayedBrowserRecognition?: { onresult(event: unknown): void; onend(): void } }).delayedBrowserRecognition!;
+    recognition.onresult({ results: [{ 0: { transcript: stop ? text + ' command stop' : text, confidence: .9 }, length: 1, isFinal: true }] });
+    if (stop) recognition.onend();
   }, { text: browserText, stop });
   await browserResult();
-  await expect(transcript.locator('p.confirmed')).toHaveText(browserText);
+  await expect(transcript.locator('p.interim')).toContainText(browserText);
   await expect(transcript.getByText('Generated test voice (estimate)', { exact: true })).toHaveCount(0);
   // Include safe diagnostics if inference fails before a label can render.
   // Only generated fixtures run here; do not print transcript or embeddings.
@@ -220,10 +222,22 @@ test('browser words receive delayed AudioWorklet estimates and both captures sto
   const textColour = await known.locator('p').evaluate((element) => getComputedStyle(element).color);
   expect(textColour).toBe(await known.locator('.caption-speaker').evaluate((element) => getComputedStyle(element).color));
   expect(textColour).not.toBe('rgb(209, 213, 219)'); // Unknown's neutral colour.
-  expect((await transcript.locator('p.confirmed').allTextContents()).join('')).toBe(browserText);
-  await expect(transcript.locator('p.confirmed')).toHaveCount(1);
+  expect(await transcript.locator('p.interim').evaluate((element) => element.firstChild?.textContent)).toBe(browserText);
+  await expect(transcript.locator('p.interim')).toHaveCount(1);
   await expect(transcript.locator('.caption-speaker')).toHaveCount(0);
   await expect(assigned).not.toContainText('Unknown speaker');
+  // Hiding a reference must not remove it from matching, stop capture or touch live words.
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  const activity = page.getByRole('button', { name: 'Show Generated test voice in Who said what', exact: true });
+  await expect(activity).toHaveAttribute('aria-pressed', 'true'); await activity.click();
+  await expect(activity).toHaveAttribute('aria-pressed', 'false');
+  await page.getByRole('button', { name: 'Back to captions' }).click();
+  await expect(assigned.locator('.caption')).toHaveCount(0);
+  await expect(transcript.locator('p.interim')).toContainText(browserText);
+  expect(await stats()).toEqual({ calls: 1, stops: 0 });
+  await page.getByRole('button', { name: 'Settings', exact: true }).click(); await activity.click();
+  await page.getByRole('button', { name: 'Back to captions' }).click();
+  await expect(known).toBeVisible();
   await page.screenshot({ path: `test-results/two-streams-${test.info().project.name}.png` });
   await browserResult(true);
   await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled({ timeout: 45000 });

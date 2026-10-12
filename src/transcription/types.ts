@@ -12,12 +12,16 @@ export interface TranscriptSegment {
   // Set together only by an attribution engine with sufficient voice evidence.
   speakerName?: string;
   speakerEstimated?: boolean;
+  /** Final local voice/phrase evidence; browser wording may still be provisional. */
+  speakerEvidenceFinal?: boolean;
 }
 
 export interface TranscriptionSnapshot {
   phase: SessionPhase;
   message: string;
   notice?: string;
+  /** Short local processing diagnostic, shown only in Settings; no audio/text. */
+  speakerStatus?: string;
   segments: readonly TranscriptSegment[];
 }
 

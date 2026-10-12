@@ -13,16 +13,16 @@ export function Caption({ segment, showName = true, colours = {}, live = false }
   </div>;
 }
 
-export function Transcript({ segments, textSize, assigned = false, colours = {} }: { segments: readonly TranscriptSegment[]; textSize: number; assigned?: boolean; colours?: SpeakerColourChoices }) {
+export function Transcript({ segments, textSize, assigned = false, colours = {}, hiddenSpeakers = [] }: { segments: readonly TranscriptSegment[]; textSize: number; assigned?: boolean; colours?: SpeakerColourChoices; hiddenSpeakers?: readonly string[] }) {
   const viewport = useRef<HTMLDivElement>(null);
   const following = useRef(true);
 
   useLayoutEffect(() => {
     const element = viewport.current;
     if (element && following.current) element.scrollTop = element.scrollHeight;
-  }, [segments, textSize]);
+  }, [segments, textSize, hiddenSpeakers]);
 
-  const visible = assigned ? assignedSegments(segments) : liveSegments(segments);
+  const visible = assigned ? assignedSegments(segments, hiddenSpeakers) : liveSegments(segments);
   return <section className="transcript-area" aria-label={assigned ? 'Who said what' : 'Live captions'}>
     <h2 className="pane-title">{assigned ? 'Who said what' : 'Live'}</h2>
     <div className="transcript" ref={viewport} role="region" aria-label={assigned ? 'Assigned transcript' : 'Live transcript'} tabIndex={0}

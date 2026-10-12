@@ -2,6 +2,13 @@
 
 This audit preserves the README's complete scope. Implemented code and passing desktop tests do not satisfy physical-device or human-speaker gates. The goal is not complete.
 
+Latest user report: Who said what is empty even after Stop, without an error.
+[ADR 0027](decisions/0027-speaker-visibility-and-provisional-attribution.md) adds
+per-person upper-pane visibility, fixes browser-final gating of completed speaker
+evidence and admits bounded phrase differences. New Settings diagnostics expose
+the stage awaiting evidence. These address reproduced code paths; the user's
+physical-device result remains unresolved until retested. See current feasibility.
+
 Current increment: [ADR 0026](decisions/0026-single-pane-settings-automatic-names.md)
 replaces nested Settings and the names toggle with one full-screen scrolling pane,
 protected colour/delete pills and automatic model preparation for saved profiles.

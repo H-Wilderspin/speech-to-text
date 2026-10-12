@@ -1,5 +1,13 @@
 # Feasibility evidence
 
+## 2026-10-12 — Speaker activity and upper-pane attribution gates
+
+- **User evidence:** the upper pane remains empty even after Stop, without a preparation/error message. No new audio, match scores, device/browser version or microphone observation. The physical cause and fix remain unconfirmed.
+- **Change:** ADR 0027 adds persisted per-profile activity controls that filter only upper speech, retaining inactive reference voices in matching. Completed local evidence now labels corresponding provisional browser words before Android native end, without promoting browser finality or appending revisions. Six unique ordered matching words may span one recognition difference; unmatched words, ambiguous/reordered matches and speaker-crossing fallback spans remain unassigned. Biometric thresholds/models are unchanged. A short diagnostic in Settings identifies the stage awaiting evidence.
+- **Checks:** Windows Node 22.20.0; typecheck, lint, 196 unit tests, asset checks and production build passed. The real generated-audio Chromium integration shows upper attribution before Android finalization, toggles it off/on while keeping the lower sentence unchanged, verifies one uninterrupted capture and tests spoken/button Stop. Other desktop browser results and final publication are recorded below when complete.
+- **Local completion:** full browser run passed 51 checks in 2.6 minutes with five existing Windows WebKit audio skips and no failures. Both browsers verified three-button pills, activity persistence and cleanup after deletion. The populated Settings and Android two-pane screenshots were inspected. Final `npm run check` passed again after refining diagnostic wording/session isolation; production JS 290.28 kB / 89.69 kB gzip, CSS 6.13 kB / 2.03 kB gzip.
+- **Limits:** synthetic models/voices and simulated browser callbacks cannot establish phone microphone coexistence or human identity accuracy. The new bounded phrase fallback is experimental correspondence, not calibrated diarization. Hiding a speaker cannot suppress unmatched speech below, and their reference remains in inference to avoid biasing matches toward others. No new models, dependencies, remote processing or retained audio.
+
 ## 2026-10-12 — Single-pane Settings and automatic names
 
 - **Change:** ADR 0026 makes Settings full-viewport with vertical scrolling and a sticky return/title row. Registration is inline. Speaker pills have colour and protected-delete buttons. The name toggle is removed; compatible profiles automatically prepare cached models, and only assigned final text shows names above. Live text remains grey, unchanged and label-free below.

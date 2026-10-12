@@ -1,5 +1,13 @@
 # Troubleshooting
 
+## 2026-10-12 — Empty Who said what (phone resolution unconfirmed)
+
+- **Report:** the user sees no upper-pane text during listening or after Stop and no preparation/error message. Device remains presumed Pixel 8; no new browser version, recording or diagnostic trace supplied.
+- **Reproduced gates:** `reconcileAndroidResults` intentionally keeps native-cycle text provisional; the old `delayedNames` and `assignedSegments` each rejected it even with final matching local evidence. Also, six contiguous matching words failed on a single recognition difference in a seven-word phrase. These limitations are proven by deterministic fixtures; neither alone proves the full cause of the user's after-Stop failure.
+- **Change:** separate final speaker evidence from browser finality, replace matched provisional slices in place, and allow six uniquely agreeing words across at most one differing word, with a consistent final local identity. Never label unmatched words or change browser wording. Settings now reports no local recognized words, no voice match, a voice match without phrase correspondence, or matching names.
+- **Verification:** new unit fixtures cover corrections, ambiguity, speaker boundaries and unchanged live text. The generated AudioWorklet integration simulates Android and requires upper names before native end/Stop, then exercises activity off/on without restarting capture. Executed results are in feasibility.
+- **Unresolved:** physical dual capture, human voice matching, short/repeated/differing recognitions and the exact phone failure. Retest the deployed app; if empty after Stop, request the short Settings matching status, not private audio or transcript text. See ADR 0027.
+
 ## 2026-10-12 — Preparation-only browser tests and Windows WebKit audio support
 
 - **Context:** Windows Playwright WebKit 27.2, automatic names preparation test.

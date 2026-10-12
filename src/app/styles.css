@@ -65,6 +65,8 @@ dialog section { border-top: 1px solid #46515c; margin-top: 1.5rem; padding-top:
 .speaker-pill { display: flex; align-items: center; gap: .35rem; border: 1px solid; border-radius: 999px; padding: .4rem .5rem .4rem 1rem; }
 .speaker-pill strong { flex: 1; min-width: 0; }
 .speaker-pill .icon-button { flex-shrink: 0; border-radius: 50%; }
+.speaker-activity[aria-pressed=true] { color: #99dfd0; border-color: #99dfd0; }
+.speaker-activity[aria-pressed=false] { border-style: dashed; }
 .colour-options { display: flex; flex-wrap: wrap; gap: .5rem; padding: .75rem .25rem; }
 dialog .colour-swatch { width: 48px; height: 48px; padding: 8px; margin: 0; position: relative; }
 .colour-swatch > span:first-child { display: block; width: 100%; height: 100%; border-radius: 50%; }

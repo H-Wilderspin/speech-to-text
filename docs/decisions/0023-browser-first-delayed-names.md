@@ -8,6 +8,9 @@ The opt-in toggle is superseded by automatic preparation for registered profiles
 
 ## Context
 
+Attribution now accepts independently completed speaker evidence on provisional
+browser captions and bounded recognition differences; see [ADR 0027](0027-speaker-visibility-and-provisional-attribution.md).
+
 After ADR 0022's larger local recognizer, the user still reports unsatisfactory
 transcription accuracy and explicitly prefers accurate words with delayed speaker
 detection. More successful generated clips cannot override that failed phone

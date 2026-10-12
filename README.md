@@ -2,9 +2,18 @@
 
 ## Implementation status — 2026-10-12
 
+**Speaker activity and upper-pane update:** each registered person has an eye
+button in Settings. Turning it off hides their speech from Who said what, including
+existing text; turning it back on restores it. The choice survives reloads. Their
+voiceprint remains in matching and all speech remains visible below. Completed
+speaker evidence can now appear above before Android finalizes its live sentence,
+and matching tolerates one differing word between two unique three-word anchors.
+Settings shows a short matching status for diagnosing an empty pane. The user's
+after-Stop failure still needs a phone retest; see [ADR 0027](docs/decisions/0027-speaker-visibility-and-provisional-attribution.md).
+
 **Single-pane Settings:** full-viewport scrolling with a return icon beside the
 title. Registration, text options and speaker colours are on the same page.
-Registered people appear as pills with colour and protected-delete buttons.
+Registered people appear as pills with activity, colour and protected-delete buttons.
 Names prepare automatically for saved profiles; there is no enable checkbox.
 See [ADR 0026](docs/decisions/0026-single-pane-settings-automatic-names.md).
 
@@ -134,7 +143,7 @@ This README is the **product specification and development guide** for Codex. `A
 
 ### Enrolled speakers
 
-1. Open **Settings**, enter a display name under Add a speaker, and record a short sample using the explicit Record action. Registered people appear above as pills with colour and protected-delete buttons.
+1. Open **Settings**, enter a display name under Add a speaker, and record a short sample using the explicit Record action. Registered people appear above as pills with activity, colour and protected-delete buttons.
 2. Generate and store a reusable voice embedding / voiceprint **on the device when technically feasible**. Let users inspect and delete individual profiles.
 3. During listening, show final assigned speech with names and colours in the upper pane. Unassigned speech appears only in the live pane below, without a speaker label.
 4. When possible, distinguish different unknown voices as **Speaker 1**, **Speaker 2**, etc. within the current session; these ephemeral labels are not identities.
