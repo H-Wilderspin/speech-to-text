@@ -1,5 +1,36 @@
 # Feasibility evidence
 
+## 2026-10-12 - Audiobook excluded; strict boundary clipping retained
+
+- **Setup:** current `index-BAIoHAOy.js`, one saved reference, one listening session.
+  The user confirms the two middle displayed passages came from a recorded
+  audiobook. The surrounding user speech receives three named spans. Device/OS/
+  browser versions are not reconfirmed; no private wording or audio is retained.
+- **Trace:** 33 checked windows, 10 matched, zero ambiguous. The first seven checks
+  match at about 0.667-0.835. The later user phrase has two matches at 0.653 and
+  0.727. The low-score middle run (checks 9-28) ranges from about -0.094 to 0.124;
+  the corresponding recognized passages remain unnamed. This is an observed
+  rejection of recorded unenrolled speech, not validation on another live person.
+- **Boundary evidence:** after the second and last displayed user phrases, checks
+  at about 27.6 and 87.8 seconds score 0.410 and 0.492. Settling each local phrase
+  adds one known and one unknown span. All three local known spans are represented
+  in the upper pane (128 characters total); the tails are already unnamed before
+  text correspondence. The first displayed user sentence is complete. Individual
+  token positions and audio are not logged, so silence dilution versus another
+  acoustic cause for the weak boundary embeddings is not established.
+- **Lifecycle:** all 1,523,072 samples drain (95.192 seconds at 16 kHz); final local
+  pending count is zero. No timing/token mismatch or capture failure is reported.
+  This run does not reproduce a processing lock or lost local named span.
+- **User decision:** explicitly keep strict word-by-word matching after reviewing
+  the alternative of whole-phrase estimates and its mixed-speaker risk. Keep two
+  agreeing covering windows, the unknown/conflict veto and 0.60 baseline. No
+  runtime, model, identity threshold or alignment change in this follow-up.
+- **Next experiment:** measure voice-window speech content at utterance boundaries
+  using generated known/unknown turns and silence before considering a change to
+  sampling. Preserve unknown and mixed-speaker rejection; do not propagate a name
+  from the sentence interior. This experiment is proposed, not implemented or
+  validated. Strict boundary coverage remains incomplete.
+
 ## 2026-10-12 - Current trace isolates a text-correspondence bottleneck
 
 - **User evidence:** current deployed build `index-BsfattpN.js`; all displayed

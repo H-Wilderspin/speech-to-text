@@ -2,13 +2,14 @@
 
 ## Implementation status — 2026-10-12
 
-**Latest attribution trace:** the current build matches nine of fourteen voice
-windows and produces three local named spans, but only one transfers to browser
-words. Capture drains normally. A reproduced repeated-phrase limitation is corrected:
-matched surrounding text can distinguish occurrences while each word still needs
-its own speaker evidence. See [ADR 0031](docs/decisions/0031-context-for-repeated-wording.md).
-The user confirms all speech was theirs; rejected voice windows, short phrases and
-recognizer differences remain limitations. Sustained attribution is not yet accepted.
+**Latest attribution trace:** three locally named spans now reach the upper pane;
+the user confirms the excluded middle passages were a recorded audiobook. Two of
+the user's sentences still have unnamed tails locally, after weaker voice windows
+at their endings. The user explicitly retains strict word-by-word matching rather
+than whole-phrase estimates. Capture drains normally. See
+[current evidence](docs/feasibility.md); boundary coverage and live different-person
+accuracy remain unresolved. Repeated wording can use matched surrounding context
+as described in [ADR 0031](docs/decisions/0031-context-for-repeated-wording.md).
 A separate registration cleanup error is fixed. Console
 output now uses complete numeric JSON lines so copied scores are not hidden inside
 collapsed object previews. Open [the debug URL](https://h-wilderspin.github.io/speech-to-text/?debugSpeakers=1)

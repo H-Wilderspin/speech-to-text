@@ -48,3 +48,12 @@ inside one interval, unknown/provisional local speech, browser repetition preced
 local evidence, exact preservation of browser text and withdrawal after revision.
 Existing tests retain short/reordered/ambiguous rejection and independent word
 evidence. Execution and publication evidence are recorded in feasibility notes.
+
+## Follow-up: retain strict word evidence (2026-10-12)
+
+The next current-build trace represented all three local named spans, but two user
+phrases had unnamed tails locally. The user identified the excluded middle speech
+as a recorded audiobook and explicitly chose strict word-by-word matching over
+complete-phrase estimates after reviewing the mixed-speaker trade-off. Retain
+independent word evidence and unknown/conflict rejection. Boundary sampling remains
+an unresolved research question; this clarification introduces no runtime change.

@@ -1,5 +1,25 @@
 # Troubleshooting
 
+## 2026-10-12 - Unnamed sentence tails with audiobook correctly excluded (Unresolved boundaries)
+
+- **Evidence:** `index-BAIoHAOy.js`, one reference; three local assigned spans and
+  three aligned/displayed spans. The user confirms the middle unassigned speech
+  was a recorded audiobook. No captured samples are lost; all queued work drains.
+- **Located stage:** settling each of two clipped user phrases creates a known
+  span and an unknown tail before browser alignment. Nearby later voice checks
+  fall to 0.410 and 0.492, below 0.60. Strict token attribution needs two agreeing
+  covering windows and rejects any unknown covering window. This explains how a
+  weak boundary check can remove an ending even with strong interior matches.
+  The trace cannot prove the acoustic cause or reconstruct each omitted token's
+  covering windows; silence in the three-second window remains a hypothesis.
+- **Decision:** user explicitly chose to retain strict per-word matching over
+  whole-phrase estimates. No name propagation, lower cutoff or removed veto.
+  Rejection of this audiobook is positive evidence, not proof of live multi-person
+  accuracy. Do not treat every missing middle passage as a false rejection.
+- **Next:** a speech-boundary sampling experiment must test known-to-unknown turns,
+  silence and overlap before any replacement window rule is shipped. No runtime
+  fix is claimed for the clipped tails in this documentation-only follow-up.
+
 ## 2026-10-12 - CI clock interruption recurs on contextual alignment change (Unresolved)
 
 - **Evidence:** `1603da2`, run `38295967253`, first attempt: 55/56 browser cases
