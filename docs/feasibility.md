@@ -1,5 +1,35 @@
 # Feasibility evidence
 
+## 2026-10-12 - Returned trace establishes below-cutoff rejection
+
+- **User evidence:** one saved profile after removing a duplicate of the same
+  person; 0/3 voice windows matched, 0 ambiguous, best similarity displayed as
+  0.59 against minimum 0.60. Device/browser versions are not reconfirmed. The
+  utterance displayed below had four words; no private content is retained here.
+- **Performance:** the trace processed all 107,776 samples (6.736 seconds); the
+  sampled first voice-extraction frame took 895 ms, with transient queued audio,
+  followed by successful drain and a 15 ms finish. This rules out a pending first
+  response as the explanation for this run, not for every future device session.
+- **Limits:** rejected voice windows already explain absent labels. Separately,
+  the six-word correspondence rule cannot transfer labels for an isolated four-word
+  utterance. Lowering the identity cutoff would not by itself fix that limitation.
+  Neither human recognition accuracy nor a new cutoff is established by this sample.
+- **Change:** complete console JSON strings replace expandable object previews;
+  explicit best/minimum similarity and rejected-window counts survive copy/paste.
+  Privacy filtering, opt-in, log sampling, browser words and identity gates remain.
+- **Capture inspection:** registration and live capture request the same mono,
+  echo-cancellation and noise-suppression constraints. Registration resamples native
+  capture to 16 kHz; live capture requests a 16 kHz AudioContext. The trace does not
+  measure actual device preprocessing, so this inspection establishes no acoustic
+  cause for the lower similarity.
+- **Verification:** Windows Node 22.20.0; typecheck, lint, 213 unit tests, pinned
+  assets and production build passed. Main JS 295.33 kB / 91.44 kB gzip. Regression
+  checks distinguish 0.59 rejection from 0.61 acceptance without ambiguity and
+  verify numeric-only output survives JSON serialization. The focused real-model
+  Chromium capture/attribution test passed in 23.0 seconds, parsing complete copied
+  JSON including trailing fields, cutoff and rejection counts. Its existing Windows
+  WebKit audio case is skipped locally and remains required in Linux CI.
+
 ## 2026-10-12 - Stage diagnostics for follow-up attribution
 
 - **Observation:** user reports one correctly transcribed and assigned statement,

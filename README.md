@@ -2,13 +2,14 @@
 
 ## Implementation status — 2026-10-12
 
-**Speaker stage diagnostics:** the latest phone report is one correct assigned
-statement followed by no further upper text. This remains unresolved. Open
-[the debug URL](https://h-wilderspin.github.io/speech-to-text/?debugSpeakers=1) and
-filter the developer console for `who-said-what` to trace capture, queued frames,
-worker timing, voice evidence, word alignment and display counts. Logs omit speech,
-names, audio and voiceprints. See [diagnostic instructions](docs/speaker-diagnostics.md)
-and [ADR 0030](docs/decisions/0030-speaker-stage-console-diagnostics.md).
+**Latest attribution trace:** one saved profile, three voice checks, zero matches;
+Settings reports best similarity 0.59 against the 0.60 minimum. Processing drains
+normally. Separately, the current six-word correspondence rule excludes isolated
+shorter phrases. Sustained/short-phrase attribution is not yet accepted. Console
+output now uses complete numeric JSON lines so copied scores are not hidden inside
+collapsed object previews. Open [the debug URL](https://h-wilderspin.github.io/speech-to-text/?debugSpeakers=1)
+and filter `who-said-what`. See [diagnostic instructions](docs/speaker-diagnostics.md)
+and [current evidence](docs/feasibility.md). No identity cutoff was changed.
 
 **Longer guided voice registration:** Settings now provides a passage to read for
 20 seconds, up from eight. Under **Voice to record**, select your saved name and

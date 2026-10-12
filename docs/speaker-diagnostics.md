@@ -8,7 +8,12 @@ being inspected; an installed app may open a different URL. Remove the query and
 reload to turn diagnostics off.
 
 Speak three different full sentences with short pauses, wait several seconds,
-then Stop. Copy the filtered metadata from start through drain/failure. Logs omit
+then Stop. Use sentences with at least eight words for this diagnostic run: the
+current alignment rule requires six agreeing words and cannot attribute isolated
+shorter phrases. This is a current product limitation, not a requirement on how
+people should normally communicate. Copy the filtered metadata from start through
+drain/failure. New logs contain the entire JSON payload in a single text line,
+so there is no need to expand individual objects. Logs omit
 words, names, profile IDs, recordings and voiceprints; no log is saved by the app.
 Debugging itself adds some overhead. Physical matching remains experimental.
 
@@ -25,7 +30,7 @@ logged. Counts generally accumulate within a session; compare consecutive lines.
 | `worker.frame-request` / `frame-response` | One request at a time; `elapsedMs` is its round trip. Routine frames are sampled approximately once a second, so request IDs may jump and slow-response lines may lack a sampled request line. |
 | `worker.frame-waiting` / `timeout` / `busy-rejected` | Waiting means the specific request has taken at least one second. Timeout terminates that worker. Busy rejection indicates an attempted concurrent RPC. |
 | `worker.pipeline` | `acceptedSamples`, `localCharacters`, `tokens`, `segment`, `endpoint` show local recognizer progress. `pipelineMs` combines ASR and voice extraction; `attributionMs` covers word attribution/output preparation. |
-| Pipeline voice fields | Increasing `voiceChecks` with flat `voiceMatched` indicates failed or ambiguous matches. `lastCandidates` / `lastSimilarity` refer to the latest window; two agreeing covering windows are still required per word. |
+| Pipeline voice fields | Increasing `voiceChecks` with flat `voiceMatched` indicates failed or ambiguous matches. `voiceRejected` counts windows with no qualifying reference; `bestSimilarity` and `minimumSimilarity` show the session maximum and cutoff. `lastCandidates` / `lastSimilarity` refer to the latest window; two agreeing covering windows are still required per word. |
 | Pipeline pending fields | `pendingFinal` and `evidenceWaitMs` identify completed sentences waiting for later evidence. `committedThrough` should advance. `wordsMatched`, `tokenMismatch`, `missingTiming`, `invalidTiming` describe the last settled word decision, not necessarily the currently growing hypothesis. |
 | `alignment.updated` | Compare `localAssigned` with `alignedCharacters`. Local identities with no increase in aligned characters point to the wording/alignment gate. Growing browser characters with stopped local processing point upstream. |
 | `display.upper-pane` | `visibleSegments` / `visibleCharacters` are the actual upper display after visibility filtering. `hiddenProfiles` explains deliberate filtering. |

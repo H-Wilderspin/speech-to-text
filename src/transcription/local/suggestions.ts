@@ -93,6 +93,8 @@ export class SuggestedTranscript {
   getDiagnostics(acceptedSamples: number) {
     const completed = [...this.pending.values()].filter((entry) => entry.isFinal);
     return { voiceChecks: this.checks, voiceMatched: this.matched, voiceAmbiguous: this.ambiguous,
+      voiceRejected: this.checks - this.matched - this.ambiguous,
+      bestSimilarity: this.bestScore, minimumSimilarity: EXPERIMENTAL_MINIMUM_COSINE,
       lastCandidates: this.lastCandidates, lastSimilarity: this.lastScore,
       pendingSegments: this.pending.size, pendingFinal: completed.length, committedThrough: this.committedThrough,
       committedSegments: this.history.length, retainedWindows: this.windows.length,

@@ -170,8 +170,21 @@ test('real local worker reuses offline models and suggests a known generated voi
 test('Android provisional words receive delayed names and activity filters only the upper pane', async ({ page }) => {
   test.setTimeout(150000);
   const stages = new Set<string>();
+  let voiceDiagnosticsComplete = false;
   page.on('console', (message) => {
-    if (message.type() === 'info' && message.text().startsWith('[who-said-what]')) stages.add(message.text().split(' ')[1]!);
+    if (message.type() === 'info' && message.text().startsWith('[who-said-what]')) {
+      const line = message.text(); stages.add(line.split(' ')[1]!);
+      // Text copied directly from DevTools must retain the complete JSON payload.
+      const payload = JSON.parse(line.slice(line.indexOf('{'))) as Record<string, unknown>;
+      if (line.includes('worker.pipeline ') && typeof payload.voiceChecks === 'number' && payload.voiceChecks > 0) {
+        expect(payload).toHaveProperty('lastSimilarity');
+        expect(payload).toHaveProperty('voiceRejected');
+        expect(payload).toHaveProperty('bestSimilarity');
+        expect(payload).toHaveProperty('minimumSimilarity', .6);
+        expect(payload).toHaveProperty('assignedSegments');
+        voiceDiagnosticsComplete = true;
+      }
+    }
   });
   await page.goto('/?debugSpeakers=1');
   const supported = await page.evaluate(() => Boolean(globalThis.AudioContext && globalThis.AudioWorkletNode));
@@ -276,6 +289,7 @@ test('Android provisional words receive delayed names and activity filters only 
   expect(await stats()).toEqual({ calls: 2, stops: 2 });
   for (const stage of ['capture.ready', 'capture.received', 'capture.processed', 'capture.drained',
     'worker.frame-request', 'worker.frame-response', 'worker.pipeline', 'alignment.updated', 'display.upper-pane']) expect(stages.has(stage), stage).toBe(true);
+  expect(voiceDiagnosticsComplete).toBe(true);
 });
 
 test('automatic model failure offers retry and closing settings does not cancel preparation', async ({ page }) => {

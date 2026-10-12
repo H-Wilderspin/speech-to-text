@@ -16,7 +16,9 @@ export function createSpeakerTrace(scope: string, enabled = speakerDiagnosticsEn
     // Defensive primitive-only copy: no object references, string values or buffers.
     const counts = Object.fromEntries(Object.entries(values).filter(([, value]) =>
       value === null || typeof value === 'boolean' || (typeof value === 'number' && Number.isFinite(value))));
-    console.info(`[who-said-what] ${scope}.${stage}`, { trace, atMs: Math.round(now), ...counts });
+    // Log a complete string: copying a collapsed DevTools object otherwise loses
+    // the later score/rejection fields behind an ellipsis.
+    console.info(`[who-said-what] ${scope}.${stage} ${JSON.stringify({ trace, atMs: Math.round(now), ...counts })}`);
   };
 }
 

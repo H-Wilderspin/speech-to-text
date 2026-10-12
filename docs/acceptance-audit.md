@@ -1,5 +1,12 @@
 # Project-plan acceptance audit — 2026-10-12
 
+**New trace after duplicate removal:** one reference, zero of three accepted voice
+windows and zero ambiguity; reported best 0.59 is below the 0.60 minimum. Capture
+and inference drained successfully. Independently, the current six-word alignment
+rule excludes the user's isolated four-word utterance. These are unresolved
+matching/short-phrase usability limits. Complete JSON console output improves
+measurement; it does not claim to fix speaker recognition or relax identity gates.
+
 **Latest phone report:** one correctly transcribed and assigned statement appeared,
 then no follow-up upper text. Sustained attribution remains unverified; the cause
 is unresolved. [ADR 0030](decisions/0030-speaker-stage-console-diagnostics.md) adds

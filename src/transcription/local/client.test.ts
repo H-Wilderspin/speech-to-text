@@ -32,9 +32,9 @@ it('reports an unsampled stalled request and its timeout, without logging frame 
   const pending = f.client.request({ type: 'frame', frame: { ...f.frame, startSample: 1600 } }, f.signal);
   const rejected = expect(pending).rejects.toThrow('timed out');
   await vi.advanceTimersByTimeAsync(1000);
-  expect(f.log).toHaveBeenCalledWith('[who-said-what] worker.frame-waiting', expect.objectContaining({ request: 1, startSample: 1600 }));
+  expect(f.log).toHaveBeenCalledWith(expect.stringMatching(/worker\.frame-waiting .*"request":1,"startSample":1600/));
   await vi.advanceTimersByTimeAsync(9000); await rejected;
-  expect(f.log).toHaveBeenCalledWith('[who-said-what] worker.timeout', expect.objectContaining({ request: 1 }));
+  expect(f.log).toHaveBeenCalledWith(expect.stringMatching(/worker\.timeout .*"request":1/));
   expect(JSON.stringify(f.log.mock.calls)).not.toContain('private-clock');
   expect(JSON.stringify(f.log.mock.calls)).not.toContain('samples');
   expect(f.worker.terminate).toHaveBeenCalledOnce();

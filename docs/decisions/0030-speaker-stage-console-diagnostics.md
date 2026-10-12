@@ -52,3 +52,12 @@ sentences and delayed alignment of successive browser statements. Real model
 integration checks repeated generated speech in one session and safe diagnostic
 transport; paced browser integration checks stage events through rendering.
 Execution results and physical limitations are recorded in feasibility notes.
+
+## Follow-up: complete copyable output (2026-10-12)
+
+Returned DevTools logs copied expandable object previews, losing later numeric
+fields behind an ellipsis. Emit the same safe fields as one JSON string per line
+and add explicit rejected count plus best/minimum similarity. This changes only
+presentation of diagnostics; privacy filtering, opt-in and matching decisions stay
+as recorded above. The returned one-profile trace established below-cutoff rejection,
+not a processing stall. See the newer troubleshooting and feasibility entries.

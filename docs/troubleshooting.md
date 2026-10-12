@@ -1,5 +1,27 @@
 # Troubleshooting
 
+## 2026-10-12 - One profile, zero matches and a short phrase (partially diagnosed)
+
+- **Evidence:** after the user removed a duplicate recording of their own voice,
+  the new trace reports one reference, three checked windows and zero matches.
+  Settings reports zero ambiguous windows, best similarity displayed as 0.59 and
+  minimum 0.60. This establishes below-cutoff rejection in this run; the earlier
+  duplicate explanation was incomplete. The actual acoustic cause is unverified.
+- **Processing:** 107,776 captured samples (6.736 seconds at 16 kHz) were processed
+  and drained. A sampled frame took 895 ms during the first voice check; the queue
+  subsequently caught up. Finish returned in 15 ms. No stall/overflow was reported.
+- **Independent limitation:** the displayed utterance contains four words. Current
+  correspondence requires six matching words, so even successful voice matching
+  alone would not attribute this isolated phrase. Unknown omission works as coded;
+  useful short-phrase attribution remains a product limitation, not a completed fix.
+- **Logging defect:** copied DevTools object previews omitted later score/ambiguity
+  fields behind an ellipsis. Emit one numeric-only JSON string per console line,
+  including best/minimum similarity and rejected-window counts. No private speech,
+  raw traces, identities or recordings are checked into the repository.
+- **Next:** compare complete per-window scores and known same/different-person
+  recordings before changing identity acceptance. A single near-cutoff score does
+  not establish a safe replacement cutoff. Live words and matching rules are unchanged.
+
 ## 2026-10-12 - One assigned statement, no follow-ups (Unresolved)
 
 - **Context:** latest user phone report says one payload had correct words and

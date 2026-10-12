@@ -12,6 +12,15 @@ const result = (patch: Partial<PipelineResult> = {}): PipelineResult => ({ text:
   tokenPoints: [{ text: '▁HEL', sample: 28000 }, { text: 'LO', sample: 30000 }, { text: '▁WORLD', sample: 32000 }], ...patch });
 
 describe('experimental name suggestions', () => {
+  it('reports near-cutoff rejection separately from ambiguity with one saved reference', () => {
+    for (const score of [.59, .61]) {
+      const transcript = new SuggestedTranscript(voices);
+      transcript.addWindow(suggestWindow({ ...windows[0]!, embedding: new Float32Array([score, Math.sqrt(1 - score * score)]) }, voices));
+      expect(transcript.getDiagnostics(48000)).toMatchObject({ voiceChecks: 1, voiceAmbiguous: 0,
+        voiceMatched: score > .6 ? 1 : 0, voiceRejected: score < .6 ? 1 : 0, minimumSimilarity: .6 });
+      expect(transcript.getDiagnostics(48000).bestSimilarity).toBeCloseTo(score, 5);
+    }
+  });
   it('commits successive sentences in one session and reports pending evidence without private content', () => {
     const transcript = new SuggestedTranscript(voices);
     windows.forEach((window) => transcript.addWindow(window));
@@ -98,6 +107,10 @@ describe('experimental name suggestions', () => {
       expect(transcript.getStatus()).toBe('No voice samples checked yet.');
       transcript.addWindow(suggestWindow({ ...windows[0]!, embedding: new Float32Array(embedding) }, references));
       expect(transcript.getStatus()).toContain(expected);
+      const diagnostic = transcript.getDiagnostics(48000);
+      expect(diagnostic.voiceMatched + diagnostic.voiceAmbiguous + diagnostic.voiceRejected).toBe(1);
+      expect(diagnostic.minimumSimilarity).toBe(.6);
+      expect(diagnostic.bestSimilarity).toBe(diagnostic.lastSimilarity);
       transcript.update(result(), true);
       expect(transcript.getStatus()).toContain('Not enough agreeing voice evidence at word times.');
       expect(transcript.getStatus()).not.toContain(voices[0]!.name);
