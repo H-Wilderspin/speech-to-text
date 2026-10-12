@@ -29,8 +29,8 @@ Debugging itself adds some overhead. Physical matching remains experimental.
 For a repetition check, speak a six-or-more-word phrase, a different full sentence,
 then the first phrase again. Distinct matching context can now separate repeated
 occurrences; ambiguous repetitions and words without voice evidence remain absent
-above. Report each pane and whether every phrase was yours. Do not shorten normal
-conversation to satisfy this diagnostic; short-phrase support remains incomplete.
+above. Report each pane and whether every phrase was yours. This diagnostic does
+not establish short-phrase support, which remains incomplete.
 
 Each line has `atMs` (time since page navigation), `trace` (one component instance)
 and a stage. Worker lines share numeric `request` IDs. Pipeline `segment` is the

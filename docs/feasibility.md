@@ -25,6 +25,17 @@
   including delayed names on provisional Android-style captions, activity filtering,
   continued capture and stop controls. Existing Windows WebKit audio skip remains;
   Linux CI covers that case. This fixture does not establish human accuracy.
+- **First CI attempt:** `1603da2`, run `38295967253`: 55/56 browser tests passed.
+  Chromium's paced local-capture case again reported an audio-clock interruption,
+  retained the browser caption and released its microphone before a name appeared.
+  This repeats the previously recorded CI failure; the physical trace has no such
+  failure. Deployment was withheld. One unchanged failed-job retry was requested,
+  without weakening the clock guard or assertions. Underlying clock cause unresolved.
+- **Publication:** the unchanged second attempt passed the full workflow and
+  deployed `1603da2`. After Pages completed, Chromium 156.0.8078.4 and WebKit 27.2
+  loaded `index-BAIoHAOy.js` and passed the public-site smoke checks: single evolving
+  live caption, settings/profile controls, opt-in complete JSON and default silence;
+  zero page errors and no microphone access. Human attribution remains unverified.
 
 ## 2026-10-12 - Follow-up trace produces partial assigned phrases
 

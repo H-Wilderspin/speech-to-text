@@ -1,5 +1,17 @@
 # Troubleshooting
 
+## 2026-10-12 - CI clock interruption recurs on contextual alignment change (Unresolved)
+
+- **Evidence:** `1603da2`, run `38295967253`, first attempt: 55/56 browser cases
+  pass; Chromium's paced case reports "The audio clock was interrupted" and releases
+  the generated microphone. Its focused Windows run passed in 23.1 seconds. Linux
+  WebKit and all other cases pass. This repeats runs `38270736803` and `38289809827`.
+- **Action:** retry the unchanged failed job once, retaining every assertion and
+  the production continuity guard. Cause remains unconfirmed; a passing retry
+  does not resolve it. This is separate from the supplied phone trace's normal drain.
+- **Retry outcome:** the unchanged second attempt passed the complete workflow and
+  deployed. This records non-recurrence on retry, not a correction of the clock cause.
+
 ## 2026-10-12 - Local names lost during repeated-phrase alignment (partially addressed)
 
 - **Evidence:** current `index-BsfattpN.js` trace finishes with 9/14 matched voice
