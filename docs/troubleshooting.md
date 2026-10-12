@@ -1,5 +1,25 @@
 # Troubleshooting
 
+## 2026-10-12 — Linux CI audio-clock interruption (Unresolved)
+
+- **Context:** guided registration commit `2082598`, first attempt of
+  [run 38270736803](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38270736803).
+  Linux CI passed 55/56 tests, including twenty-second registration/update in both
+  Chromium and WebKit. Deployment was correctly withheld.
+- **Failure:** existing Chromium paced live-attribution test reported
+  "The audio clock was interrupted. Browser captions continue." One capture was
+  opened and stopped, one browser caption remained, and no estimated name appeared.
+- **Evidence:** the worklet rejects discontinuous `currentFrame` progression. This
+  establishes its clock guard fired; the underlying scheduler/audio interruption
+  cause is unconfirmed. Guided registration does not modify this worklet or test's
+  audio source. No physical microphone was involved.
+- **Action:** retain the continuity guard and every assertion; rerun the unchanged
+  failed CI job to check recurrence. A passing retry would not prove this underlying
+  interruption fixed. Record the rerun outcome in feasibility notes.
+- **Rerun:** the unchanged second attempt passed all build/browser checks and
+  deployed successfully. The interruption did not recur in that run; its cause
+  remains unresolved. Production clock validation was not changed or bypassed.
+
 ## 2026-10-12 — Voice decisions lost before delayed words (phone issue unresolved)
 
 - **Context:** Pixel 8 user reports perfect live listening, eye on, empty upper

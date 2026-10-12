@@ -27,6 +27,24 @@
   browser cases therefore pass across those runs. Typecheck/lint also passed again.
 - **Layout:** 390px and 320px/enlarged-text reading views were inspected; content
   scrolls vertically without horizontal overflow. No physical phone was used.
+- **First CI attempt:** commit `2082598`, [run 38270736803](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38270736803),
+  passed 55/56 Linux browser checks including longer registration/update in both
+  engines. Existing Chromium paced attribution failed with "The audio clock was
+  interrupted. Browser captions continue." Safe diagnostics showed one opened and
+  stopped capture and one browser caption. No registration failure was reported.
+  Deployment was withheld. The unchanged failed job is being retried; neither a
+  scheduler cause nor a physical phone effect is established. Clock checks remain.
+- **Publication:** the unchanged second attempt of
+  [run 38270736803](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38270736803)
+  passed the full Linux build/browser suite and deployed `2082598a1e9afa5b3229498a877dcf978e357344`.
+  This retry does not establish a fix for the earlier audio-clock interruption.
+  Fresh published Chromium 156.0.8078.4 and WebKit 27.2 loaded `index-Ci7FMZkx.js`
+  and passed reading-passage display, existing/new-person selection, three-button
+  pills, colour/activity persistence, protected deletion, 320px/enlarged-text
+  overflow checks and one updating live sentence without lower names. Zero page
+  errors and no microphone use in the hosted smoke; full-length generated capture
+  and model processing were verified by the integration suite. The published
+  reading view was inspected. Physical voice-matching improvement remains untested.
 - **Limits:** more recording time does not imply calibrated accuracy. No human
   speech, private voiceprints or transcripts collected. Actual phone processing
   time, memory and same/different-person performance need a physical retest.

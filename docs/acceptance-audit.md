@@ -8,6 +8,12 @@ people can replace their voiceprint while retaining their ID, colour and visibil
 cancelled/failed attempts preserve the old profile. Checks/build and 205 unit tests
 pass locally. Human matching improvement and phone recording remain unverified.
 
+Published as `2082598`, [run 38270736803](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38270736803),
+after the unchanged second CI attempt passed the full build/browser suite. The
+first attempt had an unrelated paced audio-clock interruption, documented as
+unresolved. Published Chromium/WebKit guided-reading, profile selection, persistence
+and simulated-caption smoke checks passed with no page errors or microphone use.
+
 **Latest retest failed:** live listening is reported perfect, profile eye on, upper
 pane empty after Stop. Status: "Speech received; no saved voice matched yet."
 [ADR 0028](decisions/0028-retain-delayed-voice-evidence.md) fixes reproduced early
