@@ -7,10 +7,18 @@ device tools if a phone console is unavailable. The URL must be open in the tab
 being inspected; an installed app may open a different URL. Remove the query and
 reload to turn diagnostics off.
 
+Close all tabs and installed-app windows first, then reopen the URL above. A waiting
+service-worker update cannot activate while an older app window remains open. Do
+not clear site data: that removes saved voiceprints and downloaded models. Current
+diagnostic lines include JSON text; expandable `Object` previews or `{..., ...}`
+with hidden fields indicate the older logging build (or an older recorded trace).
+
 Speak three different full sentences with short pauses, wait several seconds,
 then Stop. Use sentences with at least eight words for this diagnostic run: the
 current alignment rule requires six agreeing words and cannot attribute isolated
-shorter phrases. This is a current product limitation, not a requirement on how
+shorter phrases. Anchors can span adjacent transcript segments, and only words
+with their own voice evidence receive names. A displayed named fragment may
+therefore contain fewer than six words. This is a current product limitation, not a requirement on how
 people should normally communicate. Copy the filtered metadata from start through
 drain/failure. New logs contain the entire JSON payload in a single text line,
 so there is no need to expand individual objects. Logs omit

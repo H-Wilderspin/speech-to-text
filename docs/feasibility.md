@@ -1,5 +1,32 @@
 # Feasibility evidence
 
+## 2026-10-12 - Follow-up trace produces partial assigned phrases
+
+- **Setup:** user-provided trace, one reference, three manual sessions; device and
+  browser versions unconfirmed. Older bundle `index-C_C15ZXQ.js` and object-preview
+  logging; subsequent complete-JSON diagnostics were not running in this trace.
+- **Observation:** final voice-window counts 3/4, 3/9 and 6/7 matched. Received and
+  processed sample totals agree at 232,320, 315,648 and 306,048 (14.52, 19.728 and
+  19.128 seconds at 16 kHz). Last session shows two assigned fragments, 29 visible
+  characters versus 44 browser characters. Voice checks continue after earlier
+  assignments and all sessions drain. These are correlated windows, not independent
+  accuracy trials. No private transcript or raw trace is retained here.
+- **Interpretation:** partial assignment confirms some evidence passes both gates;
+  omitted words may lack covering voice evidence or recognizer correspondence.
+  Collapsed fields prevent distinguishing those causes here. The six-word anchor
+  spans transcript segments; it is not a six-word minimum per displayed fragment.
+  Useful short-phrase and sustained human attribution remain unresolved.
+- **Separate correction:** reproduced the trace's registration cleanup TypeError
+  by transferring audio then delivering cancellation. The worklet now relinquishes
+  its detached view and stops, preserving the receiving buffer and safe cancellation.
+  No matching cutoff, browser wording, or alignment decision changed.
+- **Local verification:** Windows Node 22.20.0; typecheck, lint, all 214 unit tests,
+  pinned assets and build pass. The transfer/cleanup regression failed before the
+  fix and passes after it. Chromium's real-worklet registration/update/comparison,
+  offline reuse, cancellation and deletion case passes (1.0 minute). Its existing
+  Windows WebKit skip remains; Linux CI covers WebKit audio. No physical retest.
+
+
 ## 2026-10-12 - Returned trace establishes below-cutoff rejection
 
 - **User evidence:** one saved profile after removing a duplicate of the same

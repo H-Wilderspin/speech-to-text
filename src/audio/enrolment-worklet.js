@@ -7,11 +7,11 @@ class EnrolmentRecorder extends AudioWorkletProcessor {
     this.samples = new Float32Array(Math.round(sampleRate * seconds));
     this.offset = 0;
     this.lastProgress = 0;
-    this.cancelled = false;
-    this.port.onmessage = () => { this.cancelled = true; this.samples.fill(0); };
+    this.stopped = false;
+    this.port.onmessage = () => { this.stopped = true; this.samples.fill(0); };
   }
   process(inputs) {
-    if (this.cancelled) return false;
+    if (this.stopped) return false;
     const input = inputs[0]?.[0];
     if (!input) return true;
     const count = Math.min(input.length, this.samples.length - this.offset);
@@ -19,6 +19,9 @@ class EnrolmentRecorder extends AudioWorkletProcessor {
     this.offset += count;
     if (this.offset === this.samples.length) {
       this.port.postMessage({ samples: this.samples }, [this.samples.buffer]);
+      // The receiver now owns the audio. Cleanup can still arrive on the port.
+      this.samples = new Float32Array(0);
+      this.stopped = true;
       return false;
     }
     if (this.offset - this.lastProgress >= sampleRate / 4) {

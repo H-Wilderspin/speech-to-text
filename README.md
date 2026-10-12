@@ -2,10 +2,13 @@
 
 ## Implementation status — 2026-10-12
 
-**Latest attribution trace:** one saved profile, three voice checks, zero matches;
-Settings reports best similarity 0.59 against the 0.60 minimum. Processing drains
-normally. Separately, the current six-word correspondence rule excludes isolated
-shorter phrases. Sustained/short-phrase attribution is not yet accepted. Console
+**Latest attribution trace:** three sessions with one saved profile drain normally;
+the last matches six of seven voice windows but displays only fragments above.
+Words require both covering voice evidence and cross-recognizer correspondence;
+the exact exclusion reason for each missing word remains unresolved. Six-word
+anchors can span segments, so a named fragment can be shorter than six words.
+The trace is from the older logging build. Sustained/short-phrase attribution is
+not yet accepted. A separate registration cleanup error is fixed. Console
 output now uses complete numeric JSON lines so copied scores are not hidden inside
 collapsed object previews. Open [the debug URL](https://h-wilderspin.github.io/speech-to-text/?debugSpeakers=1)
 and filter `who-said-what`. See [diagnostic instructions](docs/speaker-diagnostics.md)

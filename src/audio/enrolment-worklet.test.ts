@@ -32,3 +32,16 @@ it('erases cancelled audio without returning a partial profile and rejects inval
   expect(f.messages.some((message) => message.samples)).toBe(false);
   for (const seconds of [0, 2, 31, NaN, Infinity, 20.5]) expect(() => fixture(seconds)).toThrow('Invalid recording duration');
 });
+
+it('allows cleanup after transferring a completed recording without touching the receiving buffer', () => {
+  const f = fixture(3);
+  for (let offset = 0; offset < 48000; offset += 128) {
+    f.recorder.process([[new Float32Array(128).fill(.1)]]);
+  }
+  const received = f.messages.at(-1)!.samples!;
+  expect(received.length).toBe(48000);
+  expect(() => { f.port.onmessage(); f.port.onmessage(); }).not.toThrow();
+  expect(f.recorder.process([[new Float32Array(128)]])).toBe(false);
+  expect(f.messages.filter((message) => message.samples)).toHaveLength(1);
+  expect(received.every((sample) => sample > 0)).toBe(true);
+});

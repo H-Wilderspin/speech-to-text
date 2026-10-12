@@ -1,5 +1,31 @@
 # Troubleshooting
 
+## 2026-10-12 - Partial named phrases and registration cleanup error
+
+- **Evidence:** returned trace uses the older `index-C_C15ZXQ.js` build and collapsed
+  object previews. Three sessions have one reference and finish with 3/4, 3/9 and
+  6/7 matched voice windows respectively. All captured samples drain. In the last
+  session two upper fragments total 29 characters versus 44 browser characters.
+  This rules out a first-sentence processing lock in this run. It does not establish
+  the cause of each missing word or human matching accuracy.
+- **Attribution remains unresolved:** words need two agreeing covering windows,
+  with any unknown covering window vetoing a name, plus browser/local wording
+  correspondence. Six-word anchors operate across segment boundaries; individual
+  named fragments can be shorter. Do not infer a relaxed gate from short fragments.
+  Complete current-build diagnostics are needed to narrow the exclusion stage.
+- **Separate proven bug:** after recording transfers its buffer, normal cleanup
+  sends cancellation. The worklet then calls `fill` on the detached view, matching
+  the supplied TypeError. A regression using real structured-clone transfer fails
+  before the fix. Replace the worklet's relinquished view with an empty owned array
+  and stop processing. Repeated cleanup is harmless; cancellation during capture
+  still erases owned audio, and the receiver retains its completed recording.
+  This fixes the exception, not partial word attribution; later listening proceeded.
+- **Version check:** older bundle and object logs establish the build used, not
+  whether the trace was recorded earlier or a tab kept an old worker active. Close
+  every app window and reopen the debug URL without clearing site data. See the
+  [diagnostic guide](speaker-diagnostics.md). No identity or alignment gate changes.
+
+
 ## 2026-10-12 - CI clock interruption recurred during console-format update (Unresolved)
 
 - **Evidence:** `7a55792`, run `38289809827`, first attempt: 55/56 browser cases
