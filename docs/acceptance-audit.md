@@ -9,6 +9,12 @@ Only assigned final speech has names above; live browser words remain label-free
 below. It changes the workflow, not identity accuracy. Current validation and
 publication evidence are recorded at the top of feasibility.
 
+Published as `bf64ce9`, [run 38262304632](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38262304632):
+191 unit tests, build checks and the full Linux browser suite passed. Fresh published
+Chromium/WebKit layout, profile controls and simulated-caption smoke checks passed
+with no microphone and no uncaught page errors. Physical-phone and human-speaker
+acceptance remain pending.
+
 Latest interface increment: [ADR 0025](decisions/0025-dark-two-pane-family-interface.md) adds dark two-pane captions, assigned speech only above, all live words below, persistent high-contrast colours/text preferences, and simplified personal registration. It changes presentation, not recognition accuracy or identity calibration. See the 2026-10-12 feasibility entry for checks.
 
 Published as `f48e18d`, [run 38258052858](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38258052858): all build checks and the full Linux browser suite passed. Published Chromium/WebKit checks passed with simulated recognition and no microphone; phone acceptance remains pending.
