@@ -1,5 +1,15 @@
 # Troubleshooting
 
+## 2026-10-12 — Preparation-only browser tests and Windows WebKit audio support
+
+- **Context:** Windows Playwright WebKit 27.2, automatic names preparation test.
+- **Symptoms:** the first browser run timed out clicking the disabled Prepare voice model button.
+- **Root cause:** the test reached enrolment through its real capability guard; this Windows WebKit build lacks the required audio APIs. Model inference itself does not need a microphone.
+- **Solution:** reuse the preparation-only capability fixture from the direct-worker test. It advertises the required APIs but throws immediately if any audio constructor or getUserMedia is called. Model downloads, workers, cache, profile storage and retry remain real. Do not bypass this guard in production or report a microphone pass from the fixture.
+- **Follow-up:** WebKit then reached Ready instead of Retry: page-level routing did not inject the expected failure after the reload under service-worker control. Inject rejection of the one targeted model fetch at the page fetch boundary instead; assert that the rejection actually occurred, disable it and retry the real download. This is a deterministic recovery fixture, not evidence about physical network failures.
+- **Verification:** the original failure log identifies the disabled button. Focused rerun results are in feasibility; Linux CI continues to run all real generated-capture integration tests.
+- **Related:** ADR 0026, `tests/local-listening.spec.ts`.
+
 ## 2026-10-11 — Local upgrade still transcribes poorly (phone retest pending)
 
 - **Evidence:** the user reports that transcription remains inaccurate after the upgraded model. Generated/public test clips did not predict their conversational result. No device audio was collected; a specific acoustic/model cause is unproven.

@@ -15,7 +15,7 @@ export function VoiceComparison({ session, profiles, canRecord, onBack }: {
   const last = snapshot.trials.at(-1);
   return <section className="comparison" aria-labelledby="comparison-title">
     <h3 id="comparison-title">Compare recordings</h3>
-    <button autoFocus onClick={onBack}>Back to saved speakers</button>
+    <button autoFocus onClick={onBack}>Close comparison</button>
     {!compatible.length && <p>No profiles use the current voice model. Add a new speaker first.</p>}
     <label className="speaker-name">Saved voice to compare<select value={reference} disabled={busy} onChange={(event) => setReference(event.target.value)}>
       <option value="">Choose a saved speaker</option>{compatible.map((profile) => <option key={profile.id} value={profile.id}>{profile.displayName}</option>)}

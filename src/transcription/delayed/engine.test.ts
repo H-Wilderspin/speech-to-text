@@ -2,6 +2,9 @@ import { expect, it, vi } from 'vitest';
 import { DelayedNamesEngine } from './engine';
 import type { TranscriptionSnapshot } from '../types';
 import type { LocalListeningEngine } from '../local/types';
+import type { ProfileStore, ProfileSummary } from '../../storage/profiles';
+import { speakerModel } from '../../identification/model';
+import { notifyProfileChange } from '../../storage/profile-changes';
 
 function source() {
   let snapshot: TranscriptionSnapshot = { phase: 'idle', message: 'Ready.', segments: [] };
@@ -68,4 +71,66 @@ it('can be disposed and reactivated without stale subscriptions or captions', ()
   f.engine.subscribe(() => {}); f.engine.start('en-GB'); expect(f.engine.getSnapshot().segments).toEqual([]);
   f.browser.emit({ segments: words }); expect(f.engine.getSnapshot().segments).toEqual(words); f.engine.interrupt();
   expect(f.local.engine.interrupt).toHaveBeenCalled(); expect(f.browser.engine.interrupt).toHaveBeenCalled();
+});
+
+function automaticFixture(rows: ProfileSummary[] = []) {
+  const browser = source(); const local = source();
+  const store: ProfileStore = { list: vi.fn(async () => rows), read: vi.fn(), save: vi.fn(), remove: vi.fn(), clear: vi.fn(), close: vi.fn() };
+  const database = `automatic-test-${Math.random()}`;
+  const engine = new DelayedNamesEngine(browser.engine, local.engine, { database, createStore: () => store });
+  engine.subscribe(() => {});
+  return { browser, local, store, database, engine };
+}
+const registered = [{ id: 'a', displayName: 'Test', modelVersion: speakerModel.version }] as ProfileSummary[];
+it('automatically prepares registered profiles and starts names without a preference toggle', async () => {
+  const f = automaticFixture(registered);
+  await vi.waitFor(() => expect(f.local.engine.prepare).toHaveBeenCalledOnce());
+  f.engine.start('en-GB'); expect(f.local.engine.start).toHaveBeenCalledOnce();
+  f.browser.emit({ segments: words }); f.local.emit({ segments: evidence });
+  expect(f.engine.getSnapshot().segments[0]?.speakerId).toBe('a'); f.engine.dispose();
+});
+it('keeps anonymous listening model-free and notices registration changes', async () => {
+  const f = automaticFixture();
+  await vi.waitFor(() => expect(f.store.close).toHaveBeenCalled());
+  f.engine.start('en-GB'); f.browser.emit({ segments: words });
+  expect(f.local.engine.prepare).not.toHaveBeenCalled(); expect(f.local.engine.start).not.toHaveBeenCalled();
+  expect(f.engine.getSnapshot().segments).toEqual(words);
+  vi.mocked(f.store.list).mockResolvedValue(registered); notifyProfileChange(f.database);
+  await vi.waitFor(() => expect(f.local.engine.start).toHaveBeenCalledOnce());
+  expect(f.browser.engine.start).toHaveBeenCalledOnce(); f.engine.dispose();
+});
+it('joins late preparation without resetting browser text, but Stop prevents late capture', async () => {
+  for (const stop of [false, true]) {
+    const f = automaticFixture(registered);
+    let ready = false;
+    f.local.engine.getPreparationSnapshot = () => ({ phase: ready ? 'ready' : 'preparing', message: 'Loading.' });
+    await vi.waitFor(() => expect(f.local.engine.prepare).toHaveBeenCalled());
+    f.engine.start('en-GB'); f.browser.emit({ segments: words });
+    if (stop) f.engine.stop();
+    ready = true; f.local.emit({ phase: 'idle' });
+    await Promise.resolve();
+    expect(f.local.engine.start).toHaveBeenCalledTimes(stop ? 0 : 1);
+    expect(f.engine.getSnapshot().segments).toEqual(words); f.engine.dispose();
+  }
+});
+it('does not prepare stale profiles after disposal and removes names after the last profile is deleted', async () => {
+  const f = automaticFixture(registered);
+  await vi.waitFor(() => expect(f.local.engine.prepare).toHaveBeenCalled());
+  f.engine.start('en-GB'); f.browser.emit({ segments: words }); f.local.emit({ segments: evidence });
+  vi.mocked(f.store.list).mockResolvedValue([]); notifyProfileChange(f.database);
+  await vi.waitFor(() => expect(f.engine.getSnapshot().segments).toEqual(words));
+  expect(f.browser.engine.stop).not.toHaveBeenCalled(); f.engine.dispose();
+  const pending = automaticFixture();
+  pending.engine.dispose(); await Promise.resolve();
+  expect(pending.local.engine.prepare).not.toHaveBeenCalled();
+});
+it('releases name capture if speaker storage fails while browser captions continue', async () => {
+  const f = automaticFixture(registered);
+  await vi.waitFor(() => expect(f.local.engine.prepare).toHaveBeenCalled());
+  f.engine.start('en-GB'); f.browser.emit({ segments: words }); f.local.emit({ segments: evidence });
+  vi.mocked(f.store.list).mockRejectedValue(new Error('Storage failed.')); notifyProfileChange(f.database);
+  await vi.waitFor(() => expect(f.engine.getSnapshot().notice).toContain('Speaker storage unavailable'));
+  expect(f.engine.getSnapshot().segments).toEqual(words);
+  expect(f.local.engine.interrupt).toHaveBeenCalled();
+  expect(f.browser.engine.stop).not.toHaveBeenCalled(); f.engine.dispose();
 });

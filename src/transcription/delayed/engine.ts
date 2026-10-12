@@ -1,6 +1,9 @@
 import type { TranscriptionEngine, TranscriptionSnapshot, TranscriptSegment } from '../types';
 import type { LocalListeningEngine } from '../local/types';
 import { delayedNames } from './align';
+import type { ProfileStore } from '../../storage/profiles';
+import { watchProfileChanges } from '../../storage/profile-changes';
+import { speakerModel } from '../../identification/model';
 
 const active = (snapshot: TranscriptionSnapshot) => ['requesting-permission', 'listening', 'stopping'].includes(snapshot.phase);
 
@@ -15,8 +18,15 @@ export class DelayedNamesEngine implements LocalListeningEngine {
   private starting = false;
   private namesStarted = false;
   private notice: string | undefined;
-  constructor(private readonly browser: TranscriptionEngine, private readonly local: LocalListeningEngine) {
+  private hasSpeakers: boolean;
+  private profileGeneration = 0;
+  private profileError: string | undefined;
+  private namesAttempted = false;
+  private language = 'en-GB';
+  constructor(private readonly browser: TranscriptionEngine, private readonly local: LocalListeningEngine,
+    private readonly profiles?: { database: string; createStore(): ProfileStore }) {
     this.snapshot = browser.getSnapshot();
+    this.hasSpeakers = !profiles;
   }
   get unavailableReason() { return this.browser.unavailableReason; }
   getSnapshot = () => this.snapshot;
@@ -24,6 +34,39 @@ export class DelayedNamesEngine implements LocalListeningEngine {
   private connect() {
     if (this.unwatch.length) return;
     this.unwatch = [this.browser.subscribe(() => this.update()), this.local.subscribe(() => this.update())];
+    if (this.profiles) {
+      this.unwatch.push(watchProfileChanges(this.profiles.database, () => void this.refreshProfiles()));
+      void this.refreshProfiles();
+    }
+  }
+  private async refreshProfiles() {
+    if (!this.profiles) return;
+    const generation = ++this.profileGeneration;
+    const store = this.profiles.createStore();
+    try {
+      const profiles = await store.list();
+      if (generation !== this.profileGeneration) return;
+      this.hasSpeakers = profiles.some((profile) => profile.modelVersion === speakerModel.version);
+      this.profileError = profiles.length && !this.hasSpeakers ? 'Record a new voice profile to show names.' : undefined;
+      if (this.hasSpeakers) void this.prepare();
+      else {
+        this.namesStarted = false;
+        this.local.interrupt(); this.local.cancelPreparation();
+      }
+      this.update();
+    } catch {
+      if (generation === this.profileGeneration) {
+        this.profileError = 'Speaker storage unavailable. Live captions still work.';
+        this.hasSpeakers = false; this.namesStarted = false;
+        this.local.interrupt(); this.local.cancelPreparation(); this.update();
+      }
+    } finally { store.close(); }
+  }
+  private startNamesIfReady() {
+    if (!this.running || this.namesAttempted || !this.hasSpeakers || !this.language.startsWith('en')
+      || this.local.getPreparationSnapshot().phase !== 'ready' || this.local.unavailableReason) return;
+    this.namesAttempted = true; this.namesStarted = true; this.notice = undefined;
+    this.local.start(this.language);
   }
   subscribe = (listener: () => void) => {
     this.connect(); this.listeners.add(listener); return () => { this.listeners.delete(listener); };
@@ -33,6 +76,13 @@ export class DelayedNamesEngine implements LocalListeningEngine {
   private update() {
     if (this.starting) return;
     const browser = this.browser.getSnapshot();
+    // A completed background preparation may join the current browser session.
+    // Stop/error must win before any late microphone activation.
+    if (this.profiles && !this.namesAttempted && this.local.getPreparationSnapshot().phase === 'ready'
+      && active(browser) && browser.phase !== 'stopping') queueMicrotask(() => {
+        const current = this.browser.getSnapshot();
+        if (active(current) && current.phase !== 'stopping') this.startNamesIfReady();
+      });
     let local = this.local.getSnapshot();
     if (this.running && !active(browser) && active(local)) {
       // Clear this guard before synchronous stop notifications reenter update.
@@ -54,25 +104,28 @@ export class DelayedNamesEngine implements LocalListeningEngine {
     }
     // Keep completed manual sessions isolated from the next session's evidence.
     if (!active(browser) && !active(local)) this.running = false;
+    const preparation = this.local.getPreparationSnapshot();
+    const notice = this.notice ?? this.profileError ?? (this.profiles && this.hasSpeakers && !this.namesStarted && active(browser)
+      ? !this.language.startsWith('en') ? 'Names currently support English.'
+        : preparation.phase === 'error' ? 'Names unavailable. Retry in Settings.'
+          : preparation.phase === 'ready' && this.local.unavailableReason ? 'Names unavailable on this browser.' : 'Preparing names…' : undefined);
     this.snapshot = { phase: finishing ? 'stopping' : browser.phase,
-      message: browser.phase === 'error' ? browser.message : finishing ? 'Finishing speaker estimates…' : this.notice ?? browser.message,
-      ...(this.notice && browser.phase !== 'error' ? { notice: this.notice } : {}), segments };
+      message: browser.phase === 'error' ? browser.message : finishing ? 'Finishing speaker estimates…' : notice ?? browser.message,
+      ...(notice && browser.phase !== 'error' ? { notice } : {}), segments };
     this.listeners.forEach((listener) => listener());
   }
   start(language: string) {
     if (active(this.snapshot)) return;
     this.connect(); this.starting = true;
     this.history = [...this.snapshot.segments]; this.browser.clear(); this.local.clear();
-    this.notice = undefined; this.running = true;
-    this.namesStarted = this.local.getPreparationSnapshot().phase === 'ready' && !this.local.unavailableReason && language.startsWith('en');
+    this.notice = undefined; this.running = true; this.language = language; this.namesStarted = false; this.namesAttempted = false;
     // Both activation calls stay in the user's original gesture. Browser audio
     // and results remain independent; Android/Safari coexistence needs retesting.
-    if (this.namesStarted) this.local.start(language);
-    else this.notice = language.startsWith('en') ? 'Browser captions are active. Prepare speaker estimates in Settings to add names.'
-      : 'Speaker estimates currently support English only. Browser captions continue in the selected language.';
+    this.startNamesIfReady();
+    if (this.profiles && this.hasSpeakers && !this.namesStarted) void this.prepare();
     this.browser.start(language); this.starting = false; this.update();
   }
-  stop() { this.local.stop(); this.browser.stop(); this.update(); }
+  stop() { this.running = false; this.local.stop(); this.browser.stop(); this.update(); }
   interrupt() { this.running = false; this.local.interrupt(); this.browser.interrupt(); this.update(); }
   clear() {
     if (active(this.snapshot)) return;
@@ -80,6 +133,7 @@ export class DelayedNamesEngine implements LocalListeningEngine {
     this.local.clear(); this.browser.clear(); this.starting = false; this.update();
   }
   dispose() {
+    this.profileGeneration++; this.hasSpeakers = !this.profiles; this.profileError = undefined;
     this.unwatch.splice(0).forEach((unsubscribe) => unsubscribe());
     this.running = false; this.namesStarted = false; this.history = []; this.notice = undefined;
     this.local.dispose(); this.browser.dispose(); this.snapshot = this.browser.getSnapshot(); this.listeners.clear();

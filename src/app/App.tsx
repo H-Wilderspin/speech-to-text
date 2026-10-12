@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { watchInterruptions } from '../audio/interruption';
 import { Transcript } from '../features/listening/Transcript';
 import { SettingsDialog } from '../features/settings/SettingsDialog';
-import { SpeakersDialog, type SpeakerServices } from '../features/speakers/SpeakersDialog';
+import { type SpeakerServices } from '../features/speakers/SpeakerSettings';
 import type { TranscriptionEngine } from '../transcription/types';
 import type { LocalListeningEngine } from '../transcription/local/types';
 import { readPreferences, savePreferences } from '../features/settings/preferences';
@@ -10,13 +10,7 @@ import { readPreferences, savePreferences } from '../features/settings/preferenc
 export function App({ engine: browserEngine, createSpeakers, localEngine }: {
   engine: TranscriptionEngine; createSpeakers: () => SpeakerServices; localEngine?: LocalListeningEngine;
 }) {
-  // The previous option used local-only ASR. Require selecting this new browser
-  // + delayed-name mode explicitly, with its updated processing disclosure.
-  const preferenceKey = `speech-to-text-delayed-names:${new URL(import.meta.env.BASE_URL, document.baseURI).pathname}`;
-  const [localEnabled, setLocalEnabled] = useState(() => {
-    try { return Boolean(localEngine) && localStorage.getItem(preferenceKey) === 'enabled'; } catch { return false; }
-  });
-  const engine = localEnabled && localEngine ? localEngine : browserEngine;
+  const engine = localEngine ?? browserEngine;
   const snapshot = useSyncExternalStore(engine.subscribe, engine.getSnapshot);
   const [preferences, setPreferences] = useState(readPreferences);
   const { textSize, language, colours } = preferences;
@@ -24,14 +18,10 @@ export function App({ engine: browserEngine, createSpeakers, localEngine }: {
     const next = { ...preferences, ...changes }; setPreferences(next); savePreferences(next);
   };
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [speakersOpen, setSpeakersOpen] = useState(false);
-  const [focusSpeakers, setFocusSpeakers] = useState(false);
   const settingsButton = useRef<HTMLButtonElement>(null);
   const [offline, setOffline] = useState(!navigator.onLine);
   const [installFailed, setInstallFailed] = useState(false);
   const active = ['requesting-permission', 'listening', 'stopping'].includes(snapshot.phase);
-
-  useEffect(() => { if (localEnabled) void localEngine?.prepare(true); }, [localEngine, localEnabled]);
 
   useEffect(() => {
     const unwatch = watchInterruptions(() => engine.interrupt());
@@ -58,7 +48,7 @@ export function App({ engine: browserEngine, createSpeakers, localEngine }: {
         {snapshot.phase === 'stopping' ? 'Stopping…' : active ? 'Stop' : 'Listen'}
       </button>
       <button disabled={active || snapshot.segments.length === 0} onClick={() => engine.clear()}>Clear</button>
-      <button ref={settingsButton} onClick={() => { setFocusSpeakers(false); setSettingsOpen(true); }}>Settings</button>
+      <button ref={settingsButton} onClick={() => setSettingsOpen(true)}>Settings</button>
     </header>
     <main id="captions">
       <p className={snapshot.phase === 'error' ? 'notice error' : snapshot.notice ? 'notice' : 'sr-only'} role="status" aria-live="polite" aria-atomic="true">{snapshot.message}</p>
@@ -69,19 +59,10 @@ export function App({ engine: browserEngine, createSpeakers, localEngine }: {
         <Transcript segments={snapshot.segments} textSize={textSize} />
       </div>
     </main>
-    <p className="sr-only" id="processing-note">Listen uses your browser’s speech service, which may send audio to its provider. {localEnabled && 'Delayed name estimates use saved voiceprints on this device.'} Captions are kept only until you clear or reload. Details are in Settings.</p>
-    {settingsOpen && !speakersOpen && <SettingsDialog active={active} textSize={textSize} onTextSize={(textSize) => changePreferences({ textSize })}
-      localEngine={localEngine} localEnabled={localEnabled} onLocalEnabled={(enabled) => {
-        if (active) return;
-        engine.clear(); setLocalEnabled(enabled);
-        try { if (enabled) localStorage.setItem(preferenceKey, 'enabled'); else localStorage.removeItem(preferenceKey); } catch { /* Session-only preference if storage is blocked. */ }
-      }}
-      language={language} onLanguage={(language) => changePreferences({ language })} installFailed={installFailed} focusSpeakers={focusSpeakers}
-      onSpeakers={() => { engine.stop(); setSpeakersOpen(true); }} onClose={() => {
-        setSettingsOpen(false); settingsButton.current?.focus();
-      }} />}
-    {speakersOpen && <SpeakersDialog createServices={createSpeakers} canRecord={!active} colours={colours} onColours={(colours) => changePreferences({ colours })} onClose={() => {
-      setFocusSpeakers(true); setSpeakersOpen(false);
-    }} />}
+    <p className="sr-only" id="processing-note">Listen uses your browser’s speech service, which may send audio to its provider. Delayed name estimates use saved voiceprints on this device. Captions are kept only until you clear or reload. Details are in Settings.</p>
+    {settingsOpen && <SettingsDialog active={active} textSize={textSize} onTextSize={(textSize) => changePreferences({ textSize })}
+      localEngine={localEngine} createSpeakers={createSpeakers} colours={colours} onColours={(colours) => changePreferences({ colours })}
+      language={language} onLanguage={(language) => changePreferences({ language })} installFailed={installFailed}
+      onStop={() => engine.stop()} onClose={() => { setSettingsOpen(false); settingsButton.current?.focus(); }} />}
   </div>;
 }

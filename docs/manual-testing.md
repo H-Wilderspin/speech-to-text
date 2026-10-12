@@ -5,8 +5,8 @@
 The user reports the larger local ASR is still inaccurate. Close all copies and
 reopen the published site. Listen now uses browser recognition immediately, with
 the existing pause/repetition fixes. First check ordinary words, proper nouns,
-pauses and spoken/button Stop without estimates. Then enable Settings → Prepare
-name suggestions (cached models and saved voiceprints are reused), return to
+pauses and spoken/button Stop. Saved voiceprints now prepare names automatically
+(cached models are reused); no checkbox or separate preparation action is needed. Return to
 captions and repeat. Browser wording must stay intact below while name/colour estimates
 arrive above later, possibly after a pause or Stop. Short, repeated, mismatched or
 uncertain phrases remain only in the lower live pane. Check that both microphone clients stop,
@@ -15,6 +15,25 @@ second person, compare turn-taking/name errors separately from word errors. Do n
 upload private speech or voiceprints. Browser-provider processing is disclosed;
 this mode no longer promises offline transcription. Record phone versions and
 approximate name delay if available. Earlier local-only steps below are historical.
+
+### Current Settings checks
+
+1. Open Settings at phone size and with enlarged text. It should fill the screen,
+   scroll vertically, and keep a return icon beside the title. Return/Escape goes
+   straight to captions and restores focus to Settings without clearing text.
+2. Text controls, People & colours and Add a speaker are on the same page. Each
+   profile has exactly two pill buttons. Change its colour, reload and confirm it
+   persists. Tap delete then Cancel: the profile must remain. Only confirming
+   deletion removes it. Check with TalkBack/VoiceOver when a device is available.
+3. With an existing English voiceprint, reopen the app and Listen. Names should
+   arrive only above; lower text stays grey and label-free. Unknown words must
+   remain below only. Test cold preparation finishing while already listening,
+   and Stop before preparation finishes: no late microphone may start after Stop.
+4. Open/close Settings during preparation and live listening. Captions must remain
+   intact. With no profiles, page load/Listen must fetch no name-model assets.
+   With cached profiles/models, no repeat model download should be necessary.
+   Record errors and phone/browser versions; do not equate a displayed name with
+   correct identity without checking who actually spoke.
 
 On 2026-10-10 the user reported that speech appears and Stop releases the microphone on their physical Pixel 8 using the deployed HTTPS app. This is a basic user-reported Listen/Stop pass, not completion of the full device matrix. Android/browser versions and tab/installed mode were not supplied. Desktop WebKit with an iPhone viewport is not iOS Safari.
 

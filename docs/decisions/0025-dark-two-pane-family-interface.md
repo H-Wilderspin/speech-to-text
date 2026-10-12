@@ -3,6 +3,8 @@
 Date: 2026-10-12
 Status: Accepted; supersedes the display/filtering proposal in ADR 0024
 
+The name switch and nested Settings flow are superseded by [ADR 0026](0026-single-pane-settings-automatic-names.md).
+
 ## Context
 
 The user chose immediate captions for everyone below, with only assigned speakers

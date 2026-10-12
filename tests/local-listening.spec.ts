@@ -16,13 +16,21 @@ async function fixtureSamples(name: string) {
 
 async function prepareModels(page: Page) {
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
-  await page.getByRole('button', { name: 'Speakers', exact: true }).click();
   await page.getByRole('button', { name: 'Prepare voice model' }).click();
   await expect(page.getByRole('button', { name: 'Record 8 seconds' })).toBeVisible({ timeout: 60000 });
-  await page.getByRole('button', { name: 'Back to settings' }).click();
-  await page.getByRole('button', { name: 'Prepare name suggestions' }).click();
-  await expect(page.getByLabel('Show names')).toBeChecked({ timeout: 60000 });
-  await expect(page.locator('section[aria-labelledby="name-suggestions-title"] [role=status]')).toContainText('Ready. Names are estimates;', { timeout: 60000 });
+  const reference = await createGeneratedProfile(page, true); reference.embedding.fill(0);
+  await page.reload();
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(page.locator('.name-preparation [role=status]')).toContainText('Ready. Names are estimates;', { timeout: 60000 });
+  await expect(page.getByRole('checkbox')).toHaveCount(0);
+}
+
+async function preparationOnlyAudio(page: Page) {
+  await page.addInitScript(() => {
+    class UnusedAudio { constructor() { throw new Error('Microphone must not open during model preparation.'); } }
+    Object.assign(globalThis, { AudioContext: UnusedAudio, OfflineAudioContext: UnusedAudio, AudioWorkletNode: UnusedAudio });
+    Object.defineProperty(navigator, 'mediaDevices', { value: { getUserMedia: () => { throw new Error('Unexpected microphone'); } } });
+  });
 }
 
 async function createGeneratedProfile(page: Page, save: boolean) {
@@ -62,11 +70,7 @@ async function createGeneratedProfile(page: Page, save: boolean) {
 
 test('real local worker reuses offline models and suggests a known generated voice, not every voice', async ({ page, context }) => {
   test.setTimeout(180000);
-  await page.addInitScript(() => {
-    class UnusedAudio { constructor() { throw new Error('Microphone must not open during model preparation.'); } }
-    Object.assign(globalThis, { AudioContext: UnusedAudio, OfflineAudioContext: UnusedAudio, AudioWorkletNode: UnusedAudio });
-    Object.defineProperty(navigator, 'mediaDevices', { value: { getUserMedia: () => { throw new Error('Unexpected microphone'); } } });
-  });
+  await preparationOnlyAudio(page);
   const downloads: string[] = [];
   page.on('request', (request) => { if (/(local|speaker)\/v[12]\//.test(request.url())) downloads.push(request.url()); });
   await page.goto('/'); expect(downloads).toHaveLength(0); await prepareModels(page);
@@ -74,10 +78,12 @@ test('real local worker reuses offline models and suggests a known generated voi
   const initialDownloads = downloads.length; expect(initialDownloads).toBe(13);
   await page.evaluate(() => navigator.serviceWorker.ready.then(() => true)); await context.setOffline(true); await page.reload();
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
-  await expect(page.locator('section[aria-labelledby="name-suggestions-title"] [role=status]')).toContainText('Ready. Names are estimates;', { timeout: 60000 });
+  await expect(page.locator('.name-preparation [role=status]')).toContainText('Ready. Names are estimates;', { timeout: 60000 });
   expect(downloads).toHaveLength(initialDownloads);
-  // Release the UI model before exercising the same shipped worker directly.
-  await page.getByLabel('Show names').uncheck();
+  // Deleting the last profile releases automatic inference, retaining its public cache.
+  await page.getByRole('button', { name: 'Delete Generated test voice', exact: true }).click();
+  await page.getByRole('button', { name: 'Confirm delete Generated test voice', exact: true }).click();
+  await expect(page.getByText('No speakers yet.')).toBeVisible();
   const files = await readdir(new URL('../dist/assets/', import.meta.url));
   const workerFile = files.find((name) => /^local\.worker-.*\.js$/.test(name))!;
   const result = await page.evaluate(async ({ reference, workerFile, localFiles, asr, known, other, command }) => {
@@ -128,20 +134,20 @@ test('real local worker reuses offline models and suggests a known generated voi
   // In delayed mode only browser recognition handles the user's spoken command.
   expect(result.command.segments.map((segment) => segment.text).join(' ')).toMatch(/command stop/i);
   expect(downloads).toHaveLength(initialDownloads);
-  // Simulate an enabled older installation with only the shared models retained.
-  // Cached-only startup must not silently download the large upgrade.
+  const restored = await createGeneratedProfile(page, true); restored.embedding.fill(0);
+  // Simulate a registered installation with only the shared models retained.
+  // Automatic startup tries missing files; offline failure remains recoverable.
   await page.evaluate(async () => {
     for (const key of await caches.keys()) if (key.startsWith('speech-to-text-asr:')) await caches.delete(key);
-    localStorage.setItem('speech-to-text-delayed-names:/', 'enabled');
   });
   await page.reload(); await page.getByRole('button', { name: 'Settings', exact: true }).click();
-  await expect(page.getByText('The upgraded speech model needs preparation in Settings. Saved voiceprints are kept.')).toBeVisible({ timeout: 30000 });
-  expect(downloads).toHaveLength(initialDownloads);
+  await expect(page.getByRole('button', { name: 'Retry names' })).toBeVisible({ timeout: 30000 });
+  const repairStart = downloads.length;
   await context.setOffline(false);
-  await page.getByRole('button', { name: 'Prepare name suggestions' }).click();
-  await expect(page.locator('section[aria-labelledby="name-suggestions-title"] [role=status]')).toContainText('Ready. Names are estimates;', { timeout: 60000 });
-  expect(downloads.slice(initialDownloads)).toHaveLength(5);
-  expect(downloads.slice(initialDownloads).every((url) => url.includes('/local/v2/'))).toBe(true);
+  await page.getByRole('button', { name: 'Retry names' }).click();
+  await expect(page.locator('.name-preparation [role=status]')).toContainText('Ready. Names are estimates;', { timeout: 60000 });
+  expect(downloads.slice(repairStart)).toHaveLength(5);
+  expect(downloads.slice(repairStart).every((url) => url.includes('/local/v2/'))).toBe(true);
 });
 
 test('browser words receive delayed AudioWorklet estimates and both captures stop together', async ({ page }) => {
@@ -235,18 +241,32 @@ test('browser words receive delayed AudioWorklet estimates and both captures sto
   expect(await stats()).toEqual({ calls: 2, stops: 2 });
 });
 
-test('local model download failure stays recoverable and cancellation opens no microphone', async ({ page }) => {
-  await page.goto('/'); await page.getByRole('button', { name: 'Settings', exact: true }).click();
-  await page.route('**/local/v2/encoder.part1.bin', (route) => route.abort());
-  await page.getByRole('button', { name: 'Prepare name suggestions' }).click();
-  await expect(page.getByRole('button', { name: 'Prepare name suggestions' })).toBeEnabled();
-  await expect(page.getByLabel('Show names')).not.toBeChecked();
-  await page.unroute('**/local/v2/encoder.part1.bin');
-  let release!: () => void;
-  const waiting = new Promise<void>((resolve) => { release = resolve; });
-  await page.route('**/local/v2/encoder.part1.bin', async (route) => { await waiting; await route.abort(); });
-  await page.getByRole('button', { name: 'Prepare name suggestions' }).click();
-  await page.getByRole('button', { name: 'Cancel model preparation' }).click();
-  await expect(page.locator('section[aria-labelledby="name-suggestions-title"] [role=status]')).toContainText('Preparation cancelled.'); release();
-  await expect(page.getByLabel('Show names')).not.toBeChecked();
+test('automatic model failure offers retry and closing settings does not cancel preparation', async ({ page }) => {
+  test.setTimeout(120000);
+  await preparationOnlyAudio(page);
+  await page.addInitScript(() => {
+    const fixture = Object.assign(window, { failNameDownload: true, nameDownloadFailures: 0 });
+    const fetchAsset = window.fetch.bind(window);
+    window.fetch = async (input, init) => {
+      const url = new URL(input instanceof Request ? input.url : String(input), location.href);
+      if (fixture.failNameDownload && url.pathname.endsWith('/local/v2/encoder.part1.bin')) {
+        fixture.nameDownloadFailures++; throw new TypeError('Synthetic model download failure.');
+      }
+      return fetchAsset(input, init);
+    };
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('button', { name: 'Prepare voice model' }).click();
+  await expect(page.getByRole('button', { name: 'Record 8 seconds' })).toBeVisible({ timeout: 30000 });
+  const profile = await createGeneratedProfile(page, true); profile.embedding.fill(0);
+  await page.reload(); await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Retry names' })).toBeVisible({ timeout: 60000 });
+  expect(await page.evaluate(() => (window as Window & { nameDownloadFailures?: number }).nameDownloadFailures)).toBeGreaterThan(0);
+  await page.evaluate(() => { (window as Window & { failNameDownload?: boolean }).failNameDownload = false; });
+  await page.getByRole('button', { name: 'Retry names' }).click();
+  await page.getByRole('button', { name: 'Back to captions' }).click();
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(page.locator('.name-preparation [role=status]')).toContainText('Ready. Names are estimates;', { timeout: 60000 });
+  await expect(page.getByRole('checkbox')).toHaveCount(0);
 });

@@ -1,23 +1,28 @@
 import { useEffect, useRef } from 'react';
 import { NameSuggestions } from './NameSuggestions';
 import type { LocalListeningEngine } from '../../transcription/local/types';
+import { SpeakerSettings, type SpeakerServices } from '../speakers/SpeakerSettings';
+import type { SpeakerColourChoices } from '../speakers/colours';
+import { Icon } from '../../shared/Icon';
 
-export function SettingsDialog({ active, textSize, onTextSize, language, onLanguage, installFailed, focusSpeakers, onSpeakers, onClose, localEngine, localEnabled = false, onLocalEnabled }: {
+export function SettingsDialog({ active, textSize, onTextSize, language, onLanguage, installFailed, onClose, localEngine, createSpeakers, colours, onColours, onStop }: {
   active: boolean; textSize: number; onTextSize: (size: number) => void;
   language: string; onLanguage: (language: string) => void; installFailed: boolean;
-  focusSpeakers: boolean; onSpeakers: () => void; onClose: () => void;
-  localEngine?: LocalListeningEngine; localEnabled?: boolean; onLocalEnabled?: (enabled: boolean) => void;
+  onClose: () => void; onStop: () => void;
+  localEngine?: LocalListeningEngine; createSpeakers: () => SpeakerServices;
+  colours: SpeakerColourChoices; onColours: (colours: SpeakerColourChoices) => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
-  const speakersButton = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     dialog.current?.showModal();
-    if (focusSpeakers) speakersButton.current?.focus();
-  }, [focusSpeakers]);
+  }, []);
 
   return <dialog className="settings-dialog" ref={dialog} aria-labelledby="settings-title" onClose={onClose}>
-    <h2 id="settings-title">Settings</h2>
-    <form method="dialog"><button autoFocus>Back to captions</button></form>
+    <header className="settings-header">
+      <form method="dialog"><button className="icon-button" aria-label="Back to captions" autoFocus><Icon name="back" /></button></form>
+      <h2 id="settings-title">Settings</h2>
+    </header>
+    <div className="settings-content">
     <section aria-label="Caption preferences">
       <h3>Text size</h3>
       <div className="text-controls" role="group" aria-label="Text size">
@@ -32,16 +37,14 @@ export function SettingsDialog({ active, textSize, onTextSize, language, onLangu
         </select>
       </label>
     </section>
-    <section aria-labelledby="voices-title">
-      <h3 id="voices-title">People &amp; colours</h3>
-      <button ref={speakersButton} onClick={onSpeakers}>Speakers</button>
-    </section>
-    {localEngine && onLocalEnabled && <NameSuggestions engine={localEngine} enabled={localEnabled} active={active} onEnabled={onLocalEnabled} />}
+    <SpeakerSettings createServices={createSpeakers} canRecord={!active} onStop={onStop} colours={colours} onColours={onColours} />
+    {localEngine && <NameSuggestions engine={localEngine} />}
     {installFailed && <p role="status">Offline installation unavailable.</p>}
     <details><summary>About</summary>
       <p>Speech uses your browser’s provider. Voiceprints stay on this device.</p>
       <p><a href={`${import.meta.env.BASE_URL}speaker/THIRD-PARTY-NOTICES.txt`} target="_blank" rel="noreferrer">Voice model licences</a>
         {' · '}<a href={`${import.meta.env.BASE_URL}local/THIRD-PARTY-NOTICES.txt`} target="_blank" rel="noreferrer">Speech model licences</a></p>
     </details>
+    </div>
   </dialog>;
 }

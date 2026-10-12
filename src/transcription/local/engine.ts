@@ -8,8 +8,8 @@ import { LocalWorker, type LocalProcessor } from './client';
 import type { LocalListeningEngine, LocalResponse, PreparationSnapshot, ReferenceVoice } from './types';
 
 export class LocalEngine implements LocalListeningEngine {
-  private snapshot: TranscriptionSnapshot = { phase: 'idle', message: 'Prepare experimental names in Settings.', segments: [] };
-  private preparation: PreparationSnapshot = { phase: 'idle', message: 'Prepare the local speech model to enable name suggestions.' };
+  private snapshot: TranscriptionSnapshot = { phase: 'idle', message: 'Names are not prepared yet.', segments: [] };
+  private preparation: PreparationSnapshot = { phase: 'idle', message: 'Names prepare automatically for saved speakers.' };
   private listeners = new Set<() => void>();
   private preparationOperation?: AbortController;
   private operation?: AbortController;
@@ -23,7 +23,7 @@ export class LocalEngine implements LocalListeningEngine {
     private readonly captureAudio = startAudioCapture,
     private readonly assetsLoader = loadLocalAssets,
     private readonly voiceCommands = true) {}
-  get unavailableReason() { return streamingUnavailableReason() ?? (this.preparation.phase !== 'ready' ? 'Prepare experimental names in Settings before listening.' : null); }
+  get unavailableReason() { return streamingUnavailableReason() ?? (this.preparation.phase !== 'ready' ? 'Names are not prepared yet.' : null); }
   getSnapshot = () => this.snapshot;
   getPreparationSnapshot = () => this.preparation;
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
@@ -71,17 +71,17 @@ export class LocalEngine implements LocalListeningEngine {
           }
         } finally { profile.embedding.fill(0); }
       }
-      if (!references.length) throw new Error('Save a compatible voiceprint in Settings → Speakers before enabling names.');
+      if (!references.length) throw new Error('Record a voice profile in Settings to show names.');
       await this.processor.request({ type: 'start', references, voiceCommands: this.voiceCommands }, signal);
     } finally { references.forEach((reference) => reference.embedding.fill(0)); store.close(); }
   }
   start(language: string) {
     if (this.operation) return;
     if (this.unavailableReason) { this.publish('error', this.unavailableReason); return; }
-    if (!language.startsWith('en')) { this.publish('error', 'Experimental names currently support English. Choose English or turn off name suggestions in Settings.'); return; }
+    if (!language.startsWith('en')) { this.publish('error', 'Names currently support English. Live captions still work.'); return; }
     const operation = new AbortController(); this.operation = operation; this.sessionId++; this.voiceStopped = false;
     this.unwatchProfiles = watchProfileChanges(`speech-to-text-speakers:${new URL(this.appUrl).pathname}`, () => {
-      this.interrupt(); this.publish('idle', 'Saved speakers changed. Prepare local listening again to use the current profiles.');
+      this.interrupt(); this.publish('idle', 'Saved speakers changed. Stop and Listen again to update names.');
     });
     this.history = [...this.snapshot.segments];
     this.publish('requesting-permission', 'Starting local listening…');
@@ -109,7 +109,7 @@ export class LocalEngine implements LocalListeningEngine {
           this.operation = undefined; this.capture = undefined; operation.abort(); this.processor.dispose();
           this.unwatchProfiles();
           this.setPreparation('idle', 'Local listening must be prepared again; saved model files will be reused.');
-          this.publish('error', error instanceof Error ? error.message : 'Local listening failed. Switch to browser captions in Settings.', this.snapshot.segments.filter((segment) => segment.isFinal));
+          this.publish('error', error instanceof Error ? error.message : 'Names unavailable. Live captions still work.', this.snapshot.segments.filter((segment) => segment.isFinal));
         }
       }
     })();

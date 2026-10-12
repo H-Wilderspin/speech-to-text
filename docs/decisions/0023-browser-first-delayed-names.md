@@ -3,6 +3,9 @@
 Date: 2026-10-11
 Status: Accepted for opt-in estimates; device coexistence and human matching pending
 
+The opt-in toggle is superseded by automatic preparation for registered profiles in
+[ADR 0026](0026-single-pane-settings-automatic-names.md); browser words remain authoritative.
+
 ## Context
 
 After ADR 0022's larger local recognizer, the user still reports unsatisfactory

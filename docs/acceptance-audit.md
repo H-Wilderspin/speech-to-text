@@ -2,6 +2,13 @@
 
 This audit preserves the README's complete scope. Implemented code and passing desktop tests do not satisfy physical-device or human-speaker gates. The goal is not complete.
 
+Current increment: [ADR 0026](decisions/0026-single-pane-settings-automatic-names.md)
+replaces nested Settings and the names toggle with one full-screen scrolling pane,
+protected colour/delete pills and automatic model preparation for saved profiles.
+Only assigned final speech has names above; live browser words remain label-free
+below. It changes the workflow, not identity accuracy. Current validation and
+publication evidence are recorded at the top of feasibility.
+
 Latest interface increment: [ADR 0025](decisions/0025-dark-two-pane-family-interface.md) adds dark two-pane captions, assigned speech only above, all live words below, persistent high-contrast colours/text preferences, and simplified personal registration. It changes presentation, not recognition accuracy or identity calibration. See the 2026-10-12 feasibility entry for checks.
 
 Published as `f48e18d`, [run 38258052858](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38258052858): all build checks and the full Linux browser suite passed. Published Chromium/WebKit checks passed with simulated recognition and no microphone; phone acceptance remains pending.
@@ -89,6 +96,6 @@ FR-06/07 are explicitly research-dependent in the specification. The Unknown fal
 
 The user authorized publication. Initial Pixel 8 storage/comparison observations and spoken stop/repetition fixes are recorded; opening words were reported retained. Both local recognizers subsequently failed the user's transcription-accuracy expectation. The current browser-first/delayed-name path needs a physical retest, especially simultaneous microphone access. Tab/PWA/accessibility results and Android/browser versions remain pending. iPhone remains unavailable; a second participant subsequently joined a test, but no identity-accuracy counts were reported. Follow [manual testing](manual-testing.md). The earlier all-Unknown report identified missing live integration, not a measured false-rejection rate.
 
-Use Settings → Speakers → Compare recordings with consent for realistic same/different-person trials. Follow the held-out protocol in [feasibility](feasibility.md); retain anonymous score/timing observations, not personal audio or voiceprints. Synthetic voices cannot replace this evidence. The current upstream-example baseline is expressly uncalibrated and limited to estimated suggestions by the user's choice; future reliable identity work must be based on held-out evidence.
+Use Settings → More → Compare recordings with a willing participant for realistic same/different-person trials. Follow the held-out protocol in [feasibility](feasibility.md); retain anonymous score/timing observations, not personal audio or voiceprints. Synthetic voices cannot replace this evidence. The current upstream-example baseline is expressly uncalibrated and limited to estimated suggestions by the user's choice; future reliable identity work must be based on held-out evidence.
 
 Authoritative code/tests: [application composition](../src/main.tsx), [browser adapter](../src/transcription/browser.ts), [transcript](../src/features/listening/Transcript.tsx), [speaker services](../src/app/speaker-services.ts), [app browser tests](../tests/app.spec.ts), [speaker browser tests](../tests/speakers.spec.ts), [Pages workflow](../.github/workflows/pages.yml). Detailed measurements and limitations are in [feasibility](feasibility.md).

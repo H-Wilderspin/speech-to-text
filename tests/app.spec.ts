@@ -53,8 +53,8 @@ test('upgrading from local-only mode restores browser captions without downloadi
   const models: string[] = [];
   page.on('request', (request) => { if (/(local|speaker)\/v[12]\//.test(request.url())) models.push(request.url()); });
   await page.goto('/'); await page.getByRole('button', { name: 'Settings', exact: true }).click();
-  await expect(page.getByLabel('Show names')).not.toBeChecked();
-  await expect(page.getByRole('dialog').getByRole('heading', { name: 'Who said what' })).toBeVisible();
+  await expect(page.getByRole('checkbox')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Add a speaker' })).toBeVisible();
   await page.getByRole('button', { name: 'Back to captions' }).click();
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   await result(page, 'Keep these accurately transcribed words.', true);
@@ -242,12 +242,9 @@ test('unsupported capability preserves readable UI and accessible speaker dialog
   await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeDisabled();
   await expect(page.getByRole('alert')).toContainText('does not offer');
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
-  await page.getByRole('button', { name: 'Speakers', exact: true }).click();
+
   await expect(page.getByRole('dialog')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Back to settings' })).toBeFocused();
-  await page.keyboard.press('Escape');
-  await expect(page.getByRole('dialog', { name: 'Settings', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Speakers', exact: true })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Back to captions' })).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Settings', exact: true })).toBeFocused();
