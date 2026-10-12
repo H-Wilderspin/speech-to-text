@@ -15,6 +15,37 @@ function anchors(tokens: readonly Word[], size = ANCHOR_WORDS) {
   return index;
 }
 
+function uniquePairs(target: readonly Word[], source: readonly Word[]) {
+  const a = anchors(target); const b = anchors(source);
+  const pairs: { target: number; source: number }[] = [];
+  for (const [key, positions] of a) {
+    const candidates = b.get(key);
+    if (positions.length === 1 && candidates?.length === 1) pairs.push({ target: positions[0]!, source: candidates[0]! });
+  }
+  return pairs.sort((left, right) => left.target - right.target);
+}
+
+/** Existing correspondence separates occurrences before/after context. Require
+ * another unique six-word match inside each gap; never infer identity from context. */
+function matchContextGaps(target: readonly Word[], source: readonly Word[], mapping: Map<number, number>, conflicts: Set<number>) {
+  if (!mapping.size || conflicts.size) return;
+  const boundaries = [[-1, -1], ...[...mapping].sort(([a], [b]) => a - b), [target.length, source.length]];
+  if (boundaries.some((pair, i) => i > 0 && pair[1]! <= boundaries[i - 1]![1]!)) return;
+  for (let i = 1; i < boundaries.length; i++) {
+    const [to, from] = boundaries[i - 1]!;
+    const [endTo, endFrom] = boundaries[i]!;
+    const startTo = to! + 1; const startFrom = from! + 1;
+    if (endTo! - startTo < ANCHOR_WORDS || endFrom! - startFrom < ANCHOR_WORDS) continue;
+    const pairs = uniquePairs(target.slice(startTo, endTo), source.slice(startFrom, endFrom));
+    if (pairs.some((pair, j) => j > 0 && pair.source <= pairs[j - 1]!.source)) continue;
+    for (const pair of pairs) for (let offset = 0; offset < ANCHOR_WORDS; offset++) {
+      const targetIndex = startTo + pair.target + offset; const sourceIndex = startFrom + pair.source + offset;
+      if (mapping.has(targetIndex) && mapping.get(targetIndex) !== sourceIndex) conflicts.add(targetIndex);
+      else mapping.set(targetIndex, sourceIndex);
+    }
+  }
+}
+
 /** Transfer estimates through unique six-word agreement, never callback
  * arrival times. This is experimental text correspondence, NOT forced alignment
  * or browser word timestamps. Browser wording/punctuation is never replaced. */
@@ -25,13 +56,7 @@ export function delayedNames(browser: readonly TranscriptSegment[], local: reado
   for (const word of target) {
     const list = bySegment.get(word.segment) ?? []; list.push(word); bySegment.set(word.segment, list);
   }
-  const a = anchors(target); const b = anchors(source);
-  const pairs: { target: number; source: number }[] = [];
-  for (const [key, positions] of a) {
-    const candidates = b.get(key);
-    if (positions.length === 1 && candidates?.length === 1) pairs.push({ target: positions[0]!, source: candidates[0]! });
-  }
-  pairs.sort((left, right) => left.target - right.target);
+  const pairs = uniquePairs(target, source);
   // Reordered/conflicting recognitions have no trustworthy correspondence.
   if (pairs.some((pair, i) => i > 0 && pair.source <= pairs[i - 1]!.source)) return [...browser];
   const mapping = new Map<number, number>(); const conflicts = new Set<number>();
@@ -66,6 +91,7 @@ export function delayedNames(browser: readonly TranscriptSegment[], local: reado
       else mapping.set(targetIndex, sourceIndex);
     }
   }
+  matchContextGaps(target, source, mapping, conflicts);
   const labels = new Map<number, Map<number, TranscriptSegment>>();
   for (const [to, from] of mapping) {
     if (conflicts.has(to)) continue;

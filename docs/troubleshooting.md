@@ -1,5 +1,28 @@
 # Troubleshooting
 
+## 2026-10-12 - Local names lost during repeated-phrase alignment (partially addressed)
+
+- **Evidence:** current `index-BsfattpN.js` trace finishes with 9/14 matched voice
+  windows, zero ambiguous, five rejected; best similarity 0.784. Three local named
+  spans yield only one aligned/visible span of 34 characters, hidden profiles zero.
+  Local assigned spans increase at about 66.9, 75.4 and 86.0 seconds while aligned
+  characters stay at 34. All 1,243,264 captured samples drain and finish returns in
+  83 ms. The excerpt starts mid-session; it is not a complete startup trace.
+- **Diagnosis:** correspondence discards some already-produced identities. No
+  token-mismatch or missing/invalid-timing flag appears. This is not a worker lock.
+  The user confirms all displayed speech was theirs: rejected windows remain a
+  separate acoustic limitation, not evidence for changing the cutoff.
+- **Reproduced limitation:** globally unique anchors reject repeated wording even
+  when a distinct matching passage separates occurrences. Synthetic regressions
+  fail before the correction. Restrict new exact six-word searches to corresponding
+  intervals delimited by existing matched words. Identity comes from each local
+  word, never from the surrounding speaker. Ambiguous intervals remain unassigned.
+- **Limits:** private local wording is not logged, so the regression demonstrates
+  a relevant code limitation, not the exact cause of every supplied omission.
+  Short phrases, recognition differences and rejected voice evidence still need
+  work. Do not describe this as complete recovery of the phone's missing sentences.
+- **Related:** [ADR 0031](decisions/0031-context-for-repeated-wording.md).
+
 ## 2026-10-12 - Partial named phrases and registration cleanup error
 
 - **Evidence:** returned trace uses the older `index-C_C15ZXQ.js` build and collapsed

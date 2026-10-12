@@ -2,13 +2,14 @@
 
 ## Implementation status — 2026-10-12
 
-**Latest attribution trace:** three sessions with one saved profile drain normally;
-the last matches six of seven voice windows but displays only fragments above.
-Words require both covering voice evidence and cross-recognizer correspondence;
-the exact exclusion reason for each missing word remains unresolved. Six-word
-anchors can span segments, so a named fragment can be shorter than six words.
-The trace is from the older logging build. Sustained/short-phrase attribution is
-not yet accepted. A separate registration cleanup error is fixed. Console
+**Latest attribution trace:** the current build matches nine of fourteen voice
+windows and produces three local named spans, but only one transfers to browser
+words. Capture drains normally. A reproduced repeated-phrase limitation is corrected:
+matched surrounding text can distinguish occurrences while each word still needs
+its own speaker evidence. See [ADR 0031](docs/decisions/0031-context-for-repeated-wording.md).
+The user confirms all speech was theirs; rejected voice windows, short phrases and
+recognizer differences remain limitations. Sustained attribution is not yet accepted.
+A separate registration cleanup error is fixed. Console
 output now uses complete numeric JSON lines so copied scores are not hidden inside
 collapsed object previews. Open [the debug URL](https://h-wilderspin.github.io/speech-to-text/?debugSpeakers=1)
 and filter `who-said-what`. See [diagnostic instructions](docs/speaker-diagnostics.md)

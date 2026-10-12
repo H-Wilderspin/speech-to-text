@@ -62,3 +62,50 @@ it('revises attributed provisional text in place and withdraws unsupported evide
   expect(revised.at(-1)!.speakerId).toBeUndefined();
   expect(delayedNames([{ ...segment('Something completely different.'), isFinal: false }], local).some((piece) => piece.speakerId)).toBe(false);
 });
+
+it('distinguishes repeated wording on opposite sides of an independently matched passage', () => {
+  const phrase = 'please leave the green folder here';
+  const context = 'we can review every document together';
+  const original = `${phrase} today. ${context} tomorrow. ${phrase}!`;
+  const local = [segment(`${phrase} yesterday.`, 'first', true), segment(`${context} later.`, 'context'),
+    { ...segment(phrase, 'last', true), speakerId: 'second', speakerName: 'Second test' }];
+  const result = delayedNames([segment(original)], local);
+  expect(text(result)).toBe(original);
+  expect(result.filter((part) => part.speakerId).map((part) => [part.text.trim(), part.speakerId]))
+    .toEqual([[phrase, 'voice'], [`${phrase}!`, 'second']]);
+});
+
+it('does not resolve repetitions that remain ambiguous within the same context interval', () => {
+  const phrase = 'please leave the green folder here';
+  const context = 'we can review every document together';
+  const original = `${phrase} today. ${phrase} today. ${context}`;
+  const result = delayedNames([segment(original)], [segment(`${phrase} yesterday.`, 'first', true), segment(context, 'context')]);
+  expect(text(result)).toBe(original);
+  expect(result.some((part) => part.speakerId)).toBe(false);
+});
+
+it('does not move a repeated name across context or assign unknown or unfinished local speech', () => {
+  const phrase = 'please leave the green folder here';
+  const context = 'we can review every document together';
+  const original = `${phrase} today. ${context} tomorrow. ${phrase}`;
+  for (const ending of [segment(phrase, 'last'), { ...segment(phrase, 'last', true), isFinal: false }]) {
+    const result = delayedNames([segment(original)], [segment(`${phrase} yesterday.`, 'first', true), segment(`${context} later.`, 'context'), ending]);
+    expect(text(result)).toBe(original);
+    expect(result.filter((part) => part.speakerId).map((part) => part.text.trim())).toEqual([phrase]);
+    expect(result.at(-1)!.speakerId).toBeUndefined();
+  }
+});
+
+it('keeps the earlier occurrence when browser repetition arrives before local evidence', () => {
+  const phrase = 'please leave the green folder here';
+  const context = 'we can review every document together';
+  const original = `${phrase} today. ${context} tomorrow. ${phrase}`;
+  const local = [segment(`${phrase} yesterday.`, 'first', true), segment(`${context} later.`, 'context')];
+  const result = delayedNames([{ ...segment(original), isFinal: false }], local);
+  expect(text(result)).toBe(original);
+  expect(result.filter((part) => part.speakerId).map((part) => part.text.trim())).toEqual([phrase]);
+  expect(result.every((part) => !part.isFinal)).toBe(true);
+  expect(result.at(-1)!.speakerId).toBeUndefined();
+  // Removing distinguishing context in a browser revision withdraws the estimate.
+  expect(delayedNames([segment(`${phrase} ${phrase}`)], local).some((part) => part.speakerId)).toBe(false);
+});

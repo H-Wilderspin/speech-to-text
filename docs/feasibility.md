@@ -1,5 +1,31 @@
 # Feasibility evidence
 
+## 2026-10-12 - Current trace isolates a text-correspondence bottleneck
+
+- **User evidence:** current deployed build `index-BsfattpN.js`; all displayed
+  phrases spoken by the enrolled person, including deliberate repeated wording.
+  Physical model/OS/browser versions not reconfirmed. No private wording retained.
+- **Trace:** 9/14 voice windows matched, zero ambiguous, five rejected, best cosine
+  0.784. Local assigned spans grow from one to three while browser-aligned spans
+  remain one (34 characters). Final browser count is 137 characters across five
+  internal segments. Complete drain: 1,243,264 samples / 77.704 seconds, finish 83 ms.
+  The supplied excerpt begins after 32 seconds of captured audio. No missing or
+  invalid timing/token-mismatch flag appears. These correlated windows do not
+  establish human accuracy; their actual acoustic rejection cause is unknown.
+- **Change:** use existing text correspondence to distinguish repeated six-word
+  anchors in separate intervals. Synthetic failures reproduce global uniqueness
+  unnecessarily excluding them. Per-word identity and browser words are preserved.
+  This addresses a code limitation consistent with the trace, not every omitted
+  word; local transcript content is deliberately unavailable in diagnostics.
+- **Local checks:** Windows Node 22.20.0; typecheck, lint, 218 unit tests, pinned
+  assets and build pass. Four new regression cases cover distinct speakers,
+  unresolved repetition, unknown/provisional local speech and browser revisions.
+  Main JS 295.82 kB / 91.70 kB gzip. Physical acceptance remains outstanding.
+- **Browser check:** generated real-worklet Chromium capture passes in 23.1 seconds,
+  including delayed names on provisional Android-style captions, activity filtering,
+  continued capture and stop controls. Existing Windows WebKit audio skip remains;
+  Linux CI covers that case. This fixture does not establish human accuracy.
+
 ## 2026-10-12 - Follow-up trace produces partial assigned phrases
 
 - **Setup:** user-provided trace, one reference, three manual sessions; device and
