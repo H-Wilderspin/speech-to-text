@@ -7,7 +7,8 @@ device tools if a phone console is unavailable. The URL must be open in the tab
 being inspected; an installed app may open a different URL. Remove the query and
 reload to turn diagnostics off.
 
-Close all tabs and installed-app windows first, then reopen the URL above. A waiting
+Reload online to let the app check for updates, then close all tabs and installed-app
+windows and reopen the URL above. A waiting
 service-worker update cannot activate while an older app window remains open. Do
 not clear site data: that removes saved voiceprints and downloaded models. Current
 diagnostic lines include JSON text; expandable `Object` previews or `{..., ...}`

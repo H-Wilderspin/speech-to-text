@@ -25,6 +25,11 @@
   fix and passes after it. Chromium's real-worklet registration/update/comparison,
   offline reuse, cancellation and deletion case passes (1.0 minute). Its existing
   Windows WebKit skip remains; Linux CI covers WebKit audio. No physical retest.
+- **Publication:** `f8a0988`, [run 38293387955](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38293387955),
+  passed the full workflow on its first attempt and deployed. Published Chromium
+  156.0.8078.4 and WebKit 27.2 loaded `index-BsfattpN.js` and passed the complete-JSON,
+  default-silence, settings and single-evolving-live-caption smoke checks with zero
+  page errors. These smoke checks do not use a microphone or establish human accuracy.
 
 
 ## 2026-10-12 - Returned trace establishes below-cutoff rejection
