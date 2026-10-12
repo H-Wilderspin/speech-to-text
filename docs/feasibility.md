@@ -26,6 +26,17 @@
   AudioWorklet integration retained delayed upper names, unchanged Android live
   wording, activity filtering and Stop. Typecheck/lint passed again after adding
   the real-worker assertions. Linux CI and published smoke results follow below.
+- **Publication:** commit `a15394ba1cde9386dd4895b9833392dcef87e4da`,
+  [Actions run 38268575055](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38268575055),
+  passed the full Linux build/browser suite and deployed. Fresh published Chromium
+  156.0.8078.4 and WebKit 27.2 loaded `index-DQXVdnz0.js` and fetched the new
+  `local.worker-Cs5LElHV.js` diagnostic code. Both passed speaker activity/colour
+  persistence, protected deletion, 320px/enlarged text, one growing live sentence
+  and no names below; zero page errors and no microphone use. Actual generated
+  model inference is covered by the integration suite, not the hosted UI smoke.
+  The smoke script's initial Node HTTP request failed local certificate validation;
+  the browser's trusted HTTPS fetch succeeded without disabling TLS validation.
+  Physical attribution retest remains pending.
 - **Limits:** this is a concrete correction and more specific diagnosis, not a
   verified resolution of the user's empty pane. Human matching remains experimental.
   No models, dependencies, browser transcription changes or new remote processing.

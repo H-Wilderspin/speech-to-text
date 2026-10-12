@@ -9,6 +9,12 @@ pruning of voice decisions before delayed tokens and adds diagnostic counts to
 separate voice rejection from local word-attribution failure. 201 unit tests and
 local check/build pass; physical resolution is unverified. See current feasibility.
 
+Published correction: `a15394b`,
+[run 38268575055](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38268575055).
+Full Linux checks/deployment and published Chromium/WebKit UI/asset smoke passed.
+The user confirms only their own profile is saved. Phone matching remains unresolved
+until the new retention logic and diagnostic are tested on that device.
+
 Latest user report: Who said what is empty even after Stop, without an error.
 [ADR 0027](decisions/0027-speaker-visibility-and-provisional-attribution.md) adds
 per-person upper-pane visibility, fixes browser-final gating of completed speaker
