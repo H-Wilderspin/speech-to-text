@@ -1,5 +1,24 @@
 # Troubleshooting
 
+## 2026-10-12 - One assigned statement, no follow-ups (Unresolved)
+
+- **Context:** latest user phone report says one payload had correct words and
+  identity, then no follow-up statements appeared. OS/browser versions and whether
+  the reference was updated to twenty seconds are unconfirmed.
+- **Cause:** not established. Code inspection shows a sequential frame RPC with
+  concurrent capture, not a gate that waits for one assigned sentence. Local
+  endpoint/evidence, voice matching, cross-recognizer wording and display filtering
+  are distinct gates. No phone console trace has yet located the stalled stage.
+- **Action:** add opt-in numeric-only console diagnostics at these boundaries,
+  including pending requests, queue lag, cumulative progress and current window
+  similarity. Keep browser words, clock validation and identity rules unchanged.
+- **Verification:** regression coverage exercises queued frames, follow-up local
+  sentences and delayed browser statements. Executed results are in feasibility;
+  generated speech cannot establish the physical root cause or matching accuracy.
+- **Next:** use [the diagnostic procedure](speaker-diagnostics.md) for three varied
+  statements and Stop; compare progress before/after the first visible assignment.
+- **Related:** [ADR 0030](decisions/0030-speaker-stage-console-diagnostics.md).
+
 ## 2026-10-12 — Linux CI audio-clock interruption (Unresolved)
 
 - **Context:** guided registration commit `2082598`, first attempt of

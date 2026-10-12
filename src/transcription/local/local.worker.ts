@@ -21,7 +21,7 @@ const closeSession = () => {
   references.forEach((reference) => reference.embedding.fill(0)); references = [];
 };
 
-self.onmessage = async (event: MessageEvent<{ id: number; type: string; assets?: Record<string, Uint8Array<ArrayBuffer>>; references?: ReferenceVoice[]; frame?: AudioFrame; voiceCommands?: boolean }>) => {
+self.onmessage = async (event: MessageEvent<{ id: number; type: string; assets?: Record<string, Uint8Array<ArrayBuffer>>; references?: ReferenceVoice[]; frame?: AudioFrame; voiceCommands?: boolean; debugSpeakers?: boolean }>) => {
   const data = event.data;
   if (busy) { data.frame?.samples.fill(0); data.references?.forEach((reference) => reference.embedding.fill(0)); self.postMessage({ id: data.id, error: 'Local speech processing is busy.' }); return; }
   busy = true;
@@ -53,17 +53,24 @@ self.onmessage = async (event: MessageEvent<{ id: number; type: string; assets?:
       transcript = new SuggestedTranscript(references); stopped = null; lastOutput = '';
       self.postMessage({ id: data.id });
     } else if (pipeline && transcript && (data.type === 'frame' || data.type === 'finish')) {
+      const started = performance.now();
       const result = data.type === 'finish' ? pipeline.finish() : pipeline.accept(data.frame!);
+      const pipelineMs = performance.now() - started;
       const segments = stopped ?? transcript.update(result, data.type === 'finish');
       if (voiceCommands) stopped ??= consumeStopCommand(segments);
       const output = stopped ?? segments;
       const speakerStatus = transcript.getStatus();
       const serialized = JSON.stringify({ output, speakerStatus });
+      const diagnostics = data.debugSpeakers ? { ...transcript.getDiagnostics(result.acceptedSamples),
+        acceptedSamples: result.acceptedSamples, segment: result.timing.segment, endpoint: result.isFinal,
+        localCharacters: result.text.length, tokens: result.tokenPoints.length,
+        pipelineMs: Math.round(pipelineMs), attributionMs: Math.round(performance.now() - started - pipelineMs),
+        outputChanged: serialized !== lastOutput, assignedSegments: output.filter((segment) => segment.speakerId).length } : undefined;
       if (data.type === 'finish') {
         references.forEach((reference) => reference.embedding.fill(0)); references = []; transcript = undefined;
         pipeline.reset();
       }
-      self.postMessage({ id: data.id, commandStop: stopped !== null, ...(serialized !== lastOutput ? { segments: output, speakerStatus } : {}) });
+      self.postMessage({ id: data.id, commandStop: stopped !== null, ...(diagnostics ? { diagnostics } : {}), ...(serialized !== lastOutput ? { segments: output, speakerStatus } : {}) });
       lastOutput = serialized;
     } else throw new Error('Prepare local listening before starting.');
   } catch (error) {

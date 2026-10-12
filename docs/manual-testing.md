@@ -1,5 +1,15 @@
 # Manual validation and acceptance gates
 
+## Follow-up attribution console trace
+
+Use [speaker diagnostics](speaker-diagnostics.md) to inspect the debug URL on the
+phone while speaking three different sentences. Verify browser text keeps composing
+normally; compare capture/worker/pending/alignment/display progress when the first
+upper statement appears and when later statements fail to appear. Finish with Stop
+and include the drain/failure stages. Share only the filtered numeric diagnostics,
+plus the short Settings status if it reports an error. Repeat without the debug
+query if timing changes materially. This is an unresolved physical-device check.
+
 ## Guided twenty-second voice registration
 
 1. In Settings, select an existing name under Voice to record, or enter a new name.

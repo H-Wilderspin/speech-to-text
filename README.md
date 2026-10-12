@@ -2,6 +2,14 @@
 
 ## Implementation status — 2026-10-12
 
+**Speaker stage diagnostics:** the latest phone report is one correct assigned
+statement followed by no further upper text. This remains unresolved. Open
+[the debug URL](https://h-wilderspin.github.io/speech-to-text/?debugSpeakers=1) and
+filter the developer console for `who-said-what` to trace capture, queued frames,
+worker timing, voice evidence, word alignment and display counts. Logs omit speech,
+names, audio and voiceprints. See [diagnostic instructions](docs/speaker-diagnostics.md)
+and [ADR 0030](docs/decisions/0030-speaker-stage-console-diagnostics.md).
+
 **Longer guided voice registration:** Settings now provides a passage to read for
 20 seconds, up from eight. Under **Voice to record**, select your saved name and
 choose **Update voice (20 seconds)** to replace its voiceprint while keeping its
@@ -9,7 +17,7 @@ colour and visibility. The old profile remains until the new one saves successfu
 Existing profiles continue to work. This supplies more registration speech; improved
 human matching is not yet verified. See [ADR 0029](docs/decisions/0029-guided-longer-voice-registration.md).
 
-**Empty upper pane remains under investigation:** the latest Pixel 8 retest reports
+**Earlier empty upper-pane report:** the preceding Pixel 8 retest reported
 excellent live captions but no upper text after Stop, with "Speech received; no
 saved voice matched yet." A reproduced timing defect discarded voice decisions
 before delayed local words arrived; decisions now retain a 30-second history.

@@ -23,6 +23,22 @@ function fixture(latePermission = false) {
 async function prepared() { for (let i = 0; i < 5; i++) await Promise.resolve(); }
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
 
+it('queues follow-up audio while a frame is busy, then processes every frame in order', async () => {
+  const f = fixture(); const consumed: number[] = []; let release!: () => void;
+  const capture = startAudioCapture(new AbortController().signal, async (frame) => {
+    consumed.push(frame.startSample);
+    if (frame.startSample === 0) await new Promise<void>((resolve) => { release = resolve; });
+  });
+  await prepared();
+  for (const startSample of [0, 1600, 3200]) f.send({ type: 'frame', samples: new Float32Array(1600), startSample });
+  expect(consumed).toEqual([0]);
+  release(); await prepared();
+  expect(consumed).toEqual([0, 1600, 3200]);
+  expect(f.port.postMessage.mock.calls.filter(([message]) => message.type === 'ack').map(([message]) => message.startSample))
+    .toEqual([0, 1600, 3200]);
+  capture.stop(); f.send({ type: 'end', totalSamples: 4800 }); await capture.done;
+});
+
 it('stops the microphone once, drains consumed samples and then resolves Stop', async () => {
   const f = fixture(); let finishProcessing!: () => void; let consumed: AudioFrame | undefined;
   const capture = startAudioCapture(new AbortController().signal, (frame) => {

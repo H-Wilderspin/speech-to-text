@@ -1,5 +1,6 @@
 import workletUrl from './stream-worklet.js?url&no-inline';
 import { watchInterruptions } from './interruption';
+import { createSpeakerTrace, speakerFailureStage } from '../transcription/diagnostics';
 
 export interface AudioFrame {
   clockId: string;
@@ -24,17 +25,22 @@ export function streamingUnavailableReason(): string | undefined {
  * worker; otherwise this adapter erases them after consumption. Abort also needs
  * to terminate any consumer worker. Audio timestamps never use wall-clock time. */
 export function startAudioCapture(signal: AbortSignal, consume: (frame: AudioFrame) => Promise<void>, ready: () => void = () => {}): AudioCapture {
+  const trace = createSpeakerTrace('capture');
+  trace('requested');
   let resolveDone!: () => void; let rejectDone!: (reason: unknown) => void;
   const done = new Promise<void>((resolve, reject) => { resolveDone = resolve; rejectDone = reject; });
   let context: AudioContext | undefined; let stream: MediaStream | undefined;
   let node: AudioWorkletNode | undefined; let source: MediaStreamAudioSourceNode | undefined;
   let settled = false; let stopping = false; let ended = false; let pumping = false;
   let receivedSamples = 0; let lastFrameAt = performance.now();
+  let processedSamples = 0;
   let deadline: ReturnType<typeof setTimeout> | undefined;
   let watchdog: ReturnType<typeof setInterval> | undefined;
   let unwatch = () => {};
   const clockId = crypto.randomUUID();
   const queue: AudioFrame[] = []; let active: AudioFrame | undefined;
+  const progress = () => ({ receivedSamples, processedSamples, queuedFrames: queue.length,
+    inFlight: pumping, lagMs: (receivedSamples - processedSamples) / 16 });
   const erase = (frame: AudioFrame) => { if (frame.samples.byteLength) frame.samples.fill(0); };
   const stopTracks = () => {
     const tracks = stream?.getTracks(); stream = undefined;
@@ -49,9 +55,9 @@ export function startAudioCapture(signal: AbortSignal, consume: (frame: AudioFra
     void context?.close().catch(() => {});
     queue.splice(0).forEach(erase); if (active) erase(active);
   };
-  const fail = (reason: unknown) => { if (!settled) { settled = true; cleanup(); rejectDone(reason); } };
+  const fail = (reason: unknown) => { if (!settled) { trace(speakerFailureStage(reason), progress()); settled = true; cleanup(); rejectDone(reason); } };
   const abort = () => fail(signal.reason ?? new DOMException('Cancelled', 'AbortError'));
-  const finish = () => { if (!settled && ended && !pumping && !queue.length) { settled = true; cleanup(); resolveDone(); } };
+  const finish = () => { if (!settled && ended && !pumping && !queue.length) { trace('drained', progress()); settled = true; cleanup(); resolveDone(); } };
   const pump = async () => {
     if (pumping || settled) return;
     pumping = true;
@@ -59,9 +65,11 @@ export function startAudioCapture(signal: AbortSignal, consume: (frame: AudioFra
       while (!settled && queue.length) {
         active = queue.shift()!;
         await consume(active);
+        processedSamples = active.startSample + active.samples.length;
         erase(active);
         if (!settled) node?.port.postMessage({ type: 'ack', startSample: active.startSample });
         active = undefined;
+        trace('processed', progress(), 1000);
       }
     } catch (error) { fail(error); }
     finally { pumping = false; finish(); }
@@ -69,6 +77,7 @@ export function startAudioCapture(signal: AbortSignal, consume: (frame: AudioFra
   const stop = () => {
     if (settled || stopping) return;
     stopping = true;
+    trace('stop-requested', progress());
     if (!node) { ended = true; finish(); return; }
     clearInterval(watchdog); clearTimeout(deadline);
     // Keep the context rendering until the worklet flushes its final partial frame.
@@ -104,7 +113,7 @@ export function startAudioCapture(signal: AbortSignal, consume: (frame: AudioFra
         if (message.type === 'error') { fail(new Error(message.message)); return; }
         if (message.type === 'end') {
           if (message.totalSamples !== receivedSamples) { fail(new Error('Incomplete captured audio. Start again.')); return; }
-          ended = true; stopTracks(); finish(); return;
+          trace('input-ended', progress()); ended = true; stopTracks(); finish(); return;
         }
         const samples = message.samples;
         if (message.type !== 'frame' || !(samples instanceof Float32Array) || !samples.length || samples.length > 1600
@@ -114,11 +123,12 @@ export function startAudioCapture(signal: AbortSignal, consume: (frame: AudioFra
         }
         receivedSamples += samples.length; lastFrameAt = performance.now();
         queue.push({ clockId, sampleRate: 16000, startSample: message.startSample, samples });
+        trace('received', progress(), 1000);
         void pump();
       };
       lastFrameAt = performance.now();
       watchdog = setInterval(() => { if (performance.now() - lastFrameAt > 1500) fail(new Error('No audio arrived from the microphone. Start again.')); }, 250);
-      source.connect(node); node.connect(context.destination); ready();
+      source.connect(node); node.connect(context.destination); trace('ready'); ready();
     }).catch((error: unknown) => fail(error instanceof DOMException && error.name === 'NotAllowedError'
       ? new Error('Microphone access was denied. Allow it in site settings and try again.') : error));
   } catch (error) { fail(error); }

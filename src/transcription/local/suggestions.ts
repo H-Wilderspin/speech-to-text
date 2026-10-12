@@ -73,18 +73,35 @@ export class SuggestedTranscript {
   private ambiguous = 0;
   private bestScore: number | null = null;
   private wordStatus = 'Waiting for completed local words.';
+  private lastCandidates = 0;
+  private lastScore: number | null = null;
   constructor(private readonly references: readonly ReferenceVoice[]) {}
   addWindow(window: VoiceWindow) {
     this.windows.push(window); this.checks++;
     if (window.speakerId) this.matched++;
     if ((window.match?.candidates ?? 0) > 1) this.ambiguous++;
     const score = window.match?.bestScore;
+    this.lastCandidates = window.match?.candidates ?? 0;
+    this.lastScore = score ?? null;
     if (score !== undefined && score !== null) this.bestScore = Math.max(this.bestScore ?? -1, score);
   }
   getStatus() {
     if (!this.checks) return 'No voice samples checked yet.';
     const score = this.bestScore === null ? '' : ` Best similarity ${this.bestScore.toFixed(2)}; minimum ${EXPERIMENTAL_MINIMUM_COSINE.toFixed(2)}.`;
     return `Voice samples: ${this.matched}/${this.checks} matched; ${this.ambiguous} ambiguous.${score} ${this.wordStatus}`;
+  }
+  getDiagnostics(acceptedSamples: number) {
+    const completed = [...this.pending.values()].filter((entry) => entry.isFinal);
+    return { voiceChecks: this.checks, voiceMatched: this.matched, voiceAmbiguous: this.ambiguous,
+      lastCandidates: this.lastCandidates, lastSimilarity: this.lastScore,
+      pendingSegments: this.pending.size, pendingFinal: completed.length, committedThrough: this.committedThrough,
+      committedSegments: this.history.length, retainedWindows: this.windows.length,
+      evidenceWaitMs: Math.max(0, ...completed.map((entry) =>
+        ((entry.tokenPoints.at(-1)?.sample ?? entry.acceptedSamples) + 48000 - acceptedSamples) / 16)),
+      wordsMatched: this.wordStatus === 'Local words matched.',
+      tokenMismatch: this.wordStatus === 'Local words and tokens do not align.',
+      missingTiming: this.wordStatus === 'No local word timestamps.',
+      invalidTiming: this.wordStatus === 'Local word timing is invalid.' };
   }
   update(result: PipelineResult, finished = false): TranscriptSegment[] {
     if (result.timing.segment > this.committedThrough) this.pending.set(result.timing.segment, result);

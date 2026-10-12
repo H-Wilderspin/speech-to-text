@@ -5,6 +5,7 @@ import { watchProfileChanges } from '../../storage/profile-changes';
 import type { TranscriptSegment, TranscriptionSnapshot } from '../types';
 import { loadLocalAssets } from './assets';
 import { LocalWorker, type LocalProcessor } from './client';
+import { createSpeakerTrace, speakerFailureStage } from '../diagnostics';
 import type { LocalListeningEngine, LocalResponse, PreparationSnapshot, ReferenceVoice } from './types';
 
 export class LocalEngine implements LocalListeningEngine {
@@ -19,6 +20,7 @@ export class LocalEngine implements LocalListeningEngine {
   private voiceStopped = false;
   private speakerStatus: string | undefined;
   private unwatchProfiles = () => {};
+  private trace = createSpeakerTrace('local');
   constructor(private readonly appUrl: string, private readonly createStore: () => ProfileStore,
     private readonly processor: LocalProcessor = new LocalWorker(),
     private readonly captureAudio = startAudioCapture,
@@ -30,9 +32,12 @@ export class LocalEngine implements LocalListeningEngine {
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
   private notify() { this.listeners.forEach((listener) => listener()); }
   private publish(phase: TranscriptionSnapshot['phase'], message: string, segments = this.snapshot.segments) {
+    if (phase !== this.snapshot.phase) this.trace(phase, { session: this.sessionId });
     this.snapshot = { phase, message, segments, ...(this.speakerStatus ? { speakerStatus: this.speakerStatus } : {}) }; this.notify();
   }
-  private setPreparation(phase: PreparationSnapshot['phase'], message: string) { this.preparation = { phase, message }; this.notify(); }
+  private setPreparation(phase: PreparationSnapshot['phase'], message: string) {
+    this.trace(`preparation-${phase}`); this.preparation = { phase, message }; this.notify();
+  }
 
   async prepare(cachedOnly = false) {
     if (this.preparationOperation || this.operation || this.preparation.phase === 'ready') return;
@@ -73,6 +78,7 @@ export class LocalEngine implements LocalListeningEngine {
         } finally { profile.embedding.fill(0); }
       }
       if (!references.length) throw new Error('Record a voice profile in Settings to show names.');
+      this.trace('references-ready', { session: this.sessionId, profiles: references.length });
       await this.processor.request({ type: 'start', references, voiceCommands: this.voiceCommands }, signal);
     } finally { references.forEach((reference) => reference.embedding.fill(0)); store.close(); }
   }
@@ -81,6 +87,7 @@ export class LocalEngine implements LocalListeningEngine {
     if (this.unavailableReason) { this.publish('error', this.unavailableReason); return; }
     if (!language.startsWith('en')) { this.publish('error', 'Names currently support English. Live captions still work.'); return; }
     const operation = new AbortController(); this.operation = operation; this.sessionId++; this.voiceStopped = false; this.speakerStatus = undefined;
+    this.trace('start', { session: this.sessionId });
     this.unwatchProfiles = watchProfileChanges(`speech-to-text-speakers:${new URL(this.appUrl).pathname}`, () => {
       this.interrupt(); this.publish('idle', 'Saved speakers changed. Stop and Listen again to update names.');
     });
@@ -107,6 +114,7 @@ export class LocalEngine implements LocalListeningEngine {
         this.publish('idle', this.voiceStopped ? 'Stopped by voice command.' : 'Stopped.');
       } catch (error) {
         if (this.operation === operation) {
+          this.trace(speakerFailureStage(error), { session: this.sessionId });
           this.operation = undefined; this.capture = undefined; operation.abort(); this.processor.dispose();
           this.unwatchProfiles();
           this.setPreparation('idle', 'Local listening must be prepared again; saved model files will be reused.');

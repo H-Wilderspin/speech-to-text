@@ -32,6 +32,20 @@ it('shows browser words immediately, then estimates; local recognition never ove
   f.local.emit({ segments: [{ ...evidence[0]!, text: 'Incorrect local words that must never replace the browser text.' }] });
   expect(f.engine.getSnapshot().segments).toEqual(words);
 });
+it('accepts follow-up browser words while names are pending and labels successive statements in one session', () => {
+  const f = fixture();
+  const next = { id: 'second', text: 'Tomorrow we will walk along the river together.', isFinal: false };
+  f.browser.emit({ segments: [...words, next] });
+  expect(f.engine.getSnapshot().segments.map((segment) => segment.text)).toEqual([phrase, next.text]);
+  f.local.emit({ segments: evidence });
+  expect(f.engine.getSnapshot().segments.at(-1)?.speakerId).toBeUndefined();
+  f.local.emit({ segments: [...evidence, { ...next, id: 'second-local', isFinal: true,
+    speakerId: 'a', speakerName: 'Test', speakerEstimated: true }] });
+  expect(f.engine.getSnapshot().segments.every((segment) => segment.speakerId === 'a')).toBe(true);
+  expect(f.engine.getSnapshot().segments.at(-1)).toMatchObject({ text: next.text, isFinal: false, speakerEvidenceFinal: true });
+  expect(f.local.engine.start).toHaveBeenCalledOnce();
+  expect(f.browser.engine.stop).not.toHaveBeenCalled(); f.engine.dispose();
+});
 it('reports which stage is waiting without revealing speech in the diagnostic', () => {
   const f = fixture();
   expect(f.engine.getSnapshot().speakerStatus).toBe('No local speech recognized yet.');

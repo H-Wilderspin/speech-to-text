@@ -6,6 +6,10 @@ import { type SpeakerServices } from '../features/speakers/SpeakerSettings';
 import type { TranscriptionEngine } from '../transcription/types';
 import type { LocalListeningEngine } from '../transcription/local/types';
 import { readPreferences, savePreferences } from '../features/settings/preferences';
+import { assignedSegments } from '../features/listening/streams';
+import { createSpeakerTrace } from '../transcription/diagnostics';
+
+const trace = createSpeakerTrace('display');
 
 export function App({ engine: browserEngine, createSpeakers, localEngine }: {
   engine: TranscriptionEngine; createSpeakers: () => SpeakerServices; localEngine?: LocalListeningEngine;
@@ -22,6 +26,13 @@ export function App({ engine: browserEngine, createSpeakers, localEngine }: {
   const [offline, setOffline] = useState(!navigator.onLine);
   const [installFailed, setInstallFailed] = useState(false);
   const active = ['requesting-permission', 'listening', 'stopping'].includes(snapshot.phase);
+  const visible = assignedSegments(snapshot.segments, hiddenSpeakers);
+  const visibleCharacters = visible.reduce((sum, segment) => sum + segment.text.length, 0);
+  const assignedCount = snapshot.segments.filter((segment) => segment.speakerId).length;
+  useEffect(() => {
+    trace('upper-pane', { visibleSegments: visible.length, visibleCharacters, assignedSegments: assignedCount,
+      hiddenProfiles: hiddenSpeakers.length });
+  }, [visible.length, visibleCharacters, assignedCount, hiddenSpeakers.length]);
 
   useEffect(() => {
     const unwatch = watchInterruptions(() => engine.interrupt());

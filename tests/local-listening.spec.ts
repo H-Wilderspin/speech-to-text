@@ -101,31 +101,42 @@ test('real local worker reuses offline models and suggests a known generated voi
     for (const file of asr.files) assets[file.name] = new Uint8Array(await (await upgraded.match(new URL(`local/v2/${file.name}`, location.href).href))!.arrayBuffer());
     assets['embedding.onnx'] = new Uint8Array(await (await voice.match(new URL('speaker/v1/embedding.onnx', location.href).href))!.arrayBuffer());
     const worker = new Worker(`/assets/${workerFile}`, { type: 'module' }); let sequence = 0;
-    type Segment = { text: string; speakerId?: string; speakerEstimated?: boolean; isFinal: boolean };
-    const request = (data: object) => new Promise<{ segments?: Segment[]; commandStop?: boolean; speakerStatus?: string }>((resolve, reject) => {
+    type Segment = { id: string; text: string; speakerId?: string; speakerEstimated?: boolean; isFinal: boolean };
+    const request = (data: object) => new Promise<{ segments?: Segment[]; commandStop?: boolean; speakerStatus?: string; diagnostics?: Record<string, number | boolean | null> }>((resolve, reject) => {
       const id = ++sequence; worker.onerror = () => reject(new Error('Local worker failed'));
       worker.onmessage = ({ data }) => { if (data.id === id) { if (data.error) reject(new Error(data.error)); else resolve(data); } };
       worker.postMessage({ ...data, id }, 'assets' in data ? Object.values(assets).map((bytes) => bytes.buffer) : []);
     });
-    const transcribe = async (speech: number[], clockId: string, voiceCommands = true, duplicate = false) => {
+    const transcribe = async (speech: number[], clockId: string, voiceCommands = true, duplicate = false, debugSpeakers = false) => {
       await request({ type: 'start', references: duplicate ? [reference, { ...reference, id: 'duplicate' }] : [reference], voiceCommands });
       // A 3-second pause, a new sentence, then 3 seconds to settle the endpoint.
       const samples = new Float32Array(48000 + speech.length + 48000); samples.set(speech, 48000);
       let segments: Segment[] = []; let speakerStatus = ''; const replacements: number[] = [];
+      let diagnosticFrames = 0; let diagnosticSafe = true;
       for (let offset = 0; offset < samples.length; offset += 1600) {
-        const response = await request({ type: 'frame', frame: { clockId, startSample: offset, sampleRate: 16000, samples: samples.slice(offset, offset + 1600) } });
+        const response = await request({ type: 'frame', debugSpeakers, frame: { clockId, startSample: offset, sampleRate: 16000, samples: samples.slice(offset, offset + 1600) } });
+        if (response.diagnostics) {
+          diagnosticFrames++;
+          diagnosticSafe &&= Object.values(response.diagnostics).every((value) => value === null || typeof value === 'boolean' || typeof value === 'number');
+        }
         if (response.segments) { segments = response.segments; replacements.push(segments.map((segment) => segment.text).join(' ').length); }
         speakerStatus = response.speakerStatus ?? speakerStatus;
       }
       const final = await request({ type: 'finish' }); segments = final.segments ?? segments; samples.fill(0);
-      return { segments, updates: replacements.length, speakerStatus: final.speakerStatus ?? speakerStatus };
+      return { segments, updates: replacements.length, speakerStatus: final.speakerStatus ?? speakerStatus, diagnosticFrames, diagnosticSafe };
     };
     try { await request({ type: 'prepare', assets }); return { known: await transcribe(known, 'known'), other: await transcribe(other, 'other'),
+      followup: await transcribe([...known, ...new Array<number>(48000).fill(0), ...known], 'followup', false, false, true),
       command: await transcribe(command, 'command', false), duplicate: await transcribe(known, 'duplicate', false, true) }; }
     finally { reference.embedding.fill(0); worker.terminate(); }
   }, { reference, workerFile, localFiles, asr, known: await fixtureSamples('voice-a-speech'), other: await fixtureSamples('voice-b-speech'), command: await fixtureSamples('voice-a-stop') });
   reference.embedding.fill(0);
   expect(result.known.updates).toBeGreaterThan(3);
+  expect(result.known.diagnosticFrames).toBe(0);
+  expect(result.followup.diagnosticFrames).toBeGreaterThan(10);
+  expect(result.followup.diagnosticSafe).toBe(true);
+  expect(result.followup.segments.map((segment) => segment.text).join(' ').match(/morning/gi)).toHaveLength(2);
+  expect(new Set(result.followup.segments.filter((segment) => segment.speakerId).map((segment) => segment.id.split(':')[1])).size).toBeGreaterThanOrEqual(2);
   expect(result.known.segments.some((segment) => segment.speakerId === 'generated-test' && segment.speakerEstimated)).toBe(true);
   expect(result.known.segments.every((segment) => segment.isFinal)).toBe(true);
   const knownText = result.known.segments.map((segment) => segment.text).join(' ');
@@ -158,7 +169,11 @@ test('real local worker reuses offline models and suggests a known generated voi
 
 test('Android provisional words receive delayed names and activity filters only the upper pane', async ({ page }) => {
   test.setTimeout(150000);
-  await page.goto('/');
+  const stages = new Set<string>();
+  page.on('console', (message) => {
+    if (message.type() === 'info' && message.text().startsWith('[who-said-what]')) stages.add(message.text().split(' ')[1]!);
+  });
+  await page.goto('/?debugSpeakers=1');
   const supported = await page.evaluate(() => Boolean(globalThis.AudioContext && globalThis.AudioWorkletNode));
   test.skip(process.platform === 'win32' && test.info().project.name === 'mobile-webkit' && !supported, 'Windows Playwright WebKit lacks Web Audio; physical Safari remains unverified.');
   expect(supported).toBe(true);
@@ -259,6 +274,8 @@ test('Android provisional words receive delayed names and activity filters only 
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
   expect(await stats()).toEqual({ calls: 2, stops: 2 });
+  for (const stage of ['capture.ready', 'capture.received', 'capture.processed', 'capture.drained',
+    'worker.frame-request', 'worker.frame-response', 'worker.pipeline', 'alignment.updated', 'display.upper-pane']) expect(stages.has(stage), stage).toBe(true);
 });
 
 test('automatic model failure offers retry and closing settings does not cancel preparation', async ({ page }) => {

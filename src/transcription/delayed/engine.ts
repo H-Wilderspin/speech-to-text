@@ -4,6 +4,7 @@ import { delayedNames } from './align';
 import type { ProfileStore } from '../../storage/profiles';
 import { watchProfileChanges } from '../../storage/profile-changes';
 import { speakerModel } from '../../identification/model';
+import { createSpeakerTrace } from '../diagnostics';
 
 const active = (snapshot: TranscriptionSnapshot) => ['requesting-permission', 'listening', 'stopping'].includes(snapshot.phase);
 
@@ -23,6 +24,8 @@ export class DelayedNamesEngine implements LocalListeningEngine {
   private profileError: string | undefined;
   private namesAttempted = false;
   private language = 'en-GB';
+  private trace = createSpeakerTrace('alignment');
+  private lastDiagnostic = '';
   constructor(private readonly browser: TranscriptionEngine, private readonly local: LocalListeningEngine,
     private readonly profiles?: { database: string; createStore(): ProfileStore }) {
     this.snapshot = browser.getSnapshot();
@@ -96,6 +99,18 @@ export class DelayedNamesEngine implements LocalListeningEngine {
     }
     const finishing = !active(browser) && active(local);
     const currentSegments = delayedNames(browser.segments, this.namesStarted ? local.segments : []);
+    const diagnostic = {
+      browserSegments: browser.segments.length,
+      browserCharacters: browser.segments.reduce((sum, segment) => sum + segment.text.length, 0),
+      localSegments: local.segments.length,
+      localAssigned: local.segments.filter((segment) => segment.speakerId).length,
+      alignedSegments: currentSegments.filter((segment) => segment.speakerId).length,
+      alignedCharacters: currentSegments.filter((segment) => segment.speakerId).reduce((sum, segment) => sum + segment.text.length, 0),
+      namesStarted: this.namesStarted, browserActive: active(browser), localActive: active(local),
+      localError: local.phase === 'error', finishing,
+    };
+    const diagnosticKey = JSON.stringify(diagnostic);
+    if (diagnosticKey !== this.lastDiagnostic) { this.trace('updated', diagnostic); this.lastDiagnostic = diagnosticKey; }
     const segments = [...this.history, ...currentSegments];
     let excess = segments.reduce((total, segment) => total + segment.text.length, 0) - 100000;
     while (excess > 0 && segments.length) {

@@ -1,5 +1,11 @@
 # Project-plan acceptance audit — 2026-10-12
 
+**Latest phone report:** one correctly transcribed and assigned statement appeared,
+then no follow-up upper text. Sustained attribution remains unverified; the cause
+is unresolved. [ADR 0030](decisions/0030-speaker-stage-console-diagnostics.md) adds
+opt-in stage diagnostics and follow-up regression coverage. This does not change
+identity gates or establish human match accuracy. See [trace instructions](speaker-diagnostics.md).
+
 This audit preserves the README's complete scope. Implemented code and passing desktop tests do not satisfy physical-device or human-speaker gates. The goal is not complete.
 
 **Guided registration:** [ADR 0029](decisions/0029-guided-longer-voice-registration.md)
@@ -14,7 +20,7 @@ first attempt had an unrelated paced audio-clock interruption, documented as
 unresolved. Published Chromium/WebKit guided-reading, profile selection, persistence
 and simulated-caption smoke checks passed with no page errors or microphone use.
 
-**Latest retest failed:** live listening is reported perfect, profile eye on, upper
+**Earlier retest failed:** live listening is reported perfect, profile eye on, upper
 pane empty after Stop. Status: "Speech received; no saved voice matched yet."
 [ADR 0028](decisions/0028-retain-delayed-voice-evidence.md) fixes reproduced early
 pruning of voice decisions before delayed tokens and adds diagnostic counts to

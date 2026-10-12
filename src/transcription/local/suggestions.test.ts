@@ -12,6 +12,22 @@ const result = (patch: Partial<PipelineResult> = {}): PipelineResult => ({ text:
   tokenPoints: [{ text: '▁HEL', sample: 28000 }, { text: 'LO', sample: 30000 }, { text: '▁WORLD', sample: 32000 }], ...patch });
 
 describe('experimental name suggestions', () => {
+  it('commits successive sentences in one session and reports pending evidence without private content', () => {
+    const transcript = new SuggestedTranscript(voices);
+    windows.forEach((window) => transcript.addWindow(window));
+    transcript.update(result());
+    expect(transcript.getDiagnostics(72000)).toMatchObject({ pendingFinal: 1, evidenceWaitMs: 500, committedThrough: -1 });
+    expect(transcript.update(result({ text: '', tokenPoints: [], isFinal: false, timing: { segment: 1 }, acceptedSamples: 90000 }))[0]?.speakerId).toBe('a');
+    windows.forEach((window) => transcript.addWindow({ ...window, startSample: window.startSample + 96000, endSample: window.endSample + 96000 }));
+    transcript.update(result({ timing: { segment: 1 }, acceptedSamples: 168000,
+      tokenPoints: result().tokenPoints.map((point) => ({ ...point, sample: point.sample + 96000 })) }));
+    const output = transcript.update(result({ text: '', tokenPoints: [], isFinal: false, timing: { segment: 2 }, acceptedSamples: 180000 }));
+    expect(output).toHaveLength(2);
+    expect(output.every((segment) => segment.speakerId === 'a')).toBe(true);
+    const diagnostic = transcript.getDiagnostics(180000);
+    expect(diagnostic).toMatchObject({ pendingFinal: 0, committedThrough: 1, committedSegments: 2 });
+    expect(Object.values(diagnostic).every((value) => value === null || typeof value === 'number' || typeof value === 'boolean')).toBe(true);
+  });
   it('requires one candidate above the baseline; one saved profile is not an automatic identity', () => {
     const span = { clockId: 'c', startSample: 0, endSample: 48000 };
     expect(suggestWindow({ ...span, embedding: new Float32Array([0, 1]) }, voices).speakerId).toBeUndefined();

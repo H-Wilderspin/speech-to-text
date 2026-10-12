@@ -1,5 +1,37 @@
 # Feasibility evidence
 
+## 2026-10-12 - Stage diagnostics for follow-up attribution
+
+- **Observation:** user reports one correctly transcribed and assigned statement,
+  followed by no further upper statements. Version details and updated-registration
+  use remain unknown. This is progress beyond the previous wholly empty pane, not
+  acceptance of sustained attribution or recognition accuracy.
+- **Experiment:** opt-in console metadata traces continuous capture, serialized
+  frame RPC, local endpoint/evidence progression, voice decisions, browser alignment
+  and actual visible counts. No speech, names, profile IDs or vectors are logged.
+- **Ordering:** capture queues new frames while one worker request runs. The worker
+  processes each frame synchronously; it does not block all subsequent capture
+  until a sentence gets an identity. Stage delays and capture failures remain
+  possible. The phone root cause is not yet measured.
+- **Checks:** Windows Node 22.20.0; typecheck, lint, 212 unit tests, pinned asset
+  verification and production build pass. Main JS 295.31 kB / 91.44 kB gzip; CSS
+  unchanged. Unit regressions verify queued frames and serial RPC without requiring
+  final sentences, pending future evidence and multiple attributed statements.
+- **Initial browser run:** 50 passed, five existing Windows WebKit audio skips,
+  and one paced Chromium test failed before capture: the debug navigation returned
+  HTTP 404 while the build was being regenerated. The finished build serves that
+  exact URL successfully. Rerun against unchanged output; do not rebuild during
+  preview tests. Both browsers' real-worker tests passed multiple generated speech
+  passages within one session and numeric-only diagnostics transport.
+- **Focused rerun:** the unchanged paced Chromium test passed in 23.0 seconds
+  (29.5 seconds including server setup), verifying frame request/response, pipeline,
+  capture receive/process/drain, alignment and upper-display console stages. All
+  51 locally supported browser cases therefore pass across the runs; five existing
+  Windows WebKit audio cases await Linux CI. No test assertion was relaxed.
+- **Limits:** synthetic voices and desktop scheduling do not establish physical
+  Pixel 8/iPhone behaviour. No matching threshold changes. Phone follow-up failure
+  remains unresolved pending console evidence.
+
 ## 2026-10-12 — Longer guided registration
 
 - **Request/hypothesis:** the user wants a larger voice sample and a fixed reading

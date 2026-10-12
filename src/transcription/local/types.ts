@@ -1,5 +1,6 @@
 import type { TranscriptSegment, TranscriptionEngine } from '../types';
 import type { AudioFrame } from '../../audio/streaming';
+import type { DiagnosticCounts } from '../diagnostics';
 
 export interface ReferenceVoice { id: string; name: string; embedding: number[] }
 export interface TokenPoint { text: string; sample: number }
@@ -18,7 +19,7 @@ export interface Pipeline {
   reset(): void;
   close(): void;
 }
-export interface LocalResponse { id: number; error?: string; segments?: TranscriptSegment[]; commandStop?: boolean; speakerStatus?: string }
+export interface LocalResponse { id: number; error?: string; segments?: TranscriptSegment[]; commandStop?: boolean; speakerStatus?: string; diagnostics?: DiagnosticCounts }
 export interface PreparationSnapshot { phase: 'idle' | 'preparing' | 'ready' | 'error'; message: string }
 export interface LocalListeningEngine extends TranscriptionEngine {
   getPreparationSnapshot(): PreparationSnapshot;
