@@ -2,6 +2,13 @@
 
 This audit preserves the README's complete scope. Implemented code and passing desktop tests do not satisfy physical-device or human-speaker gates. The goal is not complete.
 
+**Latest retest failed:** live listening is reported perfect, profile eye on, upper
+pane empty after Stop. Status: "Speech received; no saved voice matched yet."
+[ADR 0028](decisions/0028-retain-delayed-voice-evidence.md) fixes reproduced early
+pruning of voice decisions before delayed tokens and adds diagnostic counts to
+separate voice rejection from local word-attribution failure. 201 unit tests and
+local check/build pass; physical resolution is unverified. See current feasibility.
+
 Latest user report: Who said what is empty even after Stop, without an error.
 [ADR 0027](decisions/0027-speaker-visibility-and-provisional-attribution.md) adds
 per-person upper-pane visibility, fixes browser-final gating of completed speaker

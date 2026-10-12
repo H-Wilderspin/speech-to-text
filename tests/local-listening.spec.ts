@@ -102,24 +102,26 @@ test('real local worker reuses offline models and suggests a known generated voi
     assets['embedding.onnx'] = new Uint8Array(await (await voice.match(new URL('speaker/v1/embedding.onnx', location.href).href))!.arrayBuffer());
     const worker = new Worker(`/assets/${workerFile}`, { type: 'module' }); let sequence = 0;
     type Segment = { text: string; speakerId?: string; speakerEstimated?: boolean; isFinal: boolean };
-    const request = (data: object) => new Promise<{ segments?: Segment[]; commandStop?: boolean }>((resolve, reject) => {
+    const request = (data: object) => new Promise<{ segments?: Segment[]; commandStop?: boolean; speakerStatus?: string }>((resolve, reject) => {
       const id = ++sequence; worker.onerror = () => reject(new Error('Local worker failed'));
       worker.onmessage = ({ data }) => { if (data.id === id) { if (data.error) reject(new Error(data.error)); else resolve(data); } };
       worker.postMessage({ ...data, id }, 'assets' in data ? Object.values(assets).map((bytes) => bytes.buffer) : []);
     });
-    const transcribe = async (speech: number[], clockId: string, voiceCommands = true) => {
-      await request({ type: 'start', references: [reference], voiceCommands });
+    const transcribe = async (speech: number[], clockId: string, voiceCommands = true, duplicate = false) => {
+      await request({ type: 'start', references: duplicate ? [reference, { ...reference, id: 'duplicate' }] : [reference], voiceCommands });
       // A 3-second pause, a new sentence, then 3 seconds to settle the endpoint.
       const samples = new Float32Array(48000 + speech.length + 48000); samples.set(speech, 48000);
-      let segments: Segment[] = []; const replacements: number[] = [];
+      let segments: Segment[] = []; let speakerStatus = ''; const replacements: number[] = [];
       for (let offset = 0; offset < samples.length; offset += 1600) {
         const response = await request({ type: 'frame', frame: { clockId, startSample: offset, sampleRate: 16000, samples: samples.slice(offset, offset + 1600) } });
         if (response.segments) { segments = response.segments; replacements.push(segments.map((segment) => segment.text).join(' ').length); }
+        speakerStatus = response.speakerStatus ?? speakerStatus;
       }
       const final = await request({ type: 'finish' }); segments = final.segments ?? segments; samples.fill(0);
-      return { segments, updates: replacements.length };
+      return { segments, updates: replacements.length, speakerStatus: final.speakerStatus ?? speakerStatus };
     };
-    try { await request({ type: 'prepare', assets }); return { known: await transcribe(known, 'known'), other: await transcribe(other, 'other'), command: await transcribe(command, 'command', false) }; }
+    try { await request({ type: 'prepare', assets }); return { known: await transcribe(known, 'known'), other: await transcribe(other, 'other'),
+      command: await transcribe(command, 'command', false), duplicate: await transcribe(known, 'duplicate', false, true) }; }
     finally { reference.embedding.fill(0); worker.terminate(); }
   }, { reference, workerFile, localFiles, asr, known: await fixtureSamples('voice-a-speech'), other: await fixtureSamples('voice-b-speech'), command: await fixtureSamples('voice-a-stop') });
   reference.embedding.fill(0);
@@ -131,6 +133,10 @@ test('real local worker reuses offline models and suggests a known generated voi
   expect(knownText).not.toBe(knownText.toUpperCase());
   expect(result.other.segments.some((segment) => segment.text)).toBe(true);
   expect(result.other.segments.every((segment) => !segment.speakerId)).toBe(true);
+  expect(result.known.speakerStatus).toMatch(/Voice samples: [1-9]\d*\/\d+ matched/);
+  expect(result.other.speakerStatus).toMatch(/Voice samples: 0\/\d+ matched; 0 ambiguous/);
+  expect(result.duplicate.speakerStatus).toMatch(/Voice samples: 0\/\d+ matched; [1-9]\d* ambiguous/);
+  expect(result.duplicate.segments.every((segment) => !segment.speakerId)).toBe(true);
   // In delayed mode only browser recognition handles the user's spoken command.
   expect(result.command.segments.map((segment) => segment.text).join(' ')).toMatch(/command stop/i);
   expect(downloads).toHaveLength(initialDownloads);

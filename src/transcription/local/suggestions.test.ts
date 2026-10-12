@@ -54,4 +54,45 @@ describe('experimental name suggestions', () => {
     const transcript = new SuggestedTranscript(voices); transcript.addWindow(windows[0]!);
     expect(transcript.update(result(), true)[0]?.speakerId).toBeUndefined();
   });
+  it('retains voice evidence while the recognizer has not emitted its delayed first words', () => {
+    const transcript = new SuggestedTranscript(voices);
+    transcript.addWindow(windows[0]!);
+    transcript.update(result({ text: '', isFinal: false, tokenPoints: [], acceptedSamples: 48000 }));
+    transcript.addWindow(windows[1]!);
+    transcript.update(result({ text: '', isFinal: false, tokenPoints: [], acceptedSamples: 72000 }));
+    expect(transcript.update(result({ acceptedSamples: 90000 }), true)[0]?.speakerId).toBe('a');
+  });
+  it('keeps earlier evidence when provisional token times move backwards, and expires unused decisions', () => {
+    const transcript = new SuggestedTranscript(voices);
+    windows.forEach((window) => transcript.addWindow(window));
+    transcript.update(result({ isFinal: false, text: 'WORLD', tokenPoints: [{ text: ' WORLD', sample: 60000 }] }));
+    expect(transcript.update(result({ acceptedSamples: 90000 }), true)[0]?.speakerId).toBe('a');
+    const expired = new SuggestedTranscript(voices);
+    windows.forEach((window) => expired.addWindow(window));
+    expired.update(result({ text: '', isFinal: false, tokenPoints: [], acceptedSamples: 600000 }));
+    expect(expired.update(result({ acceptedSamples: 600000 }), true)[0]?.speakerId).toBeUndefined();
+  });
+  it('distinguishes weak, ambiguous and accepted matches without reporting speech or identities', () => {
+    for (const [embedding, references, expected] of [
+      [[0, 1], voices, '0/1 matched; 0 ambiguous. Best similarity 0.00'],
+      [[1, 0], [...voices, { ...voices[0]!, id: 'b' }], '0/1 matched; 1 ambiguous. Best similarity 1.00'],
+      [[1, 0], voices, '1/1 matched; 0 ambiguous. Best similarity 1.00'],
+    ] as const) {
+      const transcript = new SuggestedTranscript(references);
+      expect(transcript.getStatus()).toBe('No voice samples checked yet.');
+      transcript.addWindow(suggestWindow({ ...windows[0]!, embedding: new Float32Array(embedding) }, references));
+      expect(transcript.getStatus()).toContain(expected);
+      transcript.update(result(), true);
+      expect(transcript.getStatus()).toContain('Not enough agreeing voice evidence at word times.');
+      expect(transcript.getStatus()).not.toContain(voices[0]!.name);
+      expect(transcript.getStatus()).not.toContain('HELLO');
+    }
+  });
+  it('distinguishes tokenizer rejection from lack of a voice match', () => {
+    const transcript = new SuggestedTranscript(voices);
+    windows.forEach((window) => transcript.addWindow(window));
+    transcript.update(result({ text: 'Different formatting.' }), true);
+    expect(transcript.getStatus()).toContain('2/2 matched');
+    expect(transcript.getStatus()).toContain('Local words and tokens do not align.');
+  });
 });

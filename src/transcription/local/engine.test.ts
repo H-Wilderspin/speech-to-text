@@ -103,3 +103,13 @@ it('cancels preparation without accepting stale success or starting a microphone
   expect(f.engine.getPreparationSnapshot().phase).toBe('idle'); expect(f.processor.request).not.toHaveBeenCalled(); expect(f.capture).not.toHaveBeenCalled();
   f.engine.dispose();
 });
+
+it('delivers matching diagnostics independently of words, retains them after Stop, and clears them', async () => {
+  const f = fixture(); await f.engine.prepare(); f.engine.start('en-GB'); await flush(); f.ready();
+  await f.send({ id: 1, speakerStatus: 'Voice samples: 0/2 matched; 2 ambiguous.' });
+  expect(f.engine.getSnapshot().speakerStatus).toContain('2 ambiguous');
+  f.engine.stop(); await flush();
+  expect(f.engine.getSnapshot().speakerStatus).toContain('2 ambiguous');
+  f.engine.clear(); expect(f.engine.getSnapshot().speakerStatus).toBeUndefined();
+  f.engine.dispose();
+});

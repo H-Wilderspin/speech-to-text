@@ -17,6 +17,7 @@ export class LocalEngine implements LocalListeningEngine {
   private history: TranscriptSegment[] = [];
   private sessionId = 0;
   private voiceStopped = false;
+  private speakerStatus: string | undefined;
   private unwatchProfiles = () => {};
   constructor(private readonly appUrl: string, private readonly createStore: () => ProfileStore,
     private readonly processor: LocalProcessor = new LocalWorker(),
@@ -29,7 +30,7 @@ export class LocalEngine implements LocalListeningEngine {
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
   private notify() { this.listeners.forEach((listener) => listener()); }
   private publish(phase: TranscriptionSnapshot['phase'], message: string, segments = this.snapshot.segments) {
-    this.snapshot = { phase, message, segments }; this.notify();
+    this.snapshot = { phase, message, segments, ...(this.speakerStatus ? { speakerStatus: this.speakerStatus } : {}) }; this.notify();
   }
   private setPreparation(phase: PreparationSnapshot['phase'], message: string) { this.preparation = { phase, message }; this.notify(); }
 
@@ -79,7 +80,7 @@ export class LocalEngine implements LocalListeningEngine {
     if (this.operation) return;
     if (this.unavailableReason) { this.publish('error', this.unavailableReason); return; }
     if (!language.startsWith('en')) { this.publish('error', 'Names currently support English. Live captions still work.'); return; }
-    const operation = new AbortController(); this.operation = operation; this.sessionId++; this.voiceStopped = false;
+    const operation = new AbortController(); this.operation = operation; this.sessionId++; this.voiceStopped = false; this.speakerStatus = undefined;
     this.unwatchProfiles = watchProfileChanges(`speech-to-text-speakers:${new URL(this.appUrl).pathname}`, () => {
       this.interrupt(); this.publish('idle', 'Saved speakers changed. Stop and Listen again to update names.');
     });
@@ -115,6 +116,7 @@ export class LocalEngine implements LocalListeningEngine {
     })();
   }
   private accept(response: LocalResponse) {
+    if (response.speakerStatus !== undefined) this.speakerStatus = response.speakerStatus;
     if (response.segments) {
       const segments = [...this.history, ...response.segments.map((segment) => ({ ...segment, id: `${this.sessionId}:${segment.id}` }))];
       let excess = segments.reduce((sum, segment) => sum + segment.text.length, 0) - 100000;
@@ -124,7 +126,7 @@ export class LocalEngine implements LocalListeningEngine {
         else { segments[0] = { ...first, text: first.text.slice(excess) }; excess = 0; }
       }
       this.publish(this.snapshot.phase, this.snapshot.message, segments);
-    }
+    } else if (response.speakerStatus !== undefined) this.publish(this.snapshot.phase, this.snapshot.message);
     if (this.voiceCommands && response.commandStop && !this.voiceStopped) { this.voiceStopped = true; this.stop(); }
   }
   stop() {
@@ -140,8 +142,8 @@ export class LocalEngine implements LocalListeningEngine {
     this.setPreparation('idle', 'Reload the saved model in Settings to resume local listening.');
     this.publish('idle', 'Local listening paused because you left the app.', this.snapshot.segments.filter((segment) => segment.isFinal));
   }
-  clear() { if (!this.operation) { this.history = []; this.publish('idle', 'Text cleared.', []); } }
+  clear() { if (!this.operation) { this.history = []; this.speakerStatus = undefined; this.publish('idle', 'Text cleared.', []); } }
   dispose() {
-    this.interrupt(); this.cancelPreparation(); this.history = []; this.snapshot = { phase: 'idle', message: 'Ready when you are.', segments: [] };
+    this.interrupt(); this.cancelPreparation(); this.history = []; this.speakerStatus = undefined; this.snapshot = { phase: 'idle', message: 'Ready when you are.', segments: [] };
   }
 }

@@ -114,8 +114,8 @@ export class DelayedNamesEngine implements LocalListeningEngine {
       ? local.phase === 'error' ? local.message
         : currentSegments.some((segment) => segment.speakerId) ? 'Names are matching.'
           : local.segments.some((segment) => segment.speakerId) ? 'Voice matched; waiting for matching words.'
-            : local.segments.some((segment) => segment.text.trim()) ? 'Speech received; no saved voice matched yet.'
-              : 'No local speech recognized yet.'
+            : local.speakerStatus ?? (local.segments.some((segment) => segment.text.trim()) ? 'Speech received; no saved voice matched yet.'
+              : 'No local speech recognized yet.')
       : this.hasSpeakers && preparation.phase === 'ready' ? 'Names ready.' : undefined);
     this.snapshot = { phase: finishing ? 'stopping' : browser.phase,
       message: browser.phase === 'error' ? browser.message : finishing ? 'Finishing speaker estimates…' : notice ?? browser.message,

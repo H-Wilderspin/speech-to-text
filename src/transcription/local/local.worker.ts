@@ -57,12 +57,13 @@ self.onmessage = async (event: MessageEvent<{ id: number; type: string; assets?:
       const segments = stopped ?? transcript.update(result, data.type === 'finish');
       if (voiceCommands) stopped ??= consumeStopCommand(segments);
       const output = stopped ?? segments;
-      const serialized = JSON.stringify(output);
+      const speakerStatus = transcript.getStatus();
+      const serialized = JSON.stringify({ output, speakerStatus });
       if (data.type === 'finish') {
         references.forEach((reference) => reference.embedding.fill(0)); references = []; transcript = undefined;
         pipeline.reset();
       }
-      self.postMessage({ id: data.id, commandStop: stopped !== null, ...(serialized !== lastOutput ? { segments: output } : {}) });
+      self.postMessage({ id: data.id, commandStop: stopped !== null, ...(serialized !== lastOutput ? { segments: output, speakerStatus } : {}) });
       lastOutput = serialized;
     } else throw new Error('Prepare local listening before starting.');
   } catch (error) {

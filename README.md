@@ -2,14 +2,23 @@
 
 ## Implementation status — 2026-10-12
 
+**Empty upper pane remains under investigation:** the latest Pixel 8 retest reports
+excellent live captions but no upper text after Stop, with "Speech received; no
+saved voice matched yet." A reproduced timing defect discarded voice decisions
+before delayed local words arrived; decisions now retain a 30-second history.
+Settings distinguishes weak/ambiguous matches from word-attribution failures using
+session counts and similarity. Browser captions and matching thresholds are
+unchanged. This correction still needs physical verification; see
+[ADR 0028](docs/decisions/0028-retain-delayed-voice-evidence.md).
+
 **Speaker activity and upper-pane update:** each registered person has an eye
 button in Settings. Turning it off hides their speech from Who said what, including
 existing text; turning it back on restores it. The choice survives reloads. Their
 voiceprint remains in matching and all speech remains visible below. Completed
 speaker evidence can now appear above before Android finalizes its live sentence,
 and matching tolerates one differing word between two unique three-word anchors.
-Settings shows a short matching status for diagnosing an empty pane. The user's
-after-Stop failure still needs a phone retest; see [ADR 0027](docs/decisions/0027-speaker-visibility-and-provisional-attribution.md).
+Settings shows a matching status for diagnosing an empty pane. The subsequent
+phone retest still failed, as recorded above; see [ADR 0027](docs/decisions/0027-speaker-visibility-and-provisional-attribution.md).
 
 **Single-pane Settings:** full-viewport scrolling with a return icon beside the
 title. Registration, text options and speaker colours are on the same page.

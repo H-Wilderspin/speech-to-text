@@ -1,5 +1,31 @@
 # Troubleshooting
 
+## 2026-10-12 — Voice decisions lost before delayed words (phone issue unresolved)
+
+- **Context:** Pixel 8 user reports perfect live listening, eye on, empty upper
+  pane after Stop and "Speech received; no saved voice matched yet." The user
+  confirms only their own profile is saved, ruling out competing profiles for
+  this run. Versions remain unreported. No private speech/audio was collected.
+- **Proven defect:** a unit sequence with accepted matching windows followed by
+  empty recognizer hypotheses discards each window at its end sample. Delayed
+  token timestamps then find no evidence. A backward token revision can also lose
+  an earlier covering window. Neither observation proves the physical root cause.
+- **Correction:** retain 30 seconds of window decisions as well as pending-word
+  coverage. Keep the same voice threshold and two-window agreement. Settings now
+  reports matched/total/ambiguous windows, best similarity and word evidence stage;
+  the previous message conflated all local attribution failures.
+- **Interpretation:** zero matches with low best similarity means threshold
+  rejection; ambiguous windows mean multiple saved profiles pass; accepted windows
+  with insufficient word evidence mean timing/coverage/consistency has failed.
+  Tokenizer mismatch is reported separately. A best score is not a probability.
+- **Verification:** the late-first-token regression failed before the correction;
+  all 201 unit tests, typecheck, lint, asset checks and build pass afterward.
+  Real-worker/browser and publication results are recorded in feasibility notes.
+- **Next:** physical retest. If still empty, report the new Settings status after
+  Stop and the number of saved profiles, including duplicates. Do not tune the
+  identity threshold or automatically name a lone profile from this symptom.
+- **Related:** [ADR 0028](decisions/0028-retain-delayed-voice-evidence.md).
+
 ## 2026-10-12 — Empty Who said what (phone resolution unconfirmed)
 
 - **Report:** the user sees no upper-pane text during listening or after Stop and no preparation/error message. Device remains presumed Pixel 8; no new browser version, recording or diagnostic trace supplied.

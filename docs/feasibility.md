@@ -1,5 +1,36 @@
 # Feasibility evidence
 
+## 2026-10-12 — Delayed-word evidence retention and matching diagnostics
+
+- **Phone evidence:** user says live listening is perfect, the eye toggle appears
+  on, and Who said what remains empty after Stop. Exact Settings status:
+  "Speech received; no saved voice matched yet." This verifies local text output,
+  not a lack of accepted embeddings; the old status only inspects labelled words.
+  Device presumed Pixel 8; OS/browser versions remain unknown. No new accuracy,
+  latency, false-match or microphone-routing measurements.
+- **Profile clarification:** the user reports just their own profile is saved.
+  Competing saved profiles therefore do not explain this reported run; weak
+  embedding matches versus word-evidence loss remain to be distinguished.
+- **Reproduction/change:** late-first-token unit sequence fails before the fix:
+  window decisions were pruned at the current audio position before tokens arrived.
+  Retain 30 seconds plus pending-word evidence (no audio/vectors). Report aggregate
+  match/ambiguity counts, best similarity and local word-evidence stage in Settings.
+  Keep all identity, overlap-agreement and browser-word alignment gates unchanged.
+- **Local checks:** Windows Node 22.20.0; `npm run check` passed typecheck, lint,
+  201 unit tests, pinned assets and production build. JS 290.60 kB / 89.76 kB gzip;
+  CSS unchanged at 6.13 kB / 2.03 kB gzip. The new failing-then-passing unit test
+  establishes the retention defect only; it does not reproduce phone acoustics.
+- **Browser checks:** full local suite passed 51 tests in 2.7 minutes, with five
+  existing Windows WebKit audio skips and no failures. Both engines passed real
+  worker known/unknown/duplicate-profile diagnostics and cache reuse. Chromium
+  AudioWorklet integration retained delayed upper names, unchanged Android live
+  wording, activity filtering and Stop. Typecheck/lint passed again after adding
+  the real-worker assertions. Linux CI and published smoke results follow below.
+- **Limits:** this is a concrete correction and more specific diagnosis, not a
+  verified resolution of the user's empty pane. Human matching remains experimental.
+  No models, dependencies, browser transcription changes or new remote processing.
+
+
 ## 2026-10-12 — Speaker activity and upper-pane attribution gates
 
 - **User evidence:** the upper pane remains empty even after Stop, without a preparation/error message. No new audio, match scores, device/browser version or microphone observation. The physical cause and fix remain unconfirmed.

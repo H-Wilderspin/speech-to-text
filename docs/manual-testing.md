@@ -11,8 +11,11 @@
    Toggle on to restore retained upper text. Reload and verify the choice persists.
    Include another speaker when available to ensure only the selected person hides.
 3. If the upper pane stays empty during listening and after Stop, open Settings
-   and report the short matching status verbatim. It distinguishes no local words,
-   no voice match, and a matched voice with no matching phrase. Do not send private
+   and report the matching status verbatim, including matched/total and ambiguous
+   sample counts, best similarity and the word-evidence message. Also report how
+   many profiles are saved and whether any belong to the same person. It separates
+   weak/competing voice matches from word timing/coverage and tokenizer failures.
+   These are diagnostics, not identity probabilities. Do not send private
    audio or transcript content. Also note Android/Chrome versions if available.
 4. Check spoken and button Stop release the microphone. Test the three pill buttons
    with enlarged text/TalkBack or VoiceOver; delete must still require confirmation.

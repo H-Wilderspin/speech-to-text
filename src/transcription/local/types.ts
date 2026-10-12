@@ -7,15 +7,18 @@ export interface PipelineResult {
   text: string; isFinal: boolean; tokenPoints: TokenPoint[]; clockId: string;
   timing: { segment: number }; acceptedSamples: number;
 }
-export interface VoiceWindow { clockId: string; startSample: number; endSample: number; speakerId?: string }
-export interface EmbeddingWindow extends Omit<VoiceWindow, 'speakerId'> { embedding: Float32Array }
+export interface VoiceWindow {
+  clockId: string; startSample: number; endSample: number; speakerId?: string;
+  match?: { candidates: number; bestScore: number | null };
+}
+export interface EmbeddingWindow extends Omit<VoiceWindow, 'speakerId' | 'match'> { embedding: Float32Array }
 export interface Pipeline {
   accept(frame: AudioFrame): PipelineResult;
   finish(): PipelineResult;
   reset(): void;
   close(): void;
 }
-export interface LocalResponse { id: number; error?: string; segments?: TranscriptSegment[]; commandStop?: boolean }
+export interface LocalResponse { id: number; error?: string; segments?: TranscriptSegment[]; commandStop?: boolean; speakerStatus?: string }
 export interface PreparationSnapshot { phase: 'idle' | 'preparing' | 'ready' | 'error'; message: string }
 export interface LocalListeningEngine extends TranscriptionEngine {
   getPreparationSnapshot(): PreparationSnapshot;

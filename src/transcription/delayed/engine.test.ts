@@ -37,6 +37,8 @@ it('reports which stage is waiting without revealing speech in the diagnostic', 
   expect(f.engine.getSnapshot().speakerStatus).toBe('No local speech recognized yet.');
   f.local.emit({ segments: words });
   expect(f.engine.getSnapshot().speakerStatus).toBe('Speech received; no saved voice matched yet.');
+  f.local.emit({ speakerStatus: 'Voice samples: 0/4 matched; 4 ambiguous.' });
+  expect(f.engine.getSnapshot().speakerStatus).toBe('Voice samples: 0/4 matched; 4 ambiguous.');
   f.local.emit({ segments: evidence });
   expect(f.engine.getSnapshot().speakerStatus).toBe('Voice matched; waiting for matching words.');
   f.browser.emit({ segments: words.map((word) => ({ ...word, isFinal: false })) });
