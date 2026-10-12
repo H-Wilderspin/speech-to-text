@@ -3,7 +3,10 @@
 **Latest phone report:** one correctly transcribed and assigned statement appeared,
 then no follow-up upper text. Sustained attribution remains unverified; the cause
 is unresolved. [ADR 0030](decisions/0030-speaker-stage-console-diagnostics.md) adds
-opt-in stage diagnostics and follow-up regression coverage. This does not change
+opt-in stage diagnostics and follow-up regression coverage. Published as `f41049c`
+after [run 38281229875](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38281229875)
+passed the full Linux workflow. 212 unit tests and published Chromium/WebKit console
+opt-in smoke checks pass (no physical microphone used). This does not change
 identity gates or establish human match accuracy. See [trace instructions](speaker-diagnostics.md).
 
 This audit preserves the README's complete scope. Implemented code and passing desktop tests do not satisfy physical-device or human-speaker gates. The goal is not complete.

@@ -28,6 +28,13 @@
   capture receive/process/drain, alignment and upper-display console stages. All
   51 locally supported browser cases therefore pass across the runs; five existing
   Windows WebKit audio cases await Linux CI. No test assertion was relaxed.
+- **Publication:** commit `f41049c`, [run 38281229875](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38281229875),
+  passed the complete Linux build/browser workflow on its first attempt and deployed
+  successfully. Published Chromium 156.0.8078.4 and WebKit 27.2 smoke checks loaded
+  `index-C_C15ZXQ.js`, confirmed default silence and debug-URL console events,
+  profile settings/persistence, one evolving live line and no upper unknown text.
+  Both completed with zero page errors and no microphone access. These smoke checks
+  do not verify the user's physical follow-up attribution failure.
 - **Limits:** synthetic voices and desktop scheduling do not establish physical
   Pixel 8/iPhone behaviour. No matching threshold changes. Phone follow-up failure
   remains unresolved pending console evidence.
