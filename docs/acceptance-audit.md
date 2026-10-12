@@ -9,6 +9,11 @@ evidence and admits bounded phrase differences. New Settings diagnostics expose
 the stage awaiting evidence. These address reproduced code paths; the user's
 physical-device result remains unresolved until retested. See current feasibility.
 
+Published as `e340de4`, [run 38266312236](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38266312236):
+196 unit tests and all CI build/browser checks passed. Published Chromium/WebKit
+activity/persistence/layout and simulated-caption smoke checks passed. Phone retest
+requested; no new physical microphone or identity-accuracy pass is claimed.
+
 Current increment: [ADR 0026](decisions/0026-single-pane-settings-automatic-names.md)
 replaces nested Settings and the names toggle with one full-screen scrolling pane,
 protected colour/delete pills and automatic model preparation for saved profiles.
