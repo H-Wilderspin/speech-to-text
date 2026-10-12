@@ -54,6 +54,10 @@ dialog section { border-top: 1px solid #46515c; margin-top: 1.5rem; padding-top:
 .settings-dialog .text-controls { gap: 1rem; margin-bottom: 1rem; }
 .settings-dialog .language { font-size: 1rem; }
 .speaker-name { display: grid; gap: .4rem; }
+.reading-passage { margin: 1rem 0; padding: 1rem; border: 1px solid #617180; border-radius: 8px; background: #222a31; font-size: 1.15rem; line-height: 1.6; scroll-margin-top: 6rem; }
+.reading-passage h4 { margin: 0; }
+.reading-passage p { margin: .6rem 0 0; }
+.reading-passage .reading-hint { font-size: 1rem; color: #c6cbd2; }
 .speaker-name select { width: 100%; min-width: 0; font-size: 1rem; }
 .model-version { overflow-wrap: anywhere; }
 .comparison { overflow-wrap: anywhere; }

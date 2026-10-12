@@ -6,15 +6,16 @@ export interface VoiceRecorder {
   record(signal: AbortSignal, progress: (seconds: number) => void): Promise<Float32Array>;
 }
 
-export function createVoiceRecorder(): VoiceRecorder {
+export function createVoiceRecorder(durationSeconds = 8): VoiceRecorder {
+  if (!Number.isInteger(durationSeconds) || durationSeconds < 3 || durationSeconds > 30) throw new Error('Invalid recording duration.');
   const unavailableReason = !globalThis.isSecureContext ? 'Voice recording needs HTTPS. Open the published site.'
     : !navigator.mediaDevices?.getUserMedia || !globalThis.AudioContext || !globalThis.AudioWorkletNode || !globalThis.OfflineAudioContext
       ? 'This browser does not support local voice recording. Live captions may still be available.' : undefined;
-  return { unavailableReason, record: capture };
+  return { unavailableReason, record: (signal, progress) => capture(signal, progress, durationSeconds) };
 }
 
 /** Called directly from the Record gesture so audio resume and permission retain activation. */
-async function capture(signal: AbortSignal, progress: (seconds: number) => void): Promise<Float32Array> {
+async function capture(signal: AbortSignal, progress: (seconds: number) => void, durationSeconds: number): Promise<Float32Array> {
   signal.throwIfAborted();
   const context = new AudioContext();
   let stream: MediaStream | undefined;
@@ -47,11 +48,15 @@ async function capture(signal: AbortSignal, progress: (seconds: number) => void)
     }, () => {});
     void Promise.all([resume, permission, context.audioWorklet.addModule(workletUrl)]).then(() => {
       if (settled || !stream) return;
+      // Permission time must not consume the recording's time budget.
+      clearTimeout(timeout);
+      timeout = setTimeout(() => fail(new Error('Recording timed out. Keep the app open and try again.')), (durationSeconds + 10) * 1000);
       context.onstatechange = () => { if (context.state !== 'running') fail(new Error('Recording was interrupted. Keep the app open and try again.')); };
       const interrupted = () => fail(new Error('The microphone was interrupted. Try recording again.'));
       stream.getTracks().forEach((track) => { track.onended = interrupted; track.onmute = interrupted; });
       source = context.createMediaStreamSource(stream);
-      node = new AudioWorkletNode(context, 'enrolment-recorder', { channelCount: 1, channelCountMode: 'explicit', outputChannelCount: [1] });
+      node = new AudioWorkletNode(context, 'enrolment-recorder', { channelCount: 1, channelCountMode: 'explicit', outputChannelCount: [1],
+        processorOptions: { durationSeconds } });
       node.onprocessorerror = () => fail(new Error('The audio recorder stopped unexpectedly. Try again.'));
       node.port.onmessage = (event: MessageEvent<{ samples?: Float32Array; seconds?: number }>) => {
         if (settled) { event.data.samples?.fill(0); return; }

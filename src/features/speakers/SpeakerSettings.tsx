@@ -6,6 +6,7 @@ import type { VoiceComparisonSession } from './comparison';
 import { VoiceComparison } from './VoiceComparison';
 import type { SpeakerColourChoices } from './colours';
 import { SpeakerPill } from './SpeakerPill';
+import { ENROLMENT_SECONDS, READING_PASSAGE } from './reading-passage';
 
 export type SpeakerServices = { store: ProfileStore; session: EnrolmentSession; comparison: VoiceComparisonSession };
 export function SpeakerSettings({ onStop, createServices, canRecord, colours, onColours, hiddenSpeakers, onHiddenSpeakers }: {
@@ -14,6 +15,7 @@ export function SpeakerSettings({ onStop, createServices, canRecord, colours, on
   hiddenSpeakers: string[]; onHiddenSpeakers: (ids: string[]) => void;
 }) {
   const comparisonButton = useRef<HTMLButtonElement>(null);
+  const passage = useRef<HTMLDivElement>(null);
   const [{ store, session, comparison }] = useState(createServices);
   const [comparing, setComparing] = useState(false);
   const snapshot = useSyncExternalStore(session.subscribe, session.getSnapshot);
@@ -21,10 +23,13 @@ export function SpeakerSettings({ onStop, createServices, canRecord, colours, on
   const [storageError, setStorageError] = useState('');
   const [storageBusy, setStorageBusy] = useState(false);
   const [displayName, setDisplayName] = useState('');
+  const [profileId, setProfileId] = useState('');
+  const selectedProfile = profiles.find((profile) => profile.id === profileId);
   const [confirmClear, setConfirmClear] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const alive = useRef(true);
   useEffect(() => { if (!comparing) { comparisonButton.current?.focus(); void session.restore(); } }, [comparing, session]);
+  useEffect(() => { if (snapshot.phase === 'recording') passage.current?.scrollIntoView({ block: 'start' }); }, [snapshot.phase]);
   const busy = ['checking', 'preparing', 'recording', 'processing', 'saving'].includes(snapshot.phase);
   const ready = ['ready', 'saved'].includes(snapshot.phase);
   const refresh = useCallback(() => store.list().then(
@@ -40,6 +45,7 @@ export function SpeakerSettings({ onStop, createServices, canRecord, colours, on
     setStorageBusy(true);
     try {
       if (id) await store.remove(id); else await store.clear();
+      if (!id || id === profileId) setProfileId('');
       onColours(id ? Object.fromEntries(Object.entries(colours).filter(([key]) => key !== id)) : {});
       onHiddenSpeakers(id ? hiddenSpeakers.filter((key) => key !== id) : []);
       await refresh();
@@ -48,9 +54,9 @@ export function SpeakerSettings({ onStop, createServices, canRecord, colours, on
     finally { if (alive.current) { setStorageBusy(false); setConfirmClear(false); } }
   };
   const record = async () => {
-    await session.record(displayName);
+    await session.record(selectedProfile?.displayName ?? displayName, selectedProfile?.id);
     if (alive.current) {
-      if (session.getSnapshot().phase === 'saved') setDisplayName('');
+      if (session.getSnapshot().phase === 'saved') { setDisplayName(''); setProfileId(''); }
       await refresh();
     }
   };
@@ -76,16 +82,26 @@ export function SpeakerSettings({ onStop, createServices, canRecord, colours, on
     }} />}
     <section aria-labelledby="add-speaker-title">
       <h3 id="add-speaker-title">Add a speaker</h3>
-      <label className="speaker-name">Display name<input value={displayName} maxLength={60} autoComplete="off" disabled={busy || comparing}
-        onChange={(event) => setDisplayName(event.target.value)} /></label>
+      {profiles.length > 0 && <label className="speaker-name">Voice to record<select value={profileId} disabled={busy || comparing}
+        onChange={(event) => setProfileId(event.target.value)}>
+        <option value="">New speaker</option>
+        {profiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.displayName}</option>)}
+      </select></label>}
+      {!selectedProfile && <label className="speaker-name">Display name<input value={displayName} maxLength={60} autoComplete="off" disabled={busy || comparing}
+        onChange={(event) => setDisplayName(event.target.value)} /></label>}
+      <div ref={passage} className="reading-passage" aria-labelledby="reading-passage-title">
+        <h4 id="reading-passage-title">Read aloud</h4>
+        <p>{READING_PASSAGE}</p>
+        <p className="reading-hint">Use your normal voice. Repeat if you finish early.</p>
+      </div>
       {session.recorder.unavailableReason && <p role="alert" className="notice">{session.recorder.unavailableReason}</p>}
       {!canRecord && <button onClick={onStop}>Stop listening to record</button>}
       <p role="status" className={['idle', 'ready'].includes(snapshot.phase) ? 'sr-only' : undefined} aria-live="polite" aria-atomic="true">{snapshot.message}</p>
-      {snapshot.phase === 'recording' && <progress aria-label="Recording progress" value={snapshot.seconds} max={8} />}
+      {snapshot.phase === 'recording' && <progress aria-label="Recording progress" value={snapshot.seconds} max={ENROLMENT_SECONDS} />}
       {!ready && !busy && <button disabled={comparing || Boolean(session.recorder.unavailableReason) || storageBusy} onClick={() => void session.prepare()}>Prepare voice model</button>}
       {ready && <>
-        <button disabled={!canRecord || comparing || !displayName.trim() || Boolean(storageError) || storageBusy}
-          onClick={() => void record()}>Record 8 seconds</button>
+        <button disabled={!canRecord || comparing || !(selectedProfile?.displayName ?? displayName).trim() || Boolean(storageError) || storageBusy}
+          onClick={() => void record()}>{selectedProfile ? 'Update voice' : 'Record'} ({ENROLMENT_SECONDS} seconds)</button>
       </>}
       {busy && <button onClick={() => session.cancel()}>Cancel enrolment</button>}
     </section>

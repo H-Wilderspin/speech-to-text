@@ -66,9 +66,20 @@ export class IndexedDbProfiles implements ProfileStore {
     finally { for (const profile of profiles) if (Array.isArray(profile?.embedding)) profile.embedding.fill(0); }
   }
 
-  async save(profile: SpeakerProfile, signal: AbortSignal) {
+  async save(profile: SpeakerProfile, signal: AbortSignal, replaceExisting = false) {
     const safe = validateProfile(profile);
-    try { await this.transact('readwrite', (store) => store.add(safe), signal); notifyProfileChange(this.name); }
+    try {
+      if (replaceExisting) await this.transact('readwrite', (store) => {
+        const request = store.getKey(safe.id);
+        request.onsuccess = () => {
+          if (request.result === undefined) store.transaction.abort();
+          else store.put(safe);
+        };
+        return request;
+      }, signal);
+      else await this.transact('readwrite', (store) => store.add(safe), signal);
+      notifyProfileChange(this.name);
+    }
     finally { safe.embedding.fill(0); }
   }
   async read(id: string, signal: AbortSignal) {

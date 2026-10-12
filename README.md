@@ -2,6 +2,13 @@
 
 ## Implementation status — 2026-10-12
 
+**Longer guided voice registration:** Settings now provides a passage to read for
+20 seconds, up from eight. Under **Voice to record**, select your saved name and
+choose **Update voice (20 seconds)** to replace its voiceprint while keeping its
+colour and visibility. The old profile remains until the new one saves successfully.
+Existing profiles continue to work. This supplies more registration speech; improved
+human matching is not yet verified. See [ADR 0029](docs/decisions/0029-guided-longer-voice-registration.md).
+
 **Empty upper pane remains under investigation:** the latest Pixel 8 retest reports
 excellent live captions but no upper text after Stop, with "Speech received; no
 saved voice matched yet." A reproduced timing defect discarded voice decisions
@@ -47,7 +54,7 @@ Pixel 8 speaker enrolment also passed a user-reported check: a profile saved, su
 
 Listening now restarts across pauses and normal browser recognition endings. Tap Stop or say **“command stop”** to finish; the confirmed command is removed from captions. Keep the app open: leaving it or a microphone/provider failure still interrupts capture. The newest 100,000 characters are retained without stopping a long session. Growing cumulative hypotheses within one native utterance are displayed once; repeated phrases in separate utterances remain. The user has confirmed on Pixel 8 that the command works and text appears once; continuation after the requested 15-second pause was not explicitly reported. See [ADR 0014](docs/decisions/0014-persistent-listening-and-voice-stop.md).
 
-**The full project plan is not complete.** Experimental M2 enrolment is implemented: eight-second recordings produce local English-model voiceprints with versioned IndexedDB storage, listing and deletion. The first Prepare downloads about 39 MB of public model/runtime files; subsequent enrolments and comparisons automatically reuse the verified cached model, including after reloading offline. Only missing/damaged assets are fetched again; browsers can evict stored files. Raw audio is discarded. Broader physical-device performance and speaker accuracy remain unverified. See [ADR 0006](docs/decisions/0006-experimental-local-enrolment.md), [cache policy](docs/decisions/0016-reuse-cached-voice-model.md), [model assets and licences](docs/speaker-assets.md), and the [device test matrix](docs/manual-testing.md).
+**The full project plan is not complete.** Experimental M2 enrolment is implemented: guided twenty-second recordings produce local English-model voiceprints with versioned IndexedDB storage, listing and deletion. The first Prepare downloads about 39 MB of public model/runtime files; subsequent enrolments and comparisons automatically reuse the verified cached model, including after reloading offline. Only missing/damaged assets are fetched again; browsers can evict stored files. Raw audio is discarded. Broader physical-device performance and speaker accuracy remain unverified. See [ADR 0006](docs/decisions/0006-experimental-local-enrolment.md), [cache policy](docs/decisions/0016-reuse-cached-voice-model.md), [model assets and licences](docs/speaker-assets.md), and the [device test matrix](docs/manual-testing.md).
 
 **Experimental delayed names:** saved voiceprints automatically prepare the existing models, fetching only missing or damaged assets. Tap Listen for immediate browser words; prepared local processing starts alongside them or joins when ready. Names and matching text colours arrive only in the upper pane, sometimes after a pause or Stop. The lower pane never shows labels. Short, repeated, mismatched or uncertain words remain below only. Estimates may be wrong and do not establish reliable diarization. English is currently required for names; other languages retain browser captions. Failed preparation offers **Retry names** in Settings. The combined cache is about 205 MB; no models download without a compatible saved profile. The Android pause/repetition fixes remain in use.
 

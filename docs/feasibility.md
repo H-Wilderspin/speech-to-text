@@ -1,5 +1,37 @@
 # Feasibility evidence
 
+## 2026-10-12 — Longer guided registration
+
+- **Request/hypothesis:** the user wants a larger voice sample and a fixed reading
+  passage. Twenty seconds of varied spoken content may improve the saved reference
+  compared with eight seconds of unprompted speech. No new phone match scores or
+  accuracy observations establish that benefit yet.
+- **Change:** 20-second capture and an original passage in Settings, with progress
+  and an in-place Update voice option for saved people. Full audio enters the same
+  extractor; only its normalized 192-dimensional output persists. Old profiles,
+  colours/activity, cached models and eight-second comparisons remain compatible.
+  Live transcription, matching windows/thresholds and unknown fallback are unchanged.
+- **Checks so far:** Windows Node 22.20.0; typecheck, lint, 205 unit tests, asset
+  hashes and production build passed. Worklet tests verify 20 seconds at native
+  16/44.1/48 kHz, original comparison duration, bounds and cancellation. Session
+  tests check duration, replacement metadata, erasure and failure preservation.
+  JS 292.33 kB / 90.32 kB gzip; CSS 6.42 kB / 2.10 kB gzip.
+- **Browser verification:** initial full run passed 50 tests with five existing
+  Windows WebKit audio skips; one new assertion used `toHaveValue` on an option
+  instead of checking its value attribute. Both recordings had saved and the ID
+  was preserved. Correcting that assertion required no application change. The
+  focused Chromium rerun passed in 58.9 seconds, covering real 20-second capture,
+  inference, stored duration, in-place update, retained colour/visibility, offline
+  reload/cache reuse, eight-second comparison, cancellation and deletion. Its
+  Windows WebKit audio case remains skipped for Linux CI. All locally supported
+  browser cases therefore pass across those runs. Typecheck/lint also passed again.
+- **Layout:** 390px and 320px/enlarged-text reading views were inspected; content
+  scrolls vertically without horizontal overflow. No physical phone was used.
+- **Limits:** more recording time does not imply calibrated accuracy. No human
+  speech, private voiceprints or transcripts collected. Actual phone processing
+  time, memory and same/different-person performance need a physical retest.
+
+
 ## 2026-10-12 — Delayed-word evidence retention and matching diagnostics
 
 - **Phone evidence:** user says live listening is perfect, the eye toggle appears

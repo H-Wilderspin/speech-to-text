@@ -55,14 +55,14 @@ async function openSpeakers(page: Page, url = '/') {
 }
 async function prepare(page: Page) {
   await page.getByRole('button', { name: 'Prepare voice model' }).click();
-  await expect(page.getByRole('button', { name: 'Record 8 seconds' })).toBeVisible({ timeout: 30000 });
+  await expect(page.getByRole('button', { name: 'Record (20 seconds)' })).toBeVisible({ timeout: 30000 });
 }
 async function enterName(page: Page, name = 'Synthetic test') {
   await page.getByLabel('Display name').fill(name);
 }
 
 test('project-path lazy model, offline reuse, real enrolment, persisted profile and deletion', async ({ page, context }) => {
-  test.setTimeout(90000);
+  test.setTimeout(150000);
   await syntheticMicrophone(page);
   const modelRequests: string[] = [];
   page.on('request', (request) => { if (/speaker\/v1\//.test(request.url())) modelRequests.push(request.url()); });
@@ -71,10 +71,14 @@ test('project-path lazy model, offline reuse, real enrolment, persisted profile 
   await prepare(page);
   expect(modelRequests.some((url) => url.endsWith('embedding.onnx'))).toBe(true);
   expect(await stats(page)).toEqual({ calls: 0, stops: 0 });
-  const record = page.getByRole('button', { name: 'Record 8 seconds' });
+  const record = page.getByRole('button', { name: 'Record (20 seconds)' });
+  await expect(page.getByRole('heading', { name: 'Read aloud', exact: true })).toBeVisible();
+  await expect(page.locator('.reading-passage')).toContainText('Today we are sitting together');
   await expect(record).toBeDisabled(); await enterName(page);
   await record.click();
-  await expect(page.locator('section[aria-labelledby="add-speaker-title"] [role=status]')).toContainText('Saved.', { timeout: 30000 });
+  await expect(page.getByLabel('Recording progress')).toHaveAttribute('max', '20');
+  await expect(page.locator('.reading-passage')).toBeVisible();
+  await expect(page.locator('section[aria-labelledby="add-speaker-title"] [role=status]')).toContainText('Saved.', { timeout: 60000 });
   await expect(page.getByRole('button', { name: 'Delete Synthetic test', exact: true })).toBeVisible({ timeout: 30000 });
   expect(await stats(page)).toEqual({ calls: 1, stops: 1 });
   const stored = await page.evaluate(async () => {
@@ -84,9 +88,10 @@ test('project-path lazy model, offline reuse, real enrolment, persisted profile 
     try {
       return await new Promise((resolve, reject) => {
         const tx = db.transaction('profiles'); const request = tx.objectStore('profiles').getAll();
-        tx.oncomplete = () => resolve(request.result.map((profile: { embedding: number[]; registrationMethod: string; schemaVersion: number }) => ({
+        tx.oncomplete = () => resolve(request.result.map((profile: { embedding: number[]; registrationMethod: string; schemaVersion: number; sampleDurationMs: number }) => ({
           keys: Object.keys(profile).sort(), dimension: profile.embedding.length,
           normalized: Math.abs(Math.hypot(...profile.embedding) - 1) < .0001, registration: profile.registrationMethod, schema: profile.schemaVersion,
+          duration: profile.sampleDurationMs,
         })));
         tx.onabort = () => reject(tx.error);
       });
@@ -94,15 +99,27 @@ test('project-path lazy model, offline reuse, real enrolment, persisted profile 
   });
   expect(stored).toEqual([{
     keys: ['registrationMethod', 'createdAt', 'displayName', 'embedding', 'id', 'modelVersion', 'sampleDurationMs', 'schemaVersion'].sort(),
-    dimension: 192, normalized: true, registration: 'record-button', schema: 1,
+    dimension: 192, normalized: true, registration: 'record-button', schema: 1, duration: 20000,
   }]);
   await page.getByRole('button', { name: 'Change colour for Synthetic test', exact: true }).click();
   await page.getByRole('button', { name: 'Gold', exact: true }).click();
+  const activity = page.getByRole('button', { name: 'Show Synthetic test in Who said what', exact: true });
+  await activity.click();
+  const existingId = await page.getByLabel('Voice to record').locator('option').nth(1).getAttribute('value');
+  await page.getByLabel('Voice to record').selectOption(existingId!);
+  await expect(page.getByLabel('Display name')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Update voice (20 seconds)', exact: true }).click();
+  await expect(page.locator('section[aria-labelledby="add-speaker-title"] [role=status]')).toContainText('Saved.', { timeout: 60000 });
+  await expect(page.locator('.speaker-pill')).toHaveCount(1);
+  await expect(page.getByLabel('Voice to record').locator('option').nth(1)).toHaveAttribute('value', existingId!);
+  await expect(activity).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.getByRole('button', { name: 'Gold', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  expect(await stats(page)).toEqual({ calls: 2, stops: 2 });
   const downloads = modelRequests.length;
   await page.evaluate(() => navigator.serviceWorker.ready.then(() => true));
   await context.setOffline(true);
   await page.reload(); await page.getByRole('button', { name: 'Settings', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Record 8 seconds', exact: true })).toBeVisible({ timeout: 30000 });
+  await expect(page.getByRole('button', { name: 'Record (20 seconds)', exact: true })).toBeVisible({ timeout: 30000 });
   await expect(page.getByRole('button', { name: 'Prepare voice model' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Change colour for Synthetic test', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Gold', exact: true })).toHaveAttribute('aria-pressed', 'true');
@@ -164,7 +181,7 @@ test('project-path lazy model, offline reuse, real enrolment, persisted profile 
 
 test('leaving the page during recording stops capture and does not save a profile', async ({ page }) => {
   test.setTimeout(60000); await syntheticMicrophone(page); await openSpeakers(page); await prepare(page); await enterName(page);
-  await page.getByRole('button', { name: 'Record 8 seconds' }).click();
+  await page.getByRole('button', { name: 'Record (20 seconds)' }).click();
   await expect.poll(() => stats(page)).toEqual({ calls: 1, stops: 0 });
   await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
   await expect.poll(() => stats(page)).toEqual({ calls: 1, stops: 1 });
@@ -174,7 +191,7 @@ test('leaving the page during recording stops capture and does not save a profil
 
 test('closing during a permission prompt stops a microphone granted afterward', async ({ page }) => {
   test.setTimeout(60000); await syntheticMicrophone(page, true); await openSpeakers(page); await prepare(page); await enterName(page);
-  await page.getByRole('button', { name: 'Record 8 seconds' }).click();
+  await page.getByRole('button', { name: 'Record (20 seconds)' }).click();
   await expect.poll(() => page.evaluate(() => typeof (window as Window & { resolvePermission?: () => void }).resolvePermission)).toBe('function');
   await page.getByRole('button', { name: 'Back to captions' }).click();
   await page.evaluate(() => (window as Window & { resolvePermission?: () => void }).resolvePermission?.());

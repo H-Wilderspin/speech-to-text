@@ -17,7 +17,7 @@ async function fixtureSamples(name: string) {
 async function prepareModels(page: Page) {
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await page.getByRole('button', { name: 'Prepare voice model' }).click();
-  await expect(page.getByRole('button', { name: 'Record 8 seconds' })).toBeVisible({ timeout: 60000 });
+  await expect(page.getByRole('button', { name: 'Record (20 seconds)' })).toBeVisible({ timeout: 60000 });
   const reference = await createGeneratedProfile(page, true); reference.embedding.fill(0);
   await page.reload();
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
@@ -278,7 +278,7 @@ test('automatic model failure offers retry and closing settings does not cancel 
   await page.goto('/');
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await page.getByRole('button', { name: 'Prepare voice model' }).click();
-  await expect(page.getByRole('button', { name: 'Record 8 seconds' })).toBeVisible({ timeout: 30000 });
+  await expect(page.getByRole('button', { name: 'Record (20 seconds)' })).toBeVisible({ timeout: 30000 });
   const profile = await createGeneratedProfile(page, true); profile.embedding.fill(0);
   await page.reload(); await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Retry names' })).toBeVisible({ timeout: 60000 });

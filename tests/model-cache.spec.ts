@@ -18,12 +18,12 @@ test('model preparation survives worker disposal and offline reload in both engi
   };
   await page.goto('/'); await open();
   await page.getByRole('button', { name: 'Prepare voice model' }).click();
-  await expect(page.getByRole('button', { name: 'Record 8 seconds' })).toBeVisible({ timeout: 30000 });
+  await expect(page.getByRole('button', { name: 'Record (20 seconds)' })).toBeVisible({ timeout: 30000 });
   expect(requests).toHaveLength(3);
   await page.getByRole('button', { name: 'Back to captions' }).click();
   await page.evaluate(() => navigator.serviceWorker.ready.then(() => true));
   await context.setOffline(true); await page.reload(); await open();
-  await expect(page.getByRole('button', { name: 'Record 8 seconds' })).toBeVisible({ timeout: 30000 });
+  await expect(page.getByRole('button', { name: 'Record (20 seconds)' })).toBeVisible({ timeout: 30000 });
   await expect(page.getByRole('button', { name: 'Prepare voice model' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Back to captions' }).click();
 

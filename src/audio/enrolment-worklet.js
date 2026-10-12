@@ -1,8 +1,10 @@
 /* global AudioWorkletProcessor, registerProcessor, sampleRate */
 class EnrolmentRecorder extends AudioWorkletProcessor {
-  constructor() {
+  constructor(options) {
     super();
-    this.samples = new Float32Array(Math.round(sampleRate * 8));
+    const seconds = options?.processorOptions?.durationSeconds ?? 8;
+    if (!Number.isInteger(seconds) || seconds < 3 || seconds > 30) throw new Error('Invalid recording duration.');
+    this.samples = new Float32Array(Math.round(sampleRate * seconds));
     this.offset = 0;
     this.lastProgress = 0;
     this.cancelled = false;

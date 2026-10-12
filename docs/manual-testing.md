@@ -1,5 +1,24 @@
 # Manual validation and acceptance gates
 
+## Guided twenty-second voice registration
+
+1. In Settings, select an existing name under Voice to record, or enter a new name.
+   Read the displayed passage before recording. Tap Update voice (20 seconds) or
+   Record (20 seconds), then read in a normal voice until the timer finishes.
+   Repeat the passage if finished early. Confirm the microphone stops before
+   processing and Saved appears. Report processing delay or an error if observed.
+2. For an update, check there is still one pill for that person and the same colour
+   and eye setting, including after reload. Cancel an update partway through and
+   confirm the previous profile still exists. Cached models should be reused.
+3. Test live speech using different sentences from the passage. Check delayed names
+   above and unchanged live wording below. If empty after Stop, report the Settings
+   match counts and similarity. An available second person should also try different
+   sentences to check false matches; success with the enrolment passage alone does
+   not establish recognition of the person. No private audio/transcript is needed.
+4. Check passage readability and Cancel access at 320px/enlarged text and on both
+   physical phones when available. Desktop generated-tone tests are not phone
+   acoustic or accessibility acceptance.
+
 ## Speaker activity and empty Who said what retest
 
 1. Close every app copy and reopen the published site with a saved English profile.
@@ -129,11 +148,11 @@ The heavier model's phone memory, latency and battery are not yet measured.
 
 1. Open Settings → Speakers while listening: live captions must stop before Record becomes enabled. Opening Speakers alone must not ask for microphone access or download the large voice model.
 2. Enter a non-identifying test name and review the consent wording with the speaker. Prepare the voice model once (about 39 MB); measure cold/warm load time. Close/reopen Speakers and reload the app: Record should appear automatically after loading the saved model, with no Prepare action or model requests. Repeat offline after the app shell has installed. Check download failure, cache eviction/corruption and Cancel, then retry explicitly online; only missing/damaged assets should download. Record must still require both name and consent.
-3. Record eight seconds of one consented person speaking naturally. Verify microphone release before local processing and a saved profile only after successful processing/storage. Measure recording-to-save time; record device model, OS/browser version, tab/PWA mode and sample count. Silence and strong clipping should request another recording; these checks are not speech detection.
+3. Record twenty seconds of one person reading the displayed passage naturally. Verify microphone release before local processing and a saved profile only after successful processing/storage. Measure recording-to-save time; record device model, OS/browser version, tab/PWA mode and sample count. Silence and strong clipping should request another recording; these checks are not speech detection.
 4. Cancel during permission, recording and processing; close the dialog, background the app and lock the screen. Check the microphone indicator ends and no unfinished profile appears. If permission is granted after cancellation, capture must stop immediately. Reopen and verify the saved list.
 5. Reload and check the saved name persists. Delete one profile, reload, and confirm removal. Create multiple profiles, use Delete all → Keep profiles, then Delete all → Confirm delete all and reload. No voiceprints should remain. Denied storage or full storage must give an error, never a false saved confirmation.
 6. Confirm network activity contains only public application/model downloads; neither microphone audio nor embeddings may be uploaded by enrolment. Inspect local storage: only explicit schema/model/consent metadata and embeddings belong in the profile store. Do not export or commit those values. Transcripts and raw audio must not persist.
-7. Reload a saved profile, open **Compare recordings**, select it and declare **The same person** or **A different person** before the new speaker consents. A cached model loads automatically; prepare comparison only if it is missing. Record a fresh eight-second passage that differs from enrolment. Verify that missing consent/reference/relationship prevents Record. A completed comparison shows similarity and processing time, never a confirmed match. Record the score, declared relationship, anonymous reference/participant IDs, model version, device, session and microphone conditions. Do not copy voiceprint values or personal audio.
+7. Reload a saved profile, open **Compare recordings**, select it and declare **The same person** or **A different person** before the new speaker consents. A cached model loads automatically; prepare comparison only if it is missing. Record a fresh eight-second passage that differs from enrolment. Verify that missing reference/relationship prevents Record. A completed comparison shows similarity and processing time, never a confirmed match. Record the score, declared relationship, anonymous reference/participant IDs, model version, device, session and microphone conditions. Do not copy voiceprint values or personal audio.
 8. Repeat for consented same/different people, near/far positions and quiet/noisy rooms across separate sessions. Follow the participant/session protocol in [feasibility](feasibility.md); the UI accepts at most 20 temporary comparisons before Clear. Do not interpret similarity as a percentage or choose a threshold from one successful test. Raw score distributions must precede a held-out false-match evaluation.
 9. Cancel comparison during permission/recording/processing, use Back, background the app and reload. Check microphone release, disappearance of temporary results, and persistence of the original profile. Clear comparison results must not delete the reference profile. A reference deleted in another tab before its read must produce an error. Switching between enrolment and comparison should require preparing the selected mode and should never leave two microphones/workers running.
 10. Captions must remain anonymous even with profiles and comparison results; Settings must explain that saved profiles do not identify live speech. This is intentional until held-out speaker matching and compatible timestamped ASR are evaluated. Phone performance, human similarity distributions and identity calibration remain unverified.
@@ -161,7 +180,7 @@ For every run record date, device model, OS/browser versions, tab/PWA mode, lang
 
 - On Pixel 8 and iPhone, reopen the app: three top controls, dark background and two equally sized caption panes.
 - Speak with names disabled: every word appears in light grey below; the upper pane stays empty. Check pauses, deliberate repetition and command stop.
-- In Settings, save a name and record eight seconds without a consent checkbox. Pick a colour in Speakers; change text size/language. Reload and verify all choices and older profiles survive.
+- In Settings, save a name and read the displayed passage for twenty seconds without a consent checkbox. Pick a colour in Speakers; change text size/language. Reload and verify all choices and older profiles survive.
 - Prepare name suggestions in Settings, reusing cached files. With known and unknown voices, check only final assigned speech appears above, with the chosen name/text colour. Unknown speech stays below. Delayed labels must not change lower-pane words or paragraph breaks. This is experimental, not proof of identity.
 - Scroll each pane independently; check enlarged text, focus, TalkBack/VoiceOver and no horizontal overflow. Verify Clear, profile deletion and microphone stop.
 - Report actual devices/versions, recognition errors, mistaken names and observed delay separately from layout acceptance.

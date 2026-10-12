@@ -1,5 +1,6 @@
 import { createVoiceRecorder } from '../audio/recording';
 import { EnrolmentSession } from '../features/speakers/enrolment';
+import { ENROLMENT_SECONDS } from '../features/speakers/reading-passage';
 import { VoiceComparisonSession } from '../features/speakers/comparison';
 import { WorkerEmbeddingEngine } from '../identification/worker-engine';
 import { IndexedDbProfiles } from '../storage/indexeddb';
@@ -8,7 +9,7 @@ export function createSpeakerServices() {
   const appUrl = new URL(import.meta.env.BASE_URL, document.baseURI);
   const store = new IndexedDbProfiles(`speech-to-text-speakers:${appUrl.pathname}`);
   const engine = new WorkerEmbeddingEngine(new URL('speaker/v1/', appUrl).href);
-  const session = new EnrolmentSession(createVoiceRecorder(), engine, store);
+  const session = new EnrolmentSession(createVoiceRecorder(ENROLMENT_SECONDS), engine, store);
   // Only the selected dialog mode prepares its worker; switching modes disposes it.
   const comparison = new VoiceComparisonSession(createVoiceRecorder(), new WorkerEmbeddingEngine(new URL('speaker/v1/', appUrl).href), store);
   return { store, session, comparison };

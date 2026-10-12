@@ -2,6 +2,12 @@
 
 This audit preserves the README's complete scope. Implemented code and passing desktop tests do not satisfy physical-device or human-speaker gates. The goal is not complete.
 
+**Guided registration:** [ADR 0029](decisions/0029-guided-longer-voice-registration.md)
+increases new/update recordings to twenty seconds with a reading passage. Existing
+people can replace their voiceprint while retaining their ID, colour and visibility;
+cancelled/failed attempts preserve the old profile. Checks/build and 205 unit tests
+pass locally. Human matching improvement and phone recording remain unverified.
+
 **Latest retest failed:** live listening is reported perfect, profile eye on, upper
 pane empty after Stop. Status: "Speech received; no saved voice matched yet."
 [ADR 0028](decisions/0028-retain-delayed-voice-evidence.md) fixes reproduced early

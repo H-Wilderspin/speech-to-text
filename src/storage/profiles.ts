@@ -20,7 +20,8 @@ export interface ProfileStore {
   list(): Promise<ProfileSummary[]>;
   /** Caller must erase the returned temporary embedding after use. */
   read(id: string, signal: AbortSignal): Promise<SpeakerProfile | undefined>;
-  save(profile: SpeakerProfile, signal: AbortSignal): Promise<void>;
+  /** Replacement must update an existing row atomically, never recreate a deleted speaker. */
+  save(profile: SpeakerProfile, signal: AbortSignal, replaceExisting?: boolean): Promise<void>;
   remove(id: string): Promise<void>;
   clear(): Promise<void>;
   close(): void;
