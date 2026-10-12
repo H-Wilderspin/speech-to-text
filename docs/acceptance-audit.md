@@ -6,6 +6,10 @@ and inference drained successfully. Independently, the current six-word alignmen
 rule excludes the user's isolated four-word utterance. These are unresolved
 matching/short-phrase usability limits. Complete JSON console output improves
 measurement; it does not claim to fix speaker recognition or relax identity gates.
+Published as `7a55792` after [run 38289809827](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38289809827)
+passed on its unchanged second attempt; the first hit the documented CI clock
+interruption. 213 unit tests and published Chromium/WebKit JSON-log smoke checks
+pass. The user confirms the rejected utterance was their own voice.
 
 **Latest phone report:** one correctly transcribed and assigned statement appeared,
 then no follow-up upper text. Sustained attribution remains unverified; the cause

@@ -6,6 +6,9 @@
   person; 0/3 voice windows matched, 0 ambiguous, best similarity displayed as
   0.59 against minimum 0.60. Device/browser versions are not reconfirmed. The
   utterance displayed below had four words; no private content is retained here.
+  The user confirms they spoke it themselves, so the missing identity is one
+  observed false rejection of the enrolled person, not an unknown speaker test.
+  Window counts are not independent human-accuracy trials.
 - **Performance:** the trace processed all 107,776 samples (6.736 seconds); the
   sampled first voice-extraction frame took 895 ms, with transient queued audio,
   followed by successful drain and a 15 ms finish. This rules out a pending first
@@ -29,6 +32,17 @@
   Chromium capture/attribution test passed in 23.0 seconds, parsing complete copied
   JSON including trailing fields, cutoff and rejection counts. Its existing Windows
   WebKit audio case is skipped locally and remains required in Linux CI.
+- **First CI attempt:** commit `7a55792`, [run 38289809827](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38289809827),
+  passed 55/56 tests. Chromium's paced capture again hit "The audio clock was
+  interrupted" before a known label rendered; deployment was withheld. This is a
+  recurrence of the unresolved CI clock interruption, not the supplied user trace,
+  which drained normally. Requested one unchanged failed-job rerun; no clock guard
+  or assertion was modified. A passing rerun does not establish the cause fixed.
+- **Publication:** the unchanged second attempt passed the full workflow and deployed
+  `7a55792`. Published Chromium 156.0.8078.4 and WebKit 27.2 loaded
+  `index-iXqZuh2p.js`; both verified default console silence, opt-in complete numeric
+  JSON, settings/profile controls and one evolving live line. Zero page errors;
+  no physical microphone access. Speaker accuracy remains unresolved.
 
 ## 2026-10-12 - Stage diagnostics for follow-up attribution
 
