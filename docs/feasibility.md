@@ -1,5 +1,13 @@
 # Feasibility evidence
 
+## 2026-10-12 — Dark two-pane captions and personal registration
+
+- **Change:** ADR 0025 adds assigned final speech above and immediate light-grey browser words below. Unknown speech is excluded only from the upper view. Delayed attribution retains original segment IDs so its slices rejoin without rewriting/reformatting the live sentence. Speaker colours and text/language preferences persist locally. Personal registration no longer asks for a consent checkbox; legacy profiles remain readable, and new records do not fabricate consent metadata.
+- **Local checks:** Windows, Node 22.20.0; typecheck, lint without warnings, 186 unit tests, pinned assets and build passed. All eight speaker colours exceed 7:1 contrast against #121619. Initial browser suite: 40 passed, five existing Windows WebKit audio skips, seven failures from updated UI expectations/model-readiness waits. Scoped the duplicated heading, retained preparation/cancellation statuses for assistive technology, and waited for actual ready status instead of an already-enabled preference checkbox. The final focused run passed all ten supported checks with two existing Windows WebKit audio skips in 1.3 minutes. No skipped test was added.
+- **Covered behaviours:** unknown/interim exclusion above, unchanged live text during delayed assignment, independent transcript scrolling, dark theme, text/language persistence, project-path speaker colour persistence across offline reload, real generated enrolment/comparison and deletion, new/legacy profile validation, cache reuse/repair, cancellation and Stop. Root/mobile/project-path browser checks use simulated browser recognition; local model/AudioWorklet inference uses generated fixtures. Main, Settings and populated two-pane screenshots were inspected.
+- **Build:** 285.80 kB JS / 88.35 kB gzip, 4.69 kB CSS / 1.71 kB gzip; no new models or dependencies. Full Linux browser checks/deployment follow in CI.
+- **Limits:** no new physical phone, human identity or latency evidence. Colour/layout changes do not improve matching accuracy. Names remain estimates; all speech, including the reader's own, appears below. Unknown omission above is not listener suppression. Physical acceptance steps are in manual-testing.
+
 ## 2026-10-11 — Browser words with delayed name estimates
 
 - **User evidence:** after the larger-model deployment, the user still reports poor transcription and prefers accuracy over immediate speaker detection. The local transcription acceptance gate failed again; no new accuracy percentage, timing or identity score was supplied. Presumed device remains Pixel 8; versions remain unknown.

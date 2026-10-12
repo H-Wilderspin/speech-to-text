@@ -57,12 +57,11 @@ async function prepare(page: Page) {
   await page.getByRole('button', { name: 'Prepare voice model' }).click();
   await expect(page.getByRole('button', { name: 'Record 8 seconds' })).toBeVisible({ timeout: 30000 });
 }
-async function agree(page: Page, name = 'Synthetic test') {
+async function enterName(page: Page, name = 'Synthetic test') {
   await page.getByLabel('Display name').fill(name);
-  await page.getByRole('checkbox').check();
 }
 
-test('project-path lazy model, offline reuse, consent, real enrolment, persisted profile and deletion', async ({ page, context }) => {
+test('project-path lazy model, offline reuse, real enrolment, persisted profile and deletion', async ({ page, context }) => {
   test.setTimeout(90000);
   await syntheticMicrophone(page);
   const modelRequests: string[] = [];
@@ -73,9 +72,9 @@ test('project-path lazy model, offline reuse, consent, real enrolment, persisted
   expect(modelRequests.some((url) => url.endsWith('embedding.onnx'))).toBe(true);
   expect(await stats(page)).toEqual({ calls: 0, stops: 0 });
   const record = page.getByRole('button', { name: 'Record 8 seconds' });
-  await expect(record).toBeDisabled(); await agree(page);
+  await expect(record).toBeDisabled(); await enterName(page);
   await record.click();
-  await expect(page.getByRole('dialog').getByRole('status')).toContainText('Voice profile saved on this device.', { timeout: 30000 });
+  await expect(page.getByRole('dialog').getByRole('status')).toContainText('Saved.', { timeout: 30000 });
   await expect(page.getByRole('button', { name: 'Delete Synthetic test', exact: true })).toBeVisible({ timeout: 30000 });
   expect(await stats(page)).toEqual({ calls: 1, stops: 1 });
   const stored = await page.evaluate(async () => {
@@ -85,40 +84,43 @@ test('project-path lazy model, offline reuse, consent, real enrolment, persisted
     try {
       return await new Promise((resolve, reject) => {
         const tx = db.transaction('profiles'); const request = tx.objectStore('profiles').getAll();
-        tx.oncomplete = () => resolve(request.result.map((profile: { embedding: number[]; consentVersion: string; schemaVersion: number }) => ({
+        tx.oncomplete = () => resolve(request.result.map((profile: { embedding: number[]; registrationMethod: string; schemaVersion: number }) => ({
           keys: Object.keys(profile).sort(), dimension: profile.embedding.length,
-          normalized: Math.abs(Math.hypot(...profile.embedding) - 1) < .0001, consent: profile.consentVersion, schema: profile.schemaVersion,
+          normalized: Math.abs(Math.hypot(...profile.embedding) - 1) < .0001, registration: profile.registrationMethod, schema: profile.schemaVersion,
         })));
         tx.onabort = () => reject(tx.error);
       });
     } finally { db.close(); }
   });
   expect(stored).toEqual([{
-    keys: ['consentVersion', 'consentedAt', 'createdAt', 'displayName', 'embedding', 'id', 'modelVersion', 'sampleDurationMs', 'schemaVersion'].sort(),
-    dimension: 192, normalized: true, consent: 'local-voiceprint-v1', schema: 1,
+    keys: ['registrationMethod', 'createdAt', 'displayName', 'embedding', 'id', 'modelVersion', 'sampleDurationMs', 'schemaVersion'].sort(),
+    dimension: 192, normalized: true, registration: 'record-button', schema: 1,
   }]);
+  await page.getByLabel('Colour for Synthetic test').selectOption('#ffe08a');
   const downloads = modelRequests.length;
   await page.evaluate(() => navigator.serviceWorker.ready.then(() => true));
   await context.setOffline(true);
   await page.reload(); await page.getByRole('button', { name: 'Settings', exact: true }).click(); await page.getByRole('button', { name: 'Speakers', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Record 8 seconds', exact: true })).toBeVisible({ timeout: 30000 });
   await expect(page.getByRole('button', { name: 'Prepare voice model' })).toHaveCount(0);
+  await expect(page.getByLabel('Colour for Synthetic test')).toHaveValue('#ffe08a');
+  await page.getByText('More', { exact: true }).click();
   await page.getByRole('button', { name: 'Compare recordings', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Back to saved speakers' })).toBeFocused();
   await expect(page.getByRole('heading', { name: 'Add a speaker' })).toHaveCount(0);
   await page.getByLabel('Saved voice to compare').selectOption({ label: 'Synthetic test' });
   await page.getByLabel('Who is recording?').selectOption('same');
   const compare = page.getByRole('button', { name: 'Record comparison (8 seconds)', exact: true });
-  await expect(compare).toBeVisible({ timeout: 30000 }); await expect(compare).toBeDisabled();
+  await expect(compare).toBeVisible({ timeout: 30000 }); await expect(compare).toBeEnabled();
   expect(await stats(page)).toEqual({ calls: 0, stops: 0 });
-  await page.getByRole('checkbox').check(); await compare.click();
+  await compare.click();
   await expect(page.locator('.comparison p[role="status"]')).toHaveText('Comparison complete. No profile was changed.', { timeout: 30000 });
   expect(modelRequests).toHaveLength(downloads);
   await context.setOffline(false);
   const score = Number(await page.getByLabel('Similarity score').innerText());
   expect(Number.isFinite(score)).toBe(true); expect(score).toBeGreaterThanOrEqual(-1); expect(score).toBeLessThanOrEqual(1);
   expect(await stats(page)).toEqual({ calls: 1, stops: 1 });
-  await expect(page.getByText('No match threshold has been validated.', { exact: false })).toBeVisible();
+  await expect(page.getByText('not a confirmed match.', { exact: false })).toBeVisible();
   await page.setViewportSize({ width: 320, height: 720 });
   await page.evaluate(() => { document.documentElement.style.fontSize = '24px'; });
   await page.getByText('All 1 temporary results', { exact: true }).click();
@@ -146,32 +148,32 @@ test('project-path lazy model, offline reuse, consent, real enrolment, persisted
   });
   expect(persisted).toEqual({ stores: ['profiles'], count: 1, normalized: true });
   await page.getByRole('button', { name: 'Delete Synthetic test', exact: true }).click();
-  await expect(page.getByText('No saved speakers on this device.')).toBeVisible();
+  await expect(page.getByText('No speakers yet.')).toBeVisible();
   await page.reload(); await page.getByRole('button', { name: 'Settings', exact: true }).click(); await page.getByRole('button', { name: 'Speakers', exact: true }).click();
-  await expect(page.getByText('No saved speakers on this device.')).toBeVisible();
+  await expect(page.getByText('No speakers yet.')).toBeVisible();
   const cached = await page.evaluate(async () => (await Promise.all((await caches.keys()).map(async (key) => (await (await caches.open(key)).keys()).map((r) => r.url)))).flat());
   expect(cached.filter((url) => /speaker\/v1\//.test(url)).map((url) => url.split('/').at(-1)).sort()).toEqual(['embedding.onnx', 'speaker-runtime.mjs', 'speaker-runtime.wasm']);
 });
 
 test('leaving the page during recording stops capture and does not save a profile', async ({ page }) => {
-  test.setTimeout(60000); await syntheticMicrophone(page); await openSpeakers(page); await prepare(page); await agree(page);
+  test.setTimeout(60000); await syntheticMicrophone(page); await openSpeakers(page); await prepare(page); await enterName(page);
   await page.getByRole('button', { name: 'Record 8 seconds' }).click();
   await expect.poll(() => stats(page)).toEqual({ calls: 1, stops: 0 });
   await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
   await expect.poll(() => stats(page)).toEqual({ calls: 1, stops: 1 });
-  await expect(page.getByText('Cancelled. Unfinished audio and voiceprints were discarded.')).toBeVisible();
-  await expect(page.getByText('No saved speakers on this device.')).toBeVisible();
+  await expect(page.getByRole('dialog').getByRole('status')).toContainText('Cancelled.');
+  await expect(page.getByText('No speakers yet.')).toBeVisible();
 });
 
 test('closing during a permission prompt stops a microphone granted afterward', async ({ page }) => {
-  test.setTimeout(60000); await syntheticMicrophone(page, true); await openSpeakers(page); await prepare(page); await agree(page);
+  test.setTimeout(60000); await syntheticMicrophone(page, true); await openSpeakers(page); await prepare(page); await enterName(page);
   await page.getByRole('button', { name: 'Record 8 seconds' }).click();
   await expect.poll(() => page.evaluate(() => typeof (window as Window & { resolvePermission?: () => void }).resolvePermission)).toBe('function');
   await page.getByRole('button', { name: 'Back to settings' }).click();
   await page.evaluate(() => (window as Window & { resolvePermission?: () => void }).resolvePermission?.());
   await expect.poll(() => stats(page)).toEqual({ calls: 1, stops: 1 });
   await page.getByRole('button', { name: 'Speakers', exact: true }).click();
-  await expect(page.getByText('No saved speakers on this device.')).toBeVisible();
+  await expect(page.getByText('No speakers yet.')).toBeVisible();
 });
 
 test('model failure and cancellation recover without requesting a microphone', async ({ page }) => {
@@ -228,7 +230,7 @@ test('unsupported audio preserves profile management and explains recording fall
 
 test('clear-all requires confirmation and deletes real IndexedDB rows across reload', async ({ page }) => {
   await openSpeakers(page);
-  await expect(page.getByText('No saved speakers on this device.')).toBeVisible();
+  await expect(page.getByText('No speakers yet.')).toBeVisible();
   await page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open('speech-to-text-speakers:/', 1); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);
@@ -246,19 +248,19 @@ test('clear-all requires confirmation and deletes real IndexedDB rows across rel
   });
   await page.reload(); await page.getByRole('button', { name: 'Settings', exact: true }).click(); await page.getByRole('button', { name: 'Speakers', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Delete synthetic-one', exact: true })).toBeVisible();
+  await page.getByText('More', { exact: true }).click();
   await page.getByRole('button', { name: 'Delete all profiles' }).click(); await page.getByRole('button', { name: 'Keep profiles' }).click();
   await expect(page.getByRole('button', { name: 'Delete synthetic-two', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Delete all profiles' }).click(); await page.getByRole('button', { name: 'Confirm delete all' }).click();
-  await expect(page.getByText('No saved speakers on this device.')).toBeVisible();
+  await expect(page.getByText('No speakers yet.')).toBeVisible();
   await page.reload(); await page.getByRole('button', { name: 'Settings', exact: true }).click(); await page.getByRole('button', { name: 'Speakers', exact: true }).click();
-  await expect(page.getByText('No saved speakers on this device.')).toBeVisible();
+  await expect(page.getByText('No speakers yet.')).toBeVisible();
 });
 
 test('speaker form stays usable at 320px with large system text', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 740 }); await openSpeakers(page);
   await page.evaluate(() => { document.documentElement.style.fontSize = '24px'; });
   await page.getByLabel('Display name').fill('A long synthetic test name');
-  await page.getByRole('checkbox').check();
   expect(await page.getByRole('dialog').evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
   await page.getByRole('button', { name: 'Back to settings' }).click();
   await expect(page.getByRole('button', { name: 'Speakers', exact: true })).toBeFocused();

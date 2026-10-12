@@ -5,6 +5,7 @@ import { SettingsDialog } from '../features/settings/SettingsDialog';
 import { SpeakersDialog, type SpeakerServices } from '../features/speakers/SpeakersDialog';
 import type { TranscriptionEngine } from '../transcription/types';
 import type { LocalListeningEngine } from '../transcription/local/types';
+import { readPreferences, savePreferences } from '../features/settings/preferences';
 
 export function App({ engine: browserEngine, createSpeakers, localEngine }: {
   engine: TranscriptionEngine; createSpeakers: () => SpeakerServices; localEngine?: LocalListeningEngine;
@@ -17,8 +18,11 @@ export function App({ engine: browserEngine, createSpeakers, localEngine }: {
   });
   const engine = localEnabled && localEngine ? localEngine : browserEngine;
   const snapshot = useSyncExternalStore(engine.subscribe, engine.getSnapshot);
-  const [textSize, setTextSize] = useState(32);
-  const [language, setLanguage] = useState('en-GB');
+  const [preferences, setPreferences] = useState(readPreferences);
+  const { textSize, language, colours } = preferences;
+  const changePreferences = (changes: Partial<typeof preferences>) => {
+    const next = { ...preferences, ...changes }; setPreferences(next); savePreferences(next);
+  };
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [speakersOpen, setSpeakersOpen] = useState(false);
   const [focusSpeakers, setFocusSpeakers] = useState(false);
@@ -60,20 +64,23 @@ export function App({ engine: browserEngine, createSpeakers, localEngine }: {
       <p className={snapshot.phase === 'error' ? 'notice error' : snapshot.notice ? 'notice' : 'sr-only'} role="status" aria-live="polite" aria-atomic="true">{snapshot.message}</p>
       {engine.unavailableReason && <p className="notice" role="alert">{engine.unavailableReason}</p>}
       {offline && <p className="notice">You’re offline. Your browser’s speech service may need a connection.</p>}
-      <Transcript segments={snapshot.segments} textSize={textSize} />
+      <div className="caption-panes">
+        <Transcript segments={snapshot.segments} textSize={textSize} assigned colours={colours} />
+        <Transcript segments={snapshot.segments} textSize={textSize} />
+      </div>
     </main>
     <p className="sr-only" id="processing-note">Listen uses your browser’s speech service, which may send audio to its provider. {localEnabled && 'Delayed name estimates use saved voiceprints on this device.'} Captions are kept only until you clear or reload. Details are in Settings.</p>
-    {settingsOpen && !speakersOpen && <SettingsDialog active={active} textSize={textSize} onTextSize={setTextSize}
+    {settingsOpen && !speakersOpen && <SettingsDialog active={active} textSize={textSize} onTextSize={(textSize) => changePreferences({ textSize })}
       localEngine={localEngine} localEnabled={localEnabled} onLocalEnabled={(enabled) => {
         if (active) return;
         engine.clear(); setLocalEnabled(enabled);
         try { if (enabled) localStorage.setItem(preferenceKey, 'enabled'); else localStorage.removeItem(preferenceKey); } catch { /* Session-only preference if storage is blocked. */ }
       }}
-      language={language} onLanguage={setLanguage} installFailed={installFailed} focusSpeakers={focusSpeakers}
+      language={language} onLanguage={(language) => changePreferences({ language })} installFailed={installFailed} focusSpeakers={focusSpeakers}
       onSpeakers={() => { engine.stop(); setSpeakersOpen(true); }} onClose={() => {
         setSettingsOpen(false); settingsButton.current?.focus();
       }} />}
-    {speakersOpen && <SpeakersDialog createServices={createSpeakers} canRecord={!active} onClose={() => {
+    {speakersOpen && <SpeakersDialog createServices={createSpeakers} canRecord={!active} colours={colours} onColours={(colours) => changePreferences({ colours })} onClose={() => {
       setFocusSpeakers(true); setSpeakersOpen(false);
     }} />}
   </div>;

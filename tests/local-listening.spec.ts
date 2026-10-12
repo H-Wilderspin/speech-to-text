@@ -21,8 +21,8 @@ async function prepareModels(page: Page) {
   await expect(page.getByRole('button', { name: 'Record 8 seconds' })).toBeVisible({ timeout: 60000 });
   await page.getByRole('button', { name: 'Back to settings' }).click();
   await page.getByRole('button', { name: 'Prepare name suggestions' }).click();
-  await expect(page.getByLabel('Use experimental names')).toBeChecked({ timeout: 60000 });
-  await expect(page.getByText('Ready. Names are estimates;', { exact: false })).toBeVisible();
+  await expect(page.getByLabel('Show names')).toBeChecked({ timeout: 60000 });
+  await expect(page.locator('section[aria-labelledby="name-suggestions-title"] [role=status]')).toContainText('Ready. Names are estimates;', { timeout: 60000 });
 }
 
 async function createGeneratedProfile(page: Page, save: boolean) {
@@ -74,10 +74,10 @@ test('real local worker reuses offline models and suggests a known generated voi
   const initialDownloads = downloads.length; expect(initialDownloads).toBe(13);
   await page.evaluate(() => navigator.serviceWorker.ready.then(() => true)); await context.setOffline(true); await page.reload();
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
-  await expect(page.getByText('Ready. Names are estimates;', { exact: false })).toBeVisible({ timeout: 60000 });
+  await expect(page.locator('section[aria-labelledby="name-suggestions-title"] [role=status]')).toContainText('Ready. Names are estimates;', { timeout: 60000 });
   expect(downloads).toHaveLength(initialDownloads);
   // Release the UI model before exercising the same shipped worker directly.
-  await page.getByLabel('Use experimental names').uncheck();
+  await page.getByLabel('Show names').uncheck();
   const files = await readdir(new URL('../dist/assets/', import.meta.url));
   const workerFile = files.find((name) => /^local\.worker-.*\.js$/.test(name))!;
   const result = await page.evaluate(async ({ reference, workerFile, localFiles, asr, known, other, command }) => {
@@ -139,7 +139,7 @@ test('real local worker reuses offline models and suggests a known generated voi
   expect(downloads).toHaveLength(initialDownloads);
   await context.setOffline(false);
   await page.getByRole('button', { name: 'Prepare name suggestions' }).click();
-  await expect(page.getByText('Ready. Names are estimates;', { exact: false })).toBeVisible({ timeout: 60000 });
+  await expect(page.locator('section[aria-labelledby="name-suggestions-title"] [role=status]')).toContainText('Ready. Names are estimates;', { timeout: 60000 });
   expect(downloads.slice(initialDownloads)).toHaveLength(5);
   expect(downloads.slice(initialDownloads).every((url) => url.includes('/local/v2/'))).toBe(true);
 });
@@ -189,6 +189,7 @@ test('browser words receive delayed AudioWorklet estimates and both captures sto
   await page.getByRole('button', { name: 'Back to captions' }).click();
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   const transcript = page.getByRole('region', { name: 'Live transcript' });
+  const assigned = page.getByRole('region', { name: 'Assigned transcript' });
   const browserText = 'The morning is bright and the room is quiet. Please bring a glass of water to the table.';
   const browserResult = async (stop = false) => page.evaluate(({ text, stop }) => {
     const recognition = (window as Window & { delayedBrowserRecognition?: { onresult(event: unknown): void } }).delayedBrowserRecognition!;
@@ -201,7 +202,7 @@ test('browser words receive delayed AudioWorklet estimates and both captures sto
   // Only generated fixtures run here; do not print transcript or embeddings.
   let captureStatus: unknown;
   await expect.poll(async () => (captureStatus = {
-    known: await transcript.getByText('Generated test voice (estimate)', { exact: true }).first().isVisible(),
+    known: await assigned.getByText('Generated test voice (estimate)', { exact: true }).first().isVisible(),
     status: await page.locator('#captions > [role=status]').textContent(),
     captionCount: await transcript.locator('.caption').count(),
     microphone: await stats(),
@@ -209,11 +210,15 @@ test('browser words receive delayed AudioWorklet estimates and both captures sto
     console.error('Generated capture failure:', JSON.stringify(captureStatus));
     throw error;
   });
-  const known = transcript.locator('.caption').filter({ hasText: 'Generated test voice (estimate)' }).first();
+  const known = assigned.locator('.caption').filter({ hasText: 'Generated test voice (estimate)' }).first();
   const textColour = await known.locator('p').evaluate((element) => getComputedStyle(element).color);
   expect(textColour).toBe(await known.locator('.caption-speaker').evaluate((element) => getComputedStyle(element).color));
-  expect(textColour).not.toBe('rgb(67, 83, 74)'); // Unknown's neutral colour.
+  expect(textColour).not.toBe('rgb(209, 213, 219)'); // Unknown's neutral colour.
   expect((await transcript.locator('p.confirmed').allTextContents()).join('')).toBe(browserText);
+  await expect(transcript.locator('p.confirmed')).toHaveCount(1);
+  await expect(transcript.locator('.caption-speaker')).toHaveCount(0);
+  await expect(assigned).not.toContainText('Unknown speaker');
+  await page.screenshot({ path: `test-results/two-streams-${test.info().project.name}.png` });
   await browserResult(true);
   await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled({ timeout: 45000 });
   expect(await stats()).toEqual({ calls: 1, stops: 1 });
@@ -235,13 +240,13 @@ test('local model download failure stays recoverable and cancellation opens no m
   await page.route('**/local/v2/encoder.part1.bin', (route) => route.abort());
   await page.getByRole('button', { name: 'Prepare name suggestions' }).click();
   await expect(page.getByRole('button', { name: 'Prepare name suggestions' })).toBeEnabled();
-  await expect(page.getByLabel('Use experimental names')).not.toBeChecked();
+  await expect(page.getByLabel('Show names')).not.toBeChecked();
   await page.unroute('**/local/v2/encoder.part1.bin');
   let release!: () => void;
   const waiting = new Promise<void>((resolve) => { release = resolve; });
   await page.route('**/local/v2/encoder.part1.bin', async (route) => { await waiting; await route.abort(); });
   await page.getByRole('button', { name: 'Prepare name suggestions' }).click();
   await page.getByRole('button', { name: 'Cancel model preparation' }).click();
-  await expect(page.getByText('Preparation cancelled.', { exact: false })).toBeVisible(); release();
-  await expect(page.getByLabel('Use experimental names')).not.toBeChecked();
+  await expect(page.locator('section[aria-labelledby="name-suggestions-title"] [role=status]')).toContainText('Preparation cancelled.'); release();
+  await expect(page.getByLabel('Show names')).not.toBeChecked();
 });

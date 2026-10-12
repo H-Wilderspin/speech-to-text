@@ -45,10 +45,10 @@ export class VoiceComparisonSession {
     catch (error) { if (!operation.signal.aborted) this.set('error', error instanceof Error ? error.message : 'Could not prepare comparison.'); }
     finally { if (this.operation === operation) this.operation = undefined; }
   }
-  async record(referenceId: string, relation: DeclaredRelation | '', consent: boolean) {
+  async record(referenceId: string, relation: DeclaredRelation | '') {
     if (this.disposed || this.operation || !['ready', 'complete'].includes(this.snapshot.phase)) return;
-    if (!referenceId || (relation !== 'same' && relation !== 'different') || !consent) {
-      this.set('ready', 'Choose a saved speaker, declare who is recording and confirm their consent.'); return;
+    if (!referenceId || (relation !== 'same' && relation !== 'different')) {
+      this.set('ready', 'Choose a speaker and who is recording.'); return;
     }
     if (this.snapshot.trials.length >= 20) { this.set('complete', 'Twenty comparisons collected. Clear the results before recording more.'); return; }
     const operation = new AbortController(); this.operation = operation;

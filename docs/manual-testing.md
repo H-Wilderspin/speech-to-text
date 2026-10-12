@@ -113,3 +113,13 @@ The heavier model's phone memory, latency and battery are not yet measured.
 ## Recording results
 
 For every run record date, device model, OS/browser versions, tab/PWA mode, language, network condition, permission state, observations, latency sample count, and pass/fail for each step. Open a reproducible issue for any failure. M1's family-device gate, M2 enrolment and M3 attribution remain pending until the corresponding evidence exists.
+
+
+## 2026-10-12 — Two-pane family interface
+
+- On Pixel 8 and iPhone, reopen the app: three top controls, dark background and two equally sized caption panes.
+- Speak with names disabled: every word appears in light grey below; the upper pane stays empty. Check pauses, deliberate repetition and command stop.
+- In Settings, save a name and record eight seconds without a consent checkbox. Pick a colour in Speakers; change text size/language. Reload and verify all choices and older profiles survive.
+- Prepare name suggestions in Settings, reusing cached files. With known and unknown voices, check only final assigned speech appears above, with the chosen name/text colour. Unknown speech stays below. Delayed labels must not change lower-pane words or paragraph breaks. This is experimental, not proof of identity.
+- Scroll each pane independently; check enlarged text, focus, TalkBack/VoiceOver and no horizontal overflow. Verify Clear, profile deletion and microphone stop.
+- Report actual devices/versions, recognition errors, mistaken names and observed delay separately from layout acceptance.

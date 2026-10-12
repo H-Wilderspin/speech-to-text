@@ -1,6 +1,6 @@
 import type { VoiceRecorder } from '../../audio/recording';
 import { speakerModel, type EmbeddingEngine } from '../../identification/model';
-import { CONSENT_VERSION, normalizeEmbedding, type ProfileStore } from '../../storage/profiles';
+import { normalizeEmbedding, type ProfileStore } from '../../storage/profiles';
 
 type Phase = 'idle' | 'checking' | 'preparing' | 'ready' | 'recording' | 'processing' | 'saving' | 'saved' | 'error';
 export type EnrolmentSnapshot = { phase: Phase; message: string; seconds: number };
@@ -43,15 +43,14 @@ export class EnrolmentSession {
     } catch (error) { if (!operation.signal.aborted) this.set('error', error instanceof Error ? error.message : 'Could not prepare voice recording.'); }
     finally { if (this.operation === operation) this.operation = undefined; }
   }
-  async record(displayName: string, consent: boolean) {
+  async record(displayName: string) {
     if (this.disposed || this.operation) return;
     if (this.snapshot.phase !== 'ready' && this.snapshot.phase !== 'saved') return;
-    if (!consent || !displayName.trim() || displayName.trim().length > 60) {
-      this.set('ready', 'Enter a name and confirm the speaker’s consent before recording.'); return;
+    if (!displayName.trim() || displayName.trim().length > 60) {
+      this.set('ready', 'Enter a name.'); return;
     }
     const operation = this.start(); if (!operation) return;
     let samples: Float32Array | undefined; let embedding: Float32Array | undefined; let normalized: number[] | undefined;
-    const consentedAt = new Date().toISOString();
     this.set('recording', 'Allow microphone access if asked, then speak until recording finishes.');
     try {
       samples = await this.recorder.record(operation.signal, (seconds) => {
@@ -63,14 +62,14 @@ export class EnrolmentSession {
       operation.signal.throwIfAborted();
       if (embedding.length !== speakerModel.dimension) throw new Error('The voiceprint is incompatible with this model.');
       normalized = normalizeEmbedding(embedding);
-      this.set('saving', 'Saving the consented voiceprint on this device…');
+      this.set('saving', 'Saving…');
       await this.store.save({
         schemaVersion: 1, id: crypto.randomUUID(), displayName: displayName.trim(), createdAt: new Date().toISOString(),
-        consentVersion: CONSENT_VERSION, consentedAt, modelVersion: speakerModel.version,
+        registrationMethod: 'record-button', modelVersion: speakerModel.version,
         sampleDurationMs: samples.length / 16, embedding: normalized,
       }, operation.signal);
       // A completed transaction wins a later cancellation; the saved list is authoritative.
-      if (!operation.signal.aborted) this.set('saved', 'Voice profile saved on this device. Use Compare recordings to test it, or enable experimental name suggestions in Settings.');
+      if (!operation.signal.aborted) this.set('saved', 'Saved.');
     } catch (error) { if (!operation.signal.aborted) this.set('error', error instanceof Error ? error.message : 'Could not save this voice profile.'); }
     finally {
       samples?.fill(0); embedding?.fill(0); normalized?.fill(0);

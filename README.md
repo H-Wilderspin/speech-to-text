@@ -1,6 +1,8 @@
 # Speech-to-Text PWA
 
-## Implementation status — 2026-10-11
+## Implementation status — 2026-10-12
+
+**Two-pane family interface:** dark mode with immediate light-grey captions below and completed speech matched to saved people above. Unknown speech is omitted only from the upper pane. Settings contains text size/language, speaker registration and eight high-contrast colours. Choices persist across reloads. Registration needs a name and Record action; existing profiles still work. See [ADR 0025](docs/decisions/0025-dark-two-pane-family-interface.md).
 
 **Transcription first:** the user reports that the larger local model still makes
 too many mistakes and prefers delayed speaker detection. Browser recognition now
@@ -11,7 +13,7 @@ and voiceprints are reused. No new model is introduced. See [ADR 0023](docs/deci
 
 **Android browser captions:** cumulative hypotheses replace one line per native recognition cycle, including equal repeats and corrected wording, then commit once on normal completion. Continuous capture and prompt restart remain enabled; earlier completed cycles retain deliberate repetition. Spoken Stop waits for provider completion, which may require a pause. Latest user feedback confirms that opening words are no longer lost; wider physical retesting remains pending. See [ADR 0020](docs/decisions/0020-android-cumulative-recognition.md). Optional speaker processing adds delayed estimates to those captions as described below.
 
-The main page contains only **Listen**, **Clear** and **Settings** at the top, with captions filling the remaining viewport. Listen becomes Stop while active. Language, text size, voice profiles, privacy and installation information are in Settings. Estimated names and their text share a consistent profile colour; consecutive captions share one name label. Unknown speech uses a neutral colour. Browser recognition supplies no identity itself; optional local processing adds delayed estimates. See [ADR 0015](docs/decisions/0015-caption-first-layout.md).
+The main page contains only **Listen**, **Clear** and **Settings** above two independently scrolling caption panes. Listen becomes Stop. Saved names and assigned speech use the chosen profile colour; the live pane stays light grey, without labels. Unknown speech never appears in the upper pane. Browser recognition supplies no identity itself; optional local processing adds delayed estimates. Both panes preserve browser wording. [ADR 0025](docs/decisions/0025-dark-two-pane-family-interface.md) supersedes the earlier single-pane layout.
 
 M1's application is implemented: accessible anonymous captions, replaceable interim text, stable final text, explicit Listen/Stop and interruption recovery, adjustable text size, processing disclosure, and a static installable PWA shell. Automated verification and limitations are recorded in [feasibility](docs/feasibility.md).
 
@@ -21,13 +23,13 @@ Pixel 8 speaker enrolment also passed a user-reported check: a profile saved, su
 
 Listening now restarts across pauses and normal browser recognition endings. Tap Stop or say **“command stop”** to finish; the confirmed command is removed from captions. Keep the app open: leaving it or a microphone/provider failure still interrupts capture. The newest 100,000 characters are retained without stopping a long session. Growing cumulative hypotheses within one native utterance are displayed once; repeated phrases in separate utterances remain. The user has confirmed on Pixel 8 that the command works and text appears once; continuation after the requested 15-second pause was not explicitly reported. See [ADR 0014](docs/decisions/0014-persistent-listening-and-voice-stop.md).
 
-**The full project plan is not complete.** Experimental M2 enrolment is implemented: consented eight-second recordings produce local English-model voiceprints with versioned IndexedDB storage, listing and deletion. The first Prepare downloads about 39 MB of public model/runtime files; subsequent enrolments and comparisons automatically reuse the verified cached model, including after reloading offline. Only missing/damaged assets require another explicit download; browsers can evict stored files. Raw audio is discarded. Broader physical-device performance and speaker accuracy remain unverified. See [ADR 0006](docs/decisions/0006-experimental-local-enrolment.md), [cache policy](docs/decisions/0016-reuse-cached-voice-model.md), [model assets and licences](docs/speaker-assets.md), and the [device test matrix](docs/manual-testing.md).
+**The full project plan is not complete.** Experimental M2 enrolment is implemented: eight-second recordings produce local English-model voiceprints with versioned IndexedDB storage, listing and deletion. The first Prepare downloads about 39 MB of public model/runtime files; subsequent enrolments and comparisons automatically reuse the verified cached model, including after reloading offline. Only missing/damaged assets require another explicit download; browsers can evict stored files. Raw audio is discarded. Broader physical-device performance and speaker accuracy remain unverified. See [ADR 0006](docs/decisions/0006-experimental-local-enrolment.md), [cache policy](docs/decisions/0016-reuse-cached-voice-model.md), [model assets and licences](docs/speaker-assets.md), and the [device test matrix](docs/manual-testing.md).
 
-**Experimental delayed names:** after saving a voiceprint, open **Settings → Prepare name suggestions**, then return to captions and tap Listen. Browser words appear immediately. Local sample-clock speech/voice evidence supplies name estimates only where unique phrases agree with the browser transcript. Names and matching text colours can arrive after a pause or Stop. Short, repeated, mismatched or uncertain words stay Unknown. Estimates may be wrong and do not establish reliable diarization. Turn off **Use experimental names** for browser captions without the extra speaker workload. Changing this option clears text; the Android pause/repetition fixes remain in use.
+**Experimental delayed names:** after saving a voiceprint, open **Settings → Prepare name suggestions**, then return to captions and tap Listen. Browser words appear immediately. Local sample-clock speech/voice evidence supplies name estimates only where unique phrases agree with the browser transcript. Names and matching text colours can arrive in the upper pane after a pause or Stop. Short, repeated, mismatched or uncertain words stay in the live pane only. Estimates may be wrong and do not establish reliable diarization. Turn off **Show names (English)** for browser captions without the extra speaker workload. Changing this option clears text; the Android pause/repetition fixes remain in use.
 
 Delayed estimates reuse up to **205 MB** of speech models/runtime and the existing voice model (27 MB if missing). Only absent/damaged files download. Browser transcription may send audio to its provider and need a connection; voiceprints and speaker processing remain on-device. The app saves neither audio nor transcripts. Stop and “command stop” stop both captures, then pending estimates can finish. A local-processing failure leaves browser captions running. Concurrent browser/local microphone operation and accuracy on Pixel 8/iPhone require retesting. See [ADR 0023](docs/decisions/0023-browser-first-delayed-names.md) and [local model provenance](docs/local-speech-assets.md).
 
-**Settings → Speakers → Compare recordings** now supports local same-person/different-person evaluation against a saved profile. It requires consent and a declared relationship, displays cosine similarity and processing time, and retains at most 20 temporary results until you clear them, leave the screen or interrupt the app. The test recording and voiceprint are discarded; saved profiles are unchanged. Scores are measurements, not probabilities or confirmed identities. See [ADR 0011](docs/decisions/0011-local-voice-comparison.md).
+**Settings → Speakers → More → Compare recordings** now supports local same-person/different-person evaluation against a saved profile. It requires a declared relationship, displays cosine similarity and processing time, and retains at most 20 temporary results until you clear them, leave the screen or interrupt the app. The test recording and voiceprint are discarded; saved profiles are unchanged. Scores are measurements, not probabilities or confirmed identities. See [ADR 0011](docs/decisions/0011-local-voice-comparison.md).
 
 M3's shared-clock ASR/voice-window pipeline now powers the opt-in estimates above. Continuous capture feeds numbered AudioWorklet frames to streaming ASR and speaker processing, so token points share the input sample clock. Human calibration, accurate speaker turns and physical-device throughput remain unfinished. Browser ASR remains the default. The earlier experiments are recorded in [ADR 0007](docs/decisions/0007-streaming-asr-clock-experiment.md), [ADR 0009](docs/decisions/0009-continuous-audio-clock.md) and [ADR 0010](docs/decisions/0010-shared-speech-and-speaker-windows.md).
 
@@ -126,9 +128,9 @@ This README is the **product specification and development guide** for Codex. `A
 
 ### Enrolled speakers
 
-1. Open a secondary **Speakers** interface, enter a display name, and record one or more short samples with the speaker's informed consent.
+1. Open a secondary **Speakers** interface, enter a display name, and record one or more short samples using the explicit Record action.
 2. Generate and store a reusable voice embedding / voiceprint **on the device when technically feasible**. Let users inspect and delete individual profiles.
-3. During listening, attribute distinct utterances to enrolled speakers where confidence is sufficient. Display **Unknown** if no enrolled speaker matches confidently.
+3. During listening, show final assigned speech with names and colours in the upper pane. Unassigned speech appears only in the live pane below, without a speaker label.
 4. When possible, distinguish different unknown voices as **Speaker 1**, **Speaker 2**, etc. within the current session; these ephemeral labels are not identities.
 5. Communicate uncertainty without falsely presenting a guess as a confirmed identity. Preserve readable text even if speaker recognition is unavailable.
 
@@ -150,8 +152,8 @@ This README is the **product specification and development guide** for Codex. `A
 | FR-02 | Must | Interim and final transcription rendering | Interim revisions do not duplicate words; final segments remain stable. |
 | FR-03 | Must | Readable, accessible full-screen display | Large text, text scaling, high contrast, accessible controls on phone sizes. |
 | FR-04 | Must | Anonymous mode works immediately | No speaker profiles, account, or cloud service required to enter listening mode. |
-| FR-05 | Must | Enrol named speaker with voice samples | Profile can be created, displayed, and deleted; permission and consent made clear. |
-| FR-06 | Must* | Identify enrolled speakers | Correctly attribute clearly separated utterances when feasible, else label Unknown. |
+| FR-05 | Must | Enrol named speaker with voice samples | Name and Record action create a profile; choose its colour or delete it in Settings. Browser microphone permission still applies. |
+| FR-06 | Must* | Identify enrolled speakers | Show assigned final speech above; keep unknown speech only in the live pane below. |
 | FR-07 | Must* | Show who said what across speakers | Transcript groups segments by speaker; changes remain visually clear. |
 | FR-08 | Must | Graceful degradation | Unavailable recogniser / diarisation never blocks basic listening if STT works. |
 | FR-09 | Must | Cross-platform installable PWA | HTTPS; manifest; iOS Safari and Android Chrome device checks. |
@@ -161,7 +163,7 @@ This README is the **product specification and development guide** for Codex. `A
 | NFR-03 | Target | Prompt perceived responsiveness | Interim text should normally appear within ~1 second where the selected engine permits; measure rather than promise. |
 | NFR-04 | Must | Privacy and security | HTTPS, explicit microphone consent, no hard-coded secret API keys, delete enrolments. |
 
-\* Speaker identification and diarisation are **research-dependent feasibility goals**. Do not pretend they are solved by the browser SpeechRecognition API. Document measured limits and display Unknown when recognition is unreliable.
+\* Speaker identification and diarisation are **research-dependent feasibility goals**. Do not pretend they are solved by the browser SpeechRecognition API. Document measured limits and leave unreliable matches unassigned in the live pane.
 
 ## 4. Technical approach
 
@@ -234,7 +236,7 @@ Treat identity, time alignment and partial-result reconciliation as separate tes
 
 ### M2 — Speaker enrolment
 
-- User interface to add/list/delete named speakers; explain and capture consent.
+- User interface to add/list/delete named speakers and choose high-contrast colours; use an explicit Record action without consent checkboxes for this family project.
 - Select and benchmark an on-device embedding approach; store versioned embeddings in IndexedDB (not raw recordings by default).
 - Prototype same-speaker/different-speaker comparisons across sessions and realistic microphone conditions.
 - **Gate:** Profiles are created/deleted successfully, and performance / false matches are measured on target devices.

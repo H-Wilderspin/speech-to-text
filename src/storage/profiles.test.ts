@@ -6,6 +6,14 @@ const profile: SpeakerProfile = {
   consentVersion: CONSENT_VERSION, consentedAt: '2026-10-10T12:00:00Z', modelVersion: 'test-model', sampleDurationMs: 8000, embedding: [3, 4],
 };
 describe('profile boundaries', () => {
+  it('accepts personal registration without inventing legacy consent metadata', () => {
+    const personal = { ...profile, registrationMethod: 'record-button' as const, consentVersion: undefined, consentedAt: undefined };
+    const saved = validateProfile(personal);
+    expect(saved.registrationMethod).toBe('record-button');
+    expect(saved).not.toHaveProperty('consentVersion'); expect(saved).not.toHaveProperty('consentedAt');
+    expect(validateProfile(profile).consentVersion).toBe(CONSENT_VERSION);
+    expect(() => validateProfile({ ...personal, registrationMethod: undefined })).toThrow();
+  });
   it('normalizes without mutating the caller and never retains extra audio fields', () => {
     const safe = validateProfile({ ...profile, audio: [1] } as SpeakerProfile);
     expect(safe).not.toHaveProperty('audio'); expect(safe.displayName).toBe('Test speaker');

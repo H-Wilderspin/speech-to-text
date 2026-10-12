@@ -5,8 +5,11 @@ export type SpeakerProfile = {
   id: string;
   displayName: string;
   createdAt: string;
-  consentVersion: typeof CONSENT_VERSION;
-  consentedAt: string;
+  // Legacy consent metadata is preserved; new personal registrations record the
+  // button action without claiming a consent checkbox was completed.
+  consentVersion?: typeof CONSENT_VERSION;
+  consentedAt?: string;
+  registrationMethod?: 'record-button';
   modelVersion: string;
   sampleDurationMs: number;
   embedding: number[];
@@ -37,14 +40,16 @@ export function normalizeEmbedding(values: ArrayLike<number>): number[] {
 export function validateProfile(value: SpeakerProfile): SpeakerProfile {
   if (!value || typeof value !== 'object' || value.schemaVersion !== 1 || typeof value.id !== 'string' || !value.id || value.id.length > 100
     || typeof value.displayName !== 'string' || !value.displayName.trim() || value.displayName.trim().length > 60
-    || value.consentVersion !== CONSENT_VERSION || typeof value.consentedAt !== 'string' || !Number.isFinite(Date.parse(value.consentedAt))
+    || !(value.registrationMethod === 'record-button' && value.consentVersion === undefined && value.consentedAt === undefined
+      || value.registrationMethod === undefined && value.consentVersion === CONSENT_VERSION && typeof value.consentedAt === 'string' && Number.isFinite(Date.parse(value.consentedAt)))
     || typeof value.createdAt !== 'string' || !Number.isFinite(Date.parse(value.createdAt)) || typeof value.modelVersion !== 'string'
     || !value.modelVersion || value.modelVersion.length > 200
     || !Number.isFinite(value.sampleDurationMs) || value.sampleDurationMs < 3000 || value.sampleDurationMs > 30000
     || !Array.isArray(value.embedding)) throw new Error('The speaker profile is invalid or incompatible.');
   return {
     schemaVersion: 1, id: value.id, displayName: value.displayName.trim(), createdAt: value.createdAt,
-    consentVersion: CONSENT_VERSION, consentedAt: value.consentedAt, modelVersion: value.modelVersion,
+    ...(value.registrationMethod === 'record-button' ? { registrationMethod: 'record-button' as const }
+      : { consentVersion: CONSENT_VERSION, consentedAt: value.consentedAt }), modelVersion: value.modelVersion,
     sampleDurationMs: value.sampleDurationMs, embedding: normalizeEmbedding(value.embedding),
   };
 }

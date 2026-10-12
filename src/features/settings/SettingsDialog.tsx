@@ -31,26 +31,17 @@ export function SettingsDialog({ active, textSize, onTextSize, language, onLangu
           <option value="fr-FR">Français</option><option value="de-DE">Deutsch</option><option value="es-ES">Español</option>
         </select>
       </label>
-      {active && <p>Stop listening before changing the speech language.</p>}
     </section>
     <section aria-labelledby="voices-title">
-      <h3 id="voices-title">Voice profiles</h3>
-      <p>Saved profiles can be used for delayed name estimates and Compare recordings. Captions appear before speaker estimates are ready.</p>
+      <h3 id="voices-title">People &amp; colours</h3>
       <button ref={speakersButton} onClick={onSpeakers}>Speakers</button>
     </section>
     {localEngine && onLocalEnabled && <NameSuggestions engine={localEngine} enabled={localEnabled} active={active} onEnabled={onLocalEnabled} />}
-    <section aria-labelledby="listening-help-title">
-      <h3 id="listening-help-title">Listening</h3>
-      <p>Tap Listen to begin. Listening continues across pauses. Tap Stop or say “command stop” to finish. Keep the app open while listening; returning from another app requires tapping Listen again.</p>
-      <p>The latest 100,000 characters stay on screen. Scroll up to read earlier speech and return to the bottom to follow new words.</p>
-    </section>
-    <section aria-labelledby="privacy-title">
-      <h3 id="privacy-title">Privacy &amp; installation</h3>
-      <p>Browser captions use your browser’s speech service, which may send microphone audio to its provider. The provider’s processing and retention rules apply. Optional delayed speaker estimates run locally alongside those captions.</p>
-      <p>No account, analytics, saved audio or saved transcripts. Captions disappear when cleared or reloaded. Optional consented voice profiles stay in this browser and can be deleted in Speakers.</p>
-      <p>App files and prepared speaker models are cached. Transcription may need a connection, including when speaker estimates are enabled. Browsers may evict cached files.</p>
-      <p>On iPhone, use Safari’s Share menu → Add to Home Screen. On Android, use Chrome’s menu → Install app or Add to Home screen.</p>
-      {installFailed && <p>Offline installation was unavailable. Check your browser’s storage settings. Live captions can still work online.</p>}
-    </section>
+    {installFailed && <p role="status">Offline installation unavailable.</p>}
+    <details><summary>About</summary>
+      <p>Speech uses your browser’s provider. Voiceprints stay on this device.</p>
+      <p><a href={`${import.meta.env.BASE_URL}speaker/THIRD-PARTY-NOTICES.txt`} target="_blank" rel="noreferrer">Voice model licences</a>
+        {' · '}<a href={`${import.meta.env.BASE_URL}local/THIRD-PARTY-NOTICES.txt`} target="_blank" rel="noreferrer">Speech model licences</a></p>
+    </details>
   </dialog>;
 }

@@ -22,6 +22,13 @@ Deliver a **small, accessible, static-hosted TypeScript PWA** for live speech tr
 
 ## Architecture rules
 
+**Family UX update (2026-10-12, explicit user instruction):** registration uses a
+name and Record action without consent text/checkboxes. Preserve legacy consent
+metadata when reading old profiles; do not fabricate it for new recordings. Keep
+configuration under Settings and explanations minimal. See ADR 0025. This overrides
+earlier enrolment UI consent requirements, not microphone permission or the existing
+ban on uploading voiceprints/audio to new services without authorisation.
+
 - Use **TypeScript** with React and Vite unless an approved ADR changes the choice. Keep the output statically deployable.
 - Keep separate modules for `audio`, `transcription`, `diarization`, `identification`, `storage`, and UI features. UI must not directly depend on a specific inference vendor or model runtime.
 - Put interfaces and pure transformation / decision logic at boundaries; use adapters for browser APIs and external providers. Prefer composition and dependency injection over global singletons.

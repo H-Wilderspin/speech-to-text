@@ -22,14 +22,39 @@ async function result(page: Page, text: string, isFinal: boolean) {
   }, { text, isFinal });
 }
 
+test('dark live captions keep unknown speech below and remember text preferences', async ({ page }) => {
+  await mockRecognition(page); await page.setViewportSize({ width: 390, height: 844 }); await page.goto('/');
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('button', { name: 'Larger text' }).click();
+  await page.getByLabel('Speech language').selectOption('en-US');
+  await page.screenshot({ path: `test-results/settings-${test.info().project.name}.png` });
+  await page.reload();
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(page.getByLabel('Speech language')).toHaveValue('en-US');
+  await page.getByRole('button', { name: 'Back to captions' }).click();
+  await page.getByRole('button', { name: 'Listen', exact: true }).click();
+  await result(page, 'All speech appears immediately here.', false);
+  const live = page.getByRole('region', { name: 'Live transcript', exact: true });
+  const assigned = page.getByRole('region', { name: 'Assigned transcript', exact: true });
+  await expect(live).toContainText('All speech appears immediately here.');
+  await expect(assigned.locator('.caption')).toHaveCount(0);
+  await result(page, 'All speech appears immediately here.', true);
+  await expect(assigned.locator('.caption')).toHaveCount(0);
+  await expect(live.locator('.caption-speaker')).toHaveCount(0);
+  await expect(live).toHaveCSS('font-size', '36px');
+  await expect(live.locator('.caption')).toHaveCSS('color', 'rgb(209, 213, 219)');
+  await expect(page.locator('html')).toHaveCSS('background-color', 'rgb(18, 22, 25)');
+  await page.getByRole('button', { name: 'Stop', exact: true }).click();
+});
+
 test('upgrading from local-only mode restores browser captions without downloading models', async ({ page }) => {
   await mockRecognition(page);
   await page.addInitScript(() => localStorage.setItem('speech-to-text-name-suggestions:/', 'enabled'));
   const models: string[] = [];
   page.on('request', (request) => { if (/(local|speaker)\/v[12]\//.test(request.url())) models.push(request.url()); });
   await page.goto('/'); await page.getByRole('button', { name: 'Settings', exact: true }).click();
-  await expect(page.getByLabel('Use experimental names')).not.toBeChecked();
-  await expect(page.getByText('Browser captions appear first.', { exact: false })).toBeVisible();
+  await expect(page.getByLabel('Show names')).not.toBeChecked();
+  await expect(page.getByRole('dialog').getByRole('heading', { name: 'Who said what' })).toBeVisible();
   await page.getByRole('button', { name: 'Back to captions' }).click();
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   await result(page, 'Keep these accurately transcribed words.', true);
@@ -78,11 +103,13 @@ test('three top controls leave the viewport to captions and settings preserve an
   await expect(page.getByRole('button', { name: 'Clear', exact: true })).toBeDisabled();
   const transcript = page.getByRole('region', { name: 'Live transcript' });
   const box = await transcript.boundingBox();
-  expect(box!.height).toBeGreaterThan(740);
+  expect(box!.height).toBeGreaterThan(330);
+  const top = await page.getByRole('region', { name: 'Assigned transcript' }).boundingBox();
+  expect(top!.y + top!.height).toBeLessThan(box!.y);
   expect(box!.y + box!.height).toBeLessThanOrEqual(844);
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await page.getByLabel('Speech language').selectOption('en-US');
-  await expect(page.locator('section[aria-labelledby="privacy-title"]').getByText('may send microphone audio', { exact: false })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'People & colours' })).toBeVisible();
   await page.getByRole('button', { name: 'Back to captions' }).click();
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   await result(page, 'The captions fill this page.', true);
@@ -243,7 +270,7 @@ test('320px and larger text do not create horizontal overflow', async ({ page })
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   await result(page, 'LongUnbrokenWord'.repeat(20), true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-  expect(await page.getByRole('region').evaluate((element) => getComputedStyle(element).fontSize)).toBe('56px');
+  expect(await page.getByRole('region', { name: 'Live transcript', exact: true }).evaluate((element) => getComputedStyle(element).fontSize)).toBe('56px');
   await page.screenshot({ path: `test-results/mobile-${test.info().project.name}.png`, fullPage: true });
 });
 

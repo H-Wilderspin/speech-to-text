@@ -1,8 +1,10 @@
-# Project-plan acceptance audit — 2026-10-11
+# Project-plan acceptance audit — 2026-10-12
 
 This audit preserves the README's complete scope. Implemented code and passing desktop tests do not satisfy physical-device or human-speaker gates. The goal is not complete.
 
-Latest increment: the larger local recognizer also failed the user's accuracy
+Latest interface increment: [ADR 0025](decisions/0025-dark-two-pane-family-interface.md) adds dark two-pane captions, assigned speech only above, all live words below, persistent high-contrast colours/text preferences, and simplified personal registration. It changes presentation, not recognition accuracy or identity calibration. See the 2026-10-12 feasibility entry for checks.
+
+Previous recognition increment: the larger local recognizer also failed the user's accuracy
 retest. [ADR 0023](decisions/0023-browser-first-delayed-names.md) restores browser
 words and adds optional delayed estimates without replacing text. Existing models
 and voiceprints are reused. This is experimental phrase correspondence, not a

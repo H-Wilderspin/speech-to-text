@@ -16,17 +16,17 @@ function setup() {
   const session = new EnrolmentSession(recorder, engine, store);
   return { session, recorder, engine, store, samples, embedding };
 }
-describe('consented enrolment lifecycle', () => {
-  it('requires preparation, a name and consent before touching the microphone', async () => {
+describe('personal enrolment lifecycle', () => {
+  it('requires preparation, a name before touching the microphone', async () => {
     const { session, recorder } = setup();
-    await session.record('Test', true); await session.prepare();
-    await session.record('Test', false); await session.record(' ', true);
+    await session.record('Test'); await session.prepare();
+    await session.record(' ');
     expect(recorder.record).not.toHaveBeenCalled();
   });
   it('waits for durable save and erases audio and temporary embeddings afterward', async () => {
     const { session, store, samples, embedding } = setup();
     const save = deferred<void>(); vi.mocked(store.save).mockReturnValue(save.promise);
-    await session.prepare(); const operation = session.record(' Test ', true);
+    await session.prepare(); const operation = session.record(' Test ');
     await vi.waitFor(() => expect(session.getSnapshot().phase).toBe('saving'));
     expect(session.getSnapshot().phase).not.toBe('saved'); save.resolve(); await operation;
     expect(session.getSnapshot().phase).toBe('saved');
@@ -36,19 +36,19 @@ describe('consented enrolment lifecycle', () => {
   it('discards capture that resolves after cancellation without starting inference', async () => {
     const { session, recorder, engine, store, samples } = setup();
     const capture = deferred<Float32Array>(); recorder.record.mockReturnValue(capture.promise);
-    await session.prepare(); const operation = session.record('Test', true); session.cancel(); capture.resolve(samples); await operation;
+    await session.prepare(); const operation = session.record('Test'); session.cancel(); capture.resolve(samples); await operation;
     expect(engine.compute).not.toHaveBeenCalled(); expect(store.save).not.toHaveBeenCalled();
     expect(samples.every((v) => v === 0)).toBe(true); expect(session.getSnapshot().phase).toBe('idle');
   });
   it('does not save an embedding delivered after cancellation or disposal', async () => {
     const { session, engine, store, embedding } = setup(); const inference = deferred<Float32Array>();
-    engine.compute.mockReturnValue(inference.promise); await session.prepare(); const operation = session.record('Test', true);
+    engine.compute.mockReturnValue(inference.promise); await session.prepare(); const operation = session.record('Test');
     await vi.waitFor(() => expect(engine.compute).toHaveBeenCalled()); session.dispose(); inference.resolve(embedding); await operation;
     expect(store.save).not.toHaveBeenCalled(); expect(embedding.every((v) => v === 0)).toBe(true);
   });
   it('passes cancellation into storage and reports storage failure without claiming success', async () => {
     const { session, store, samples } = setup(); vi.mocked(store.save).mockRejectedValue(new Error('Storage full'));
-    await session.prepare(); await session.record('Test', true);
+    await session.prepare(); await session.record('Test');
     expect(session.getSnapshot()).toMatchObject({ phase: 'error', message: 'Storage full' });
     expect(samples.every((v) => v === 0)).toBe(true);
     expect(vi.mocked(store.save).mock.calls[0]?.[1]).toBeInstanceOf(AbortSignal);

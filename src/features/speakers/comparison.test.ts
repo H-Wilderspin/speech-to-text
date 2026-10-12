@@ -16,14 +16,14 @@ function setup() {
   const session = new VoiceComparisonSession(recorder, engine, store);
   return { session, recorder, engine, store, samples, embedding, reference };
 }
-describe('temporary consented voice comparisons', () => {
-  it('requires preparation, a reference, a declared relationship and consent before recording', async () => {
-    const f = setup(); await f.session.record('reference', 'same', true); await f.session.prepare();
-    await f.session.record('', 'same', true); await f.session.record('reference', '', true); await f.session.record('reference', 'same', false);
+describe('temporary voice comparisons', () => {
+  it('requires preparation, a reference, a declared relationship before recording', async () => {
+    const f = setup(); await f.session.record('reference', 'same'); await f.session.prepare();
+    await f.session.record('', 'same'); await f.session.record('reference', '');
     expect(f.recorder.record).not.toHaveBeenCalled(); expect(f.store.read).not.toHaveBeenCalled();
   });
   it('returns a score with the declared relationship, saves nothing and erases temporary buffers', async () => {
-    const f = setup(); await f.session.prepare(); await f.session.record('reference', 'different', true);
+    const f = setup(); await f.session.prepare(); await f.session.record('reference', 'different');
     expect(f.session.getSnapshot().phase).toBe('complete');
     expect(f.session.getSnapshot().trials).toEqual([expect.objectContaining({ score: .8, relation: 'different', referenceId: 'reference', modelVersion: speakerModel.version, durationMs: 8000 })]);
     expect(f.store.save).not.toHaveBeenCalled(); expect(f.store.remove).not.toHaveBeenCalled();
@@ -34,19 +34,19 @@ describe('temporary consented voice comparisons', () => {
   it('checks a freshly read reference and refuses deleted or incompatible profiles', async () => {
     for (const invalid of [undefined, { modelVersion: 'old' }, { embedding: [1, 0] }]) {
       const f = setup(); vi.mocked(f.store.read).mockResolvedValue(invalid === undefined ? undefined : { ...f.reference, ...invalid });
-      await f.session.prepare(); await f.session.record('reference', 'same', true);
+      await f.session.prepare(); await f.session.record('reference', 'same');
       expect(f.session.getSnapshot().phase).toBe('error'); expect(f.engine.compute).not.toHaveBeenCalled();
       expect(f.samples.every((v) => v === 0)).toBe(true); expect(f.session.getSnapshot().trials).toHaveLength(0);
     }
   });
   it('cancels late recordings before reading profiles or starting inference', async () => {
     const f = setup(); const recording = deferred<Float32Array>(); f.recorder.record.mockReturnValue(recording.promise);
-    await f.session.prepare(); const operation = f.session.record('reference', 'same', true); f.session.cancel(); recording.resolve(f.samples); await operation;
+    await f.session.prepare(); const operation = f.session.record('reference', 'same'); f.session.cancel(); recording.resolve(f.samples); await operation;
     expect(f.store.read).not.toHaveBeenCalled(); expect(f.engine.compute).not.toHaveBeenCalled(); expect(f.samples.every((v) => v === 0)).toBe(true);
   });
   it('discards inference delivered after cancellation and suppresses stale results', async () => {
     const f = setup(); const inference = deferred<Float32Array>(); f.engine.compute.mockReturnValue(inference.promise);
-    await f.session.prepare(); const operation = f.session.record('reference', 'same', true);
+    await f.session.prepare(); const operation = f.session.record('reference', 'same');
     await vi.waitFor(() => expect(f.engine.compute).toHaveBeenCalledOnce());
     f.session.cancel(); inference.resolve(f.embedding); await operation;
     expect(f.session.getSnapshot()).toMatchObject({ phase: 'idle', trials: [] }); expect(f.reference.embedding.every((v) => v === 0)).toBe(true); expect(f.embedding.every((v) => v === 0)).toBe(true);
@@ -56,7 +56,7 @@ describe('temporary consented voice comparisons', () => {
     const preparation = f.session.prepare(); await f.session.prepare(); f.session.dispose(); prepared.resolve(); await preparation;
     expect(f.engine.prepare).toHaveBeenCalledOnce(); expect(f.session.getSnapshot().phase).toBe('idle');
     const second = setup(); const capture = deferred<Float32Array>(); second.recorder.record.mockReturnValue(capture.promise);
-    await second.session.prepare(); const recording = second.session.record('reference', 'same', true); await second.session.record('reference', 'same', true);
+    await second.session.prepare(); const recording = second.session.record('reference', 'same'); await second.session.record('reference', 'same');
     expect(second.recorder.record).toHaveBeenCalledOnce(); second.session.cancel(); capture.resolve(second.samples); await recording;
   });
   it('bounds temporary results and permits another trial only after clearing them', async () => {
@@ -65,15 +65,15 @@ describe('temporary consented voice comparisons', () => {
     f.engine.compute.mockImplementation(async () => new Float32Array(192).fill(.1));
     vi.mocked(f.store.read).mockImplementation(async () => ({ ...f.reference, embedding: [...f.reference.embedding] }));
     await f.session.prepare();
-    for (let i = 0; i < 21; i++) await f.session.record('reference', 'same', true);
+    for (let i = 0; i < 21; i++) await f.session.record('reference', 'same');
     expect(f.session.getSnapshot().trials).toHaveLength(20); expect(f.recorder.record).toHaveBeenCalledTimes(20);
-    f.session.clearResults(); await f.session.record('reference', 'different', true);
+    f.session.clearResults(); await f.session.record('reference', 'different');
     expect(f.session.getSnapshot().trials).toHaveLength(1); expect(f.recorder.record).toHaveBeenCalledTimes(21);
     f.session.dispose(); expect(f.session.getSnapshot().trials).toHaveLength(0);
   });
   it('rejects invalid inference values without publishing a score or changing a profile', async () => {
     const f = setup(); f.embedding.fill(0);
-    await f.session.prepare(); await f.session.record('reference', 'same', true);
+    await f.session.prepare(); await f.session.record('reference', 'same');
     expect(f.session.getSnapshot()).toMatchObject({ phase: 'error', trials: [] });
     expect(f.store.save).not.toHaveBeenCalled(); expect(f.reference.embedding.every((v) => v === 0)).toBe(true);
   });

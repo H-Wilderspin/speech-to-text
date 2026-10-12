@@ -22,10 +22,10 @@ describe('speaker presentation', () => {
       expect(html).not.toContain('Unverified name');
     }
   });
-  it('maintains at least 4.5:1 text contrast against the app background', () => {
+  it('maintains at least 7:1 text contrast against the app background', () => {
     const luminance = (hex: string) => hex.slice(1).match(/../g)!.map((pair) => parseInt(pair, 16) / 255)
       .map((v) => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4)
       .reduce((sum, value, i) => sum + value * [.2126, .7152, .0722][i]!, 0);
-    for (const colour of [...speakerColours, unknownColour]) expect((luminance('#f7f8f2') + .05) / (luminance(colour) + .05)).toBeGreaterThanOrEqual(4.5);
+    for (const colour of [...speakerColours, unknownColour]) expect((luminance(colour) + .05) / (luminance('#121619') + .05)).toBeGreaterThanOrEqual(7);
   });
 });

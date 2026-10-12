@@ -2,6 +2,8 @@ export type SessionPhase = 'idle' | 'requesting-permission' | 'listening' | 'sto
 
 export interface TranscriptSegment {
   id: string;
+  /** Original browser segment when delayed attribution splits its text. */
+  sourceSegmentId?: string;
   text: string;
   isFinal: boolean;
   startMs?: number;
