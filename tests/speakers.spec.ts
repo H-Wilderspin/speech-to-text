@@ -309,6 +309,7 @@ test('settings fills the viewport with inline protected speaker pills and a retu
       for (const id of ['Alex', 'Sam', 'Jo']) tx.objectStore('profiles').put({ schemaVersion: 1, id, displayName: id,
         createdAt: new Date().toISOString(), registrationMethod: 'record-button', modelVersion: 'layout-fixture', sampleDurationMs: 8000, embedding: [1, 0] });
     }); db.close();
+    localStorage.setItem('speech-to-text-display:/', JSON.stringify({ colours: { Alex: '#ffe08a' } }));
   });
   await page.reload(); await page.getByRole('button', { name: 'Settings', exact: true }).click();
   const pill = page.locator('.speaker-pill').filter({ hasText: 'Alex' });
@@ -320,8 +321,9 @@ test('settings fills the viewport with inline protected speaker pills and a retu
   await expect(activity).toHaveAttribute('aria-pressed', 'false');
   await expect(pill.getByRole('button')).toHaveCount(3);
   await pill.getByRole('button', { name: 'Change colour for Alex' }).click();
+  await expect(page.getByRole('group', { name: 'Colour for Alex' }).getByRole('button', { name: 'Gold', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('group', { name: 'Colour for Alex' }).getByRole('button', { name: 'Gold', exact: true }).click();
-  await expect(pill.locator('strong')).toHaveCSS('color', 'rgb(255, 224, 138)');
+  await expect(pill.locator('strong')).toHaveCSS('color', 'rgb(112, 80, 0)');
   await pill.getByRole('button', { name: 'Delete Alex', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Cancel', exact: true })).toBeFocused();
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();

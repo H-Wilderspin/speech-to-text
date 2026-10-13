@@ -8,6 +8,11 @@ fill the remaining space and the display choice is remembered. Collapsing change
 the display only; existing local attribution continues and its accuracy limitations
 remain. See [ADR 0037](docs/decisions/0037-browser-plan-collapsible-attribution.md).
 
+**Reading view:** light backgrounds with dark text. The latest live sentence stays
+at the top of Live; earlier speech scrolls independently underneath. Long current
+utterances can be scrolled within their reading area. Saved speaker colours keep
+their colour family using darker shades for contrast. See ADR 0039.
+
 **Typography and Settings:** Poppins is bundled for online/offline use. The UI has
 small (14px), medium (16px) and large caption sizes (32px initially, adjustable).
 Descriptions/captions use weight 400; labels use uppercase with .2em letter spacing.
@@ -76,7 +81,7 @@ Registered people appear as pills with activity, colour and protected-delete but
 Names prepare automatically for saved profiles; there is no enable checkbox.
 See [ADR 0026](docs/decisions/0026-single-pane-settings-automatic-names.md).
 
-**Two-pane family interface:** dark mode with immediate light-grey captions below and completed speech matched to saved people above. Unknown speech is omitted only from the upper pane. Settings contains text size/language, speaker registration and eight high-contrast colours. Choices persist across reloads. Registration needs a name and Record action; existing profiles still work. See [ADR 0025](docs/decisions/0025-dark-two-pane-family-interface.md).
+**Two-pane family interface:** immediate dark captions on a light background below and completed speech matched to saved people above. Unknown speech is omitted only from the upper pane. Settings contains text size/language, speaker registration and eight high-contrast colours. Choices persist across reloads. Registration needs a name and Record action; existing profiles still work. See [ADR 0025](docs/decisions/0025-dark-two-pane-family-interface.md).
 
 **Transcription first:** the user reports that the larger local model still makes
 too many mistakes and prefers delayed speaker detection. Browser recognition now
@@ -87,7 +92,7 @@ and voiceprints are reused. No new model is introduced. See [ADR 0023](docs/deci
 
 **Android browser captions:** cumulative hypotheses replace one line per native recognition cycle, including equal repeats and corrected wording, then commit once on normal completion. Continuous capture and prompt restart remain enabled; earlier completed cycles retain deliberate repetition. Spoken Stop waits for provider completion, which may require a pause. Latest user feedback confirms that opening words are no longer lost; wider physical retesting remains pending. See [ADR 0020](docs/decisions/0020-android-cumulative-recognition.md). Optional speaker processing adds delayed estimates to those captions as described below.
 
-The main page contains only **Listen**, **Clear** and **Settings** above two independently scrolling caption panes. Listen becomes Stop. Saved names and assigned speech use the chosen profile colour; the live pane stays light grey, without labels. Unknown speech never appears in the upper pane. Browser recognition supplies no identity itself; optional local processing adds delayed estimates. Both panes preserve browser wording. [ADR 0025](docs/decisions/0025-dark-two-pane-family-interface.md) supersedes the earlier single-pane layout.
+The main page contains only **Listen**, **Clear** and **Settings** above two independently scrolling caption panes. Listen becomes Stop. Saved names and assigned speech use the chosen profile colour; the live pane stays dark grey, without speaker labels. Its newest utterance stays in a fixed reading area above independently scrolling history (ADR 0039). Unknown speech never appears in the upper pane. Browser recognition supplies no identity itself; optional local processing adds delayed estimates. Both panes preserve browser wording. [ADR 0025](docs/decisions/0025-dark-two-pane-family-interface.md) supersedes the earlier single-pane layout.
 
 M1's application is implemented: accessible anonymous captions, replaceable interim text, stable final text, explicit Listen/Stop and interruption recovery, adjustable text size, processing disclosure, and a static installable PWA shell. Automated verification and limitations are recorded in [feasibility](docs/feasibility.md).
 

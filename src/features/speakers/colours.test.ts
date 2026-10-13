@@ -5,6 +5,13 @@ import { Caption } from '../listening/Transcript';
 import { speakerColour, speakerColours, unknownColour } from './colours';
 
 describe('speaker presentation', () => {
+  it('preserves saved colour families from the dark theme', () => {
+    const previous = ['#8ecbff', '#e1afff', '#a3e4a1', '#ffb4a5', '#ffe08a', '#80e1dc', '#ffafd5', '#bdc3ff'];
+    previous.forEach((colour, index) => {
+      expect(speakerColour('person', { person: colour })).toBe(speakerColours[index]);
+    });
+    expect(speakerColour('person', { person: '#705000' })).toBe('#705000');
+  });
   it('keeps a name and its speech in the same stable colour, including interim words', () => {
     for (const isFinal of [false, true]) {
       const html = renderToStaticMarkup(createElement(Caption, { segment: { id: 'one', text: 'Example speech.', isFinal, speakerId: 'voice-a', speakerName: 'Example name' } }));
@@ -26,6 +33,6 @@ describe('speaker presentation', () => {
     const luminance = (hex: string) => hex.slice(1).match(/../g)!.map((pair) => parseInt(pair, 16) / 255)
       .map((v) => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4)
       .reduce((sum, value, i) => sum + value * [.2126, .7152, .0722][i]!, 0);
-    for (const colour of [...speakerColours, unknownColour]) expect((luminance(colour) + .05) / (luminance('#121619') + .05)).toBeGreaterThanOrEqual(7);
+    for (const colour of [...speakerColours, unknownColour]) expect((luminance('#faf9f6') + .05) / (luminance(colour) + .05)).toBeGreaterThanOrEqual(7);
   });
 });

@@ -22,6 +22,13 @@ Deliver a **small, accessible, static-hosted TypeScript PWA** for live speech tr
 
 ## Architecture rules
 
+**Light theme and stable reading (2026-10-13):** light backgrounds with dark text
+supersede the earlier dark theme. Map saved speaker colour families to dark,
+high-contrast equivalents. The newest browser utterance stays at the top of Live
+in a fixed-height scrollable reading area; earlier speech scrolls independently
+below. Never duplicate captions or alter recognition to implement this display.
+See ADR 0039.
+
 **Typography/settings update (2026-10-13):** locally hosted Poppins, three size
 roles (small labels/descriptions, medium controls/headings, adjustable large
 captions). Descriptions/captions use weight 400; labels uppercase with added

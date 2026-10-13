@@ -1,5 +1,26 @@
 # Feasibility evidence
 
+## 2026-10-13 - Light theme and steady Live reading
+
+- **Change:** off-white surfaces, dark neutral captions, darker speaker colours,
+  legacy colour-family migration, light PWA theme metadata. The latest browser
+  utterance occupies a fixed top half of Live; independently scrolling history
+  occupies the lower half. Each utterance is rendered once. See ADR 0039.
+- **Checks:** typecheck, lint, 232 unit tests, assets and production build pass.
+  All 36 app-browser cases pass across the initial run and focused correction;
+  two additional speaker-control cases pass in Chromium/WebKit. Contrast tests
+  verify at least 7:1 for all speaker text, and a legacy saved Gold choice remains
+  selected as dark Gold in Settings. Desktop/mobile screenshots reviewed.
+- **Stable position:** measured paragraph origin is identical as interim speech
+  wraps, becomes final and is replaced by the next utterance. History retains a
+  reader's scroll position. Stop/Clear, narrow layout, larger text and offline
+  project-path installation pass. The initial new test incorrectly expected an
+  unfinished result to survive Stop; it now supplies final recognition before
+  checking persistence, preserving the existing engine's Stop behaviour.
+- **Limits:** recognition is simulated in UI checks. Physical target-device
+  readability remains to be confirmed. Long utterances scroll manually; browser
+  utterance boundaries can encompass multiple sentences. Deployment pending.
+
 ## 2026-10-13 - Speaker pill padding correction
 
 - Replaced inherited left padding (zero from the parent) with explicit `2rem`,

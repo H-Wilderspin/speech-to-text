@@ -22,7 +22,7 @@ async function result(page: Page, text: string, isFinal: boolean) {
   }, { text, isFinal });
 }
 
-test('dark live captions keep unknown speech below and remember text preferences', async ({ page }) => {
+test('light live captions keep unknown speech below and remember text preferences', async ({ page }) => {
   await mockRecognition(page); await page.setViewportSize({ width: 390, height: 844 }); await page.goto('/');
   await page.getByRole('button', { name: 'Who said what', exact: true }).click();
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
@@ -43,8 +43,8 @@ test('dark live captions keep unknown speech below and remember text preferences
   await expect(assigned.locator('.caption')).toHaveCount(0);
   await expect(live.locator('.caption-speaker')).toHaveCount(0);
   await expect(live).toHaveCSS('font-size', '36px');
-  await expect(live.locator('.caption')).toHaveCSS('color', 'rgb(209, 213, 219)');
-  await expect(page.locator('html')).toHaveCSS('background-color', 'rgb(18, 22, 25)');
+  await expect(live.locator('.caption')).toHaveCSS('color', 'rgb(48, 56, 64)');
+  await expect(page.locator('html')).toHaveCSS('background-color', 'rgb(250, 249, 246)');
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
 });
 
@@ -384,11 +384,58 @@ test('subdirectory deployment installs scoped assets and opens offline', async (
   expect(await page.evaluate(() => document.fonts.check('400 32px Poppins'))).toBe(true);
 });
 
+test('newest sentence stays anchored through revisions, finalization and new speech', async ({ page }) => {
+  await mockRecognition(page); await page.setViewportSize({ width: 390, height: 844 }); await page.goto('/');
+  await page.getByRole('button', { name: 'Listen', exact: true }).click();
+  await result(page, 'We are', false);
+  const latest = page.getByRole('region', { name: 'Latest sentence', exact: true });
+  const origin = async () => latest.locator('p').evaluate((element) => {
+    const box = element.getBoundingClientRect(); return { x: box.x, y: box.y };
+  });
+  const start = await origin();
+  await result(page, 'We are reading a longer sentence as it grows across several lines.', false);
+  expect(await origin()).toEqual(start);
+  await result(page, 'We are reading a longer sentence as it grows across several lines.', true);
+  expect(await origin()).toEqual(start);
+  await page.evaluate(() => {
+    const host = window as Window & { testRecognition?: { onresult: (event: unknown) => void } };
+    host.testRecognition?.onresult({ results: [
+      { 0: { transcript: 'We are reading a longer sentence as it grows across several lines.', confidence: .9 }, length: 1, isFinal: true },
+      { 0: { transcript: 'The next sentence starts here.', confidence: .9 }, length: 1, isFinal: false },
+    ] });
+  });
+  expect(await origin()).toEqual(start);
+  await expect(latest).toContainText('The next sentence starts here.');
+  await expect(page.getByRole('region', { name: 'Earlier sentences' }).locator('.caption')).toHaveCount(1);
+  await expect(page.getByRole('region', { name: 'Live transcript', exact: true }).locator('.caption')).toHaveCount(2);
+  await page.screenshot({ path: `test-results/steady-live-${test.info().project.name}.png` });
+  await page.evaluate(() => {
+    const host = window as Window & { testRecognition?: { onresult: (event: unknown) => void } };
+    host.testRecognition?.onresult({ results: [
+      { 0: { transcript: 'We are reading a longer sentence as it grows across several lines.', confidence: .9 }, length: 1, isFinal: true },
+      { 0: { transcript: 'The next sentence starts here.', confidence: .9 }, length: 1, isFinal: true },
+    ] });
+  });
+  expect(await origin()).toEqual(start);
+  await page.getByRole('button', { name: 'Stop', exact: true }).click();
+  await expect(latest).toContainText('The next sentence starts here.');
+  await page.getByRole('button', { name: 'Clear', exact: true }).click();
+  await expect(latest).toHaveCount(0);
+  await expect(page.getByText('Tap Listen to start.', { exact: true })).toBeVisible();
+});
+
 test('reading earlier speech preserves scroll and returning to bottom resumes following', async ({ page }) => {
   await mockRecognition(page); await page.goto('/');
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   await result(page, 'A readable sentence. '.repeat(200), true);
-  const region = page.getByRole('region', { name: 'Live transcript' });
+  await page.evaluate(() => {
+    const host = window as Window & { testRecognition?: { onresult: (event: unknown) => void } };
+    host.testRecognition?.onresult({ results: [
+      { 0: { transcript: 'A readable sentence. '.repeat(200), confidence: .9 }, length: 1, isFinal: true },
+      { 0: { transcript: 'The newest thought.', confidence: .9 }, length: 1, isFinal: true },
+    ] });
+  });
+  const region = page.getByRole('region', { name: 'Earlier sentences' });
   await region.evaluate((element) => { element.scrollTop = 0; element.dispatchEvent(new Event('scroll')); });
   await expect(page.getByRole('banner').getByRole('button')).toHaveCount(3);
   await page.evaluate(() => {
@@ -396,6 +443,7 @@ test('reading earlier speech preserves scroll and returning to bottom resumes fo
     host.testRecognition?.onresult({ results: [
       { 0: { transcript: 'A readable sentence. '.repeat(200), confidence: .9 }, length: 1, isFinal: true },
       { 0: { transcript: 'The newest thought.', confidence: .9 }, length: 1, isFinal: true },
+      { 0: { transcript: 'Another thought.', confidence: .9 }, length: 1, isFinal: true },
     ] });
   });
   expect(await region.evaluate((element) => element.scrollTop)).toBe(0);

@@ -31,7 +31,7 @@ describe('two caption streams', () => {
     ];
     expect(assignedSegments(segments).map((segment) => segment.id)).toEqual(['d']);
     const top = renderToStaticMarkup(createElement(Transcript, { segments, textSize: 32, assigned: true, colours: { one: '#ffe08a' } }));
-    expect(top).toContain('Assigned words.'); expect(top).toContain('Alex (estimate)'); expect(top).toContain('color:#ffe08a');
+    expect(top).toContain('Assigned words.'); expect(top).toContain('Alex (estimate)'); expect(top).toContain('color:#705000');
     expect(top).not.toContain('Unknown words.'); expect(top).not.toContain('Still changing.');
     const bottom = renderToStaticMarkup(createElement(Transcript, { segments, textSize: 32 }));
     for (const segment of segments) expect(bottom).toContain(segment.text);
