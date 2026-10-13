@@ -1,5 +1,11 @@
 # Speech-to-Text PWA
 
+**Local comparison (2026-10-13):** speech-region Whisper substantially improves
+generated-speech transcription, but the tested delayed diarizer merges speakers
+and still clips assigned words. No replacement is ready to deploy. See the
+[measured comparison and recommended next step](docs/comparison-benchmark.md).
+Live captions and the published app are unchanged.
+
 ## Implementation status — 2026-10-12
 
 **Latest attribution trace:** three locally named spans now reach the upper pane;

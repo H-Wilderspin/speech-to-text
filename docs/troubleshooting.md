@@ -1,5 +1,27 @@
 # Troubleshooting
 
+## 2026-10-13 - Local benchmark library compatibility and chunking
+
+- **Environment:** Windows/Python 3.13, faster-whisper 1.2.1, PyAV 19.0.1.
+  `transcribe(path)` fails because its decoder passes `metadata_errors` to a PyAV
+  `open()` that rejects that argument. The benchmark's WAVs are mono PCM16/16 kHz;
+  standard-library `wave` decoding into float32 samples bypasses that incompatible
+  file-decoder API. Both eight-fixture passes then complete. Dependencies are pinned
+  in `research/comparison-requirements.txt`; this is not a general codec fix.
+- **Node wrapper:** importing the shipped browser `asr-api.mjs` directly in Node
+  enters its CommonJS branch and raises `module is not defined`. The runner writes
+  a private `.cjs` copy with only the appended ESM export removed. It uses the actual
+  production model/runtime bytes; public assets remain unchanged.
+- **Measured model failure:** whole-fixture Whisper drops one intentional repeat
+  and invents a word on silence. A separate Silero-region pass preserves both repeats
+  and produces no word on silence. This exploratory correction reduces 14 edits to
+  two on the same 164-word screen, not independently held-out human validation.
+- **Unresolved:** delayed speaker clustering merges the known/unknown turns and
+  cluster aggregation falsely matches that mixture to a saved reference. Better
+  transcription does not fix this. Do not deploy this combination or lower its
+  identity threshold; [benchmark evidence](comparison-benchmark.md) records the next
+  model/alignment comparison and preserves the unsuccessful measurements.
+
 ## 2026-10-12 - Unnamed sentence tails with audiobook correctly excluded (Unresolved boundaries)
 
 - **Evidence:** `index-BAIoHAOy.js`, one reference; three local assigned spans and

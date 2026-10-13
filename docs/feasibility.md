@@ -1,5 +1,33 @@
 # Feasibility evidence
 
+## 2026-10-13 - Local comparative screen: better words, unresolved identity
+
+- **Scope:** user requested a small comparison, then confirmed no API access and
+  a local start. Eight generated desktop Hazel/Zira fixtures, 117 seconds;
+  164 non-overlap reference words, 123 known/41 unknown, 11 known utterances.
+  Windows build 26200, Core Ultra 7 255H CPU, Node 22.20.0, Python 3.13.
+- **Measured:** production local Zipformer/strict-window components (before browser
+  correspondence) have 19 word edits and 104/123 correctly named words, zero aligned
+  false names on unknown speech and zero complete known utterances. Speech-region
+  Whisper small.en has two edits, preserves deliberate repetition and rejects the
+  silence fixture; its transcription pass takes 25.8 seconds for all 117 seconds.
+- **Failure:** the existing sherpa segmentation-3.0/ERes2Net diarizer merges two
+  alternating voices into one cluster. Joined to speech-region Whisper it correctly
+  names 75/123 known words, falsely names 13/41 unknown words and produces no fully
+  assigned known utterances. No threshold is changed. The two-profile version
+  rejects the merged cluster as ambiguous. Longer cluster evidence alone is unsafe.
+- **Isolation:** scripted correct turns/identities plus regional Whisper produce
+  119/123 correctly named words and 8/11 complete utterances. This is an oracle,
+  not inference. Reference-word timing with actual diarization still fails; both
+  speaker segmentation and alignment need work. Modern pyannote, WhisperX, managed
+  services, human voices, physical devices and end-to-end latency are untested.
+- **Decision:** proceed toward a separate delayed Python pipeline; evaluate modern
+  diarization and forced alignment before production integration. Preserve live
+  browser captions and strict word-level uncertainty. See [full report and raw
+  aggregate results](comparison-benchmark.md) and [ADR 0033](decisions/0033-local-comparative-benchmark.md).
+- **Checks:** scoring regressions plus typecheck/lint, 221 unit tests, pinned assets
+  and build pass. No deployment or new browser microphone acceptance was needed.
+
 ## 2026-10-12 - Audiobook excluded; strict boundary clipping retained
 
 - **Setup:** current `index-BAIoHAOy.js`, one saved reference, one listening session.

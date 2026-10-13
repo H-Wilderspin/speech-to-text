@@ -1,0 +1,2348 @@
+{
+  "date": "2026-10-13T09:39:06.796Z",
+  "syntheticOnly": true,
+  "humanAccuracyMeasured": false,
+  "managedApi": "Not run: user requested local first; no API access",
+  "modernPyannote": "Not run: Community-1 model requires Hugging Face acceptance/token",
+  "host": {
+    "platform": "win32",
+    "release": "10.0.26200",
+    "cpu": "Intel(R) Core(TM) Ultra 7 255H",
+    "node": "v22.20.0"
+  },
+  "modelHashes": {
+    "encoder.onnx": "3810755ce7c3ab26b42a8bcf39d191308fa27fb0f53358823ba46141d03b7eb3",
+    "decoder.onnx": "21e2a2acd961b3ac72f55be2f10f1a285e1b0b0ba010d7c0b6eab141411b163c",
+    "joiner.onnx": "e085d73b593cf9b0707f370dbd656d58327d3fe36d80d849202ef81df02cb01e",
+    "tokens.txt": "49e3c2646595fd907228b3c6787069658f67b17377c60aeb8619c4551b2316fb",
+    "silero_vad.onnx": "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6",
+    "pipeline-runtime.wasm": "1163d12da20827b15d4db0b03cc70f44c0095b01680bf06d305ea772eee4948e",
+    "embedding.onnx": "c59158379255ad66e161679cca6af8d52d51e389e3224ab7d7a7baae295c2db5",
+    "segmentation.onnx": "d582f4b4c6b48205de7e0643c57df0df5615a3c176189be3fc461e9d18827b5d",
+    "diarization-runtime.wasm": "2ebafec57c3ad1ec273b7629b04eb026b1d48940cf4c10acbb720cf8b6f490ab"
+  },
+  "whisper": {
+    "model": "Systran/faster-whisper-small.en",
+    "revision": "d1d751a5f8271d482d14ca55d9e2deeebbae577f",
+    "modelSha256": "62b2a45b05ee59acb4a5341b33ee35e041395d378d418a18acfe4c9e768ee37a",
+    "versions": {
+      "faster-whisper": "1.2.1",
+      "ctranslate2": "4.8.3",
+      "huggingface-hub": "2.2.0"
+    },
+    "initializationMs": 1223,
+    "device": "cpu",
+    "computeType": "int8",
+    "threads": 4,
+    "beamSize": 5
+  },
+  "regionWhisper": {
+    "model": "Systran/faster-whisper-small.en",
+    "revision": "d1d751a5f8271d482d14ca55d9e2deeebbae577f",
+    "modelSha256": "62b2a45b05ee59acb4a5341b33ee35e041395d378d418a18acfe4c9e768ee37a",
+    "versions": {
+      "faster-whisper": "1.2.1",
+      "ctranslate2": "4.8.3",
+      "huggingface-hub": "2.2.0"
+    },
+    "initializationMs": 1127,
+    "device": "cpu",
+    "computeType": "int8",
+    "threads": 4,
+    "beamSize": 5,
+    "chunking": "silero-regions",
+    "vadParameters": {
+      "min_silence_duration_ms": 500,
+      "speech_pad_ms": 200,
+      "max_speech_duration_s": 25
+    }
+  },
+  "localInitializationMs": 2135,
+  "identityThreshold": 0.6,
+  "thresholdCalibrated": false,
+  "stageTimings": [
+    {
+      "id": "known-long",
+      "baselineMs": 3288,
+      "diarizationAndIdentityMs": 5493,
+      "whisperMs": 1521,
+      "regionalWhisperMs": 3729
+    },
+    {
+      "id": "known-unknown-known",
+      "baselineMs": 3696,
+      "diarizationAndIdentityMs": 7294,
+      "whisperMs": 1608,
+      "regionalWhisperMs": 4924
+    },
+    {
+      "id": "two-enrolled",
+      "baselineMs": 3557,
+      "diarizationAndIdentityMs": 7379,
+      "whisperMs": 1594,
+      "regionalWhisperMs": 4995
+    },
+    {
+      "id": "short-and-pause",
+      "baselineMs": 2486,
+      "diarizationAndIdentityMs": 3038,
+      "whisperMs": 1351,
+      "regionalWhisperMs": 2643
+    },
+    {
+      "id": "intentional-repeat",
+      "baselineMs": 2634,
+      "diarizationAndIdentityMs": 2685,
+      "whisperMs": 1513,
+      "regionalWhisperMs": 2739
+    },
+    {
+      "id": "unknown-only",
+      "baselineMs": 2810,
+      "diarizationAndIdentityMs": 4046,
+      "whisperMs": 2165,
+      "regionalWhisperMs": 4096
+    },
+    {
+      "id": "overlap",
+      "baselineMs": 1877,
+      "diarizationAndIdentityMs": 1244,
+      "whisperMs": 1436,
+      "regionalWhisperMs": 2676
+    },
+    {
+      "id": "silence",
+      "baselineMs": 450,
+      "diarizationAndIdentityMs": 70,
+      "whisperMs": 1201,
+      "regionalWhisperMs": 12
+    }
+  ],
+  "predictedSpeakers": [
+    {
+      "id": "known-long",
+      "clusters": 1,
+      "matchedClusters": 1,
+      "evidence": [
+        {
+          "cluster": 0,
+          "seconds": 8.2516875,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.9186755735491917
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "known-unknown-known",
+      "clusters": 1,
+      "matchedClusters": 1,
+      "evidence": [
+        {
+          "cluster": 0,
+          "seconds": 10.242875,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.7448890865098069
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "two-enrolled",
+      "clusters": 1,
+      "matchedClusters": 0,
+      "evidence": [
+        {
+          "cluster": 0,
+          "seconds": 10.242875,
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.7448890865098069
+            },
+            {
+              "id": "Zira",
+              "score": 0.7610057639603448
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "short-and-pause",
+      "clusters": 1,
+      "matchedClusters": 1,
+      "evidence": [
+        {
+          "cluster": 0,
+          "seconds": 4.488625,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.8931108415242335
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "intentional-repeat",
+      "clusters": 1,
+      "matchedClusters": 1,
+      "evidence": [
+        {
+          "cluster": 0,
+          "seconds": 5.534875,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.8163869009934641
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "unknown-only",
+      "clusters": 1,
+      "matchedClusters": 0,
+      "evidence": [
+        {
+          "cluster": 0,
+          "seconds": 7.0198125,
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.27115923389943636
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "overlap",
+      "clusters": 2,
+      "matchedClusters": 0,
+      "evidence": [
+        {
+          "cluster": 0,
+          "seconds": 0
+        },
+        {
+          "cluster": 1,
+          "seconds": 0
+        }
+      ]
+    },
+    {
+      "id": "silence",
+      "clusters": 0,
+      "matchedClusters": 0,
+      "evidence": []
+    }
+  ],
+  "limitations": [
+    "Only two desktop TTS voices, never human validation; Zira is unenrolled in the one-profile cases but enrolled in a separate two-profile scenario.",
+    "Current local components exclude browser ASR and text correspondence; this is not a reproduction of the visible app or its live recognition WER.",
+    "Delayed diarizer is the existing sherpa ONNX experiment, not modern pyannote Community-1, Precision or WhisperX.",
+    "Zipformer emits token points, Whisper emits estimated word intervals: strict attribution uses available coordinates without inventing end times.",
+    "Reports the final unpaced CPU pass per fixture; baseline was rerun once to verify text assembly with identical accuracy counts. Model initialization, collection delay, transport and UI excluded. Serial sums are not measured live end-to-end latency.",
+    "Whisper route sums separately measured Whisper and diarization runtimes; Zipformer delayed total includes redundant baseline window embeddings.",
+    "WER/word coverage exclude overlap; overlap count uses scripted playback ranges including edge silence, not human DER.",
+    "Complete utterance count means every reference word was recognized and correctly named; WER separately counts extra inserted words.",
+    "Oracle uses scripted identities and playback intervals; it diagnoses a ceiling and must never be presented as deployable inference.",
+    "No cross-chunk reconciliation, forced alignment, real-time queues or p95 latency tested."
+  ],
+  "fixtures": [
+    {
+      "id": "known-long",
+      "duration": 16.65,
+      "enrolled": [
+        "Hazel"
+      ],
+      "overlap": false,
+      "sha256": "278923ca6628ca0d77b5e9c16d627edabd1e8e327293e15959a223b8e22e334c"
+    },
+    {
+      "id": "known-unknown-known",
+      "duration": 17.98,
+      "enrolled": [
+        "Hazel"
+      ],
+      "overlap": false,
+      "sha256": "bb1f45eb9896e232a604a7b29cf2ca85013fb3e892e74dd4a6cafa5c516ea4a3"
+    },
+    {
+      "id": "two-enrolled",
+      "duration": 17.98,
+      "enrolled": [
+        "Hazel",
+        "Zira"
+      ],
+      "overlap": false,
+      "sha256": "bb1f45eb9896e232a604a7b29cf2ca85013fb3e892e74dd4a6cafa5c516ea4a3"
+    },
+    {
+      "id": "short-and-pause",
+      "duration": 15.43,
+      "enrolled": [
+        "Hazel"
+      ],
+      "overlap": false,
+      "sha256": "4f0213c63b3a444310ff1ad23e7d0667a6098ff8da74b49dd4747e20c2ad62b9"
+    },
+    {
+      "id": "intentional-repeat",
+      "duration": 13,
+      "enrolled": [
+        "Hazel"
+      ],
+      "overlap": false,
+      "sha256": "f8e9f74f32546058567c3986753fb211036eb9ee4eeb7339f18e3a5fc3f96078"
+    },
+    {
+      "id": "unknown-only",
+      "duration": 14.52,
+      "enrolled": [
+        "Hazel"
+      ],
+      "overlap": false,
+      "sha256": "dba5ebcb94cd66d6c25adcd0053459838de78e7de39aa8c3e7fd278c561cbaea"
+    },
+    {
+      "id": "overlap",
+      "duration": 11.44,
+      "enrolled": [
+        "Hazel"
+      ],
+      "overlap": true,
+      "sha256": "9207f9980599041a6b07067cb269183cf0ad194fdc33a3d5bf248edd0c76acab"
+    },
+    {
+      "id": "silence",
+      "duration": 10,
+      "enrolled": [
+        "Hazel"
+      ],
+      "overlap": false,
+      "sha256": "ee7bea4232762775f8fce9b3e27e4d3948c8ac6a45a87ca769f703d6eed0b448"
+    }
+  ],
+  "summaries": [
+    {
+      "route": "current-local-components",
+      "referenceWords": 164,
+      "recognizedWords": 174,
+      "edits": 19,
+      "knownWords": 123,
+      "correctlyNamedWords": 104,
+      "namedWords": 114,
+      "wrongNamesOnAlignedWords": 0,
+      "unknownReferenceWords": 41,
+      "falseNamesOnUnknownAlignedWords": 0,
+      "unalignedNamedInsertions": 6,
+      "knownUtterances": 11,
+      "completeCorrectKnownUtterances": 0,
+      "correctOpeningWords": 10,
+      "correctClosingWords": 4,
+      "wordErrorRate": 0.11585365853658537,
+      "correctlyNamedWordCoverage": 0.8455284552845529,
+      "processingMs": 20798,
+      "audioSeconds": 116.99999999999999,
+      "fixtureProcessingMs": {
+        "min": 450,
+        "max": 3696
+      },
+      "overlapAssignedWords": 0
+    },
+    {
+      "route": "zipformer-plus-delayed-turns",
+      "referenceWords": 164,
+      "recognizedWords": 174,
+      "edits": 19,
+      "knownWords": 123,
+      "correctlyNamedWords": 75,
+      "namedWords": 96,
+      "wrongNamesOnAlignedWords": 13,
+      "unknownReferenceWords": 41,
+      "falseNamesOnUnknownAlignedWords": 13,
+      "unalignedNamedInsertions": 6,
+      "knownUtterances": 11,
+      "completeCorrectKnownUtterances": 0,
+      "correctOpeningWords": 8,
+      "correctClosingWords": 0,
+      "wordErrorRate": 0.11585365853658537,
+      "correctlyNamedWordCoverage": 0.6097560975609756,
+      "processingMs": 52047,
+      "audioSeconds": 116.99999999999999,
+      "fixtureProcessingMs": {
+        "min": 520,
+        "max": 10990
+      },
+      "overlapAssignedWords": 0
+    },
+    {
+      "route": "whisper-plus-delayed-turns",
+      "referenceWords": 164,
+      "recognizedWords": 154,
+      "edits": 14,
+      "knownWords": 123,
+      "correctlyNamedWords": 67,
+      "namedWords": 82,
+      "wrongNamesOnAlignedWords": 14,
+      "unknownReferenceWords": 41,
+      "falseNamesOnUnknownAlignedWords": 14,
+      "unalignedNamedInsertions": 0,
+      "knownUtterances": 11,
+      "completeCorrectKnownUtterances": 1,
+      "correctOpeningWords": 1,
+      "correctClosingWords": 6,
+      "wordErrorRate": 0.08536585365853659,
+      "correctlyNamedWordCoverage": 0.5447154471544715,
+      "processingMs": 43638,
+      "audioSeconds": 116.99999999999999,
+      "fixtureProcessingMs": {
+        "min": 1271,
+        "max": 8973
+      },
+      "overlapAssignedWords": 0
+    },
+    {
+      "route": "whisper-regions-plus-delayed-turns",
+      "referenceWords": 164,
+      "recognizedWords": 164,
+      "edits": 2,
+      "knownWords": 123,
+      "correctlyNamedWords": 75,
+      "namedWords": 89,
+      "wrongNamesOnAlignedWords": 13,
+      "unknownReferenceWords": 41,
+      "falseNamesOnUnknownAlignedWords": 13,
+      "unalignedNamedInsertions": 0,
+      "knownUtterances": 11,
+      "completeCorrectKnownUtterances": 0,
+      "correctOpeningWords": 0,
+      "correctClosingWords": 7,
+      "wordErrorRate": 0.012195121951219513,
+      "correctlyNamedWordCoverage": 0.6097560975609756,
+      "processingMs": 57063,
+      "audioSeconds": 116.99999999999999,
+      "fixtureProcessingMs": {
+        "min": 82,
+        "max": 12374
+      },
+      "overlapAssignedWords": 0
+    },
+    {
+      "route": "oracle-turns-and-identity-NOT-A-ROUTE",
+      "referenceWords": 164,
+      "recognizedWords": 154,
+      "edits": 14,
+      "knownWords": 123,
+      "correctlyNamedWords": 105,
+      "namedWords": 106,
+      "wrongNamesOnAlignedWords": 0,
+      "unknownReferenceWords": 41,
+      "falseNamesOnUnknownAlignedWords": 0,
+      "unalignedNamedInsertions": 0,
+      "knownUtterances": 11,
+      "completeCorrectKnownUtterances": 4,
+      "correctOpeningWords": 4,
+      "correctClosingWords": 10,
+      "wordErrorRate": 0.08536585365853659,
+      "correctlyNamedWordCoverage": 0.8536585365853658,
+      "processingMs": null,
+      "audioSeconds": 116.99999999999999,
+      "fixtureProcessingMs": null,
+      "overlapAssignedWords": 0
+    },
+    {
+      "route": "regional-oracle-NOT-A-ROUTE",
+      "referenceWords": 164,
+      "recognizedWords": 164,
+      "edits": 2,
+      "knownWords": 123,
+      "correctlyNamedWords": 119,
+      "namedWords": 121,
+      "wrongNamesOnAlignedWords": 0,
+      "unknownReferenceWords": 41,
+      "falseNamesOnUnknownAlignedWords": 0,
+      "unalignedNamedInsertions": 0,
+      "knownUtterances": 11,
+      "completeCorrectKnownUtterances": 8,
+      "correctOpeningWords": 8,
+      "correctClosingWords": 11,
+      "wordErrorRate": 0.012195121951219513,
+      "correctlyNamedWordCoverage": 0.967479674796748,
+      "processingMs": null,
+      "audioSeconds": 116.99999999999999,
+      "fixtureProcessingMs": null,
+      "overlapAssignedWords": 0
+    },
+    {
+      "route": "reference-word-onsets-speaker-probe-NOT-A-ROUTE",
+      "referenceWords": 164,
+      "recognizedWords": 164,
+      "edits": 0,
+      "knownWords": 123,
+      "correctlyNamedWords": 78,
+      "namedWords": 92,
+      "wrongNamesOnAlignedWords": 14,
+      "unknownReferenceWords": 41,
+      "falseNamesOnUnknownAlignedWords": 14,
+      "unalignedNamedInsertions": 0,
+      "knownUtterances": 11,
+      "completeCorrectKnownUtterances": 0,
+      "correctOpeningWords": 1,
+      "correctClosingWords": 8,
+      "wordErrorRate": 0,
+      "correctlyNamedWordCoverage": 0.6341463414634146,
+      "processingMs": 31249,
+      "audioSeconds": 116.99999999999999,
+      "fixtureProcessingMs": {
+        "min": 70,
+        "max": 7379
+      },
+      "overlapAssignedWords": 0
+    }
+  ],
+  "rows": [
+    {
+      "fixture": "known-long",
+      "route": "current-local-components",
+      "overlap": false,
+      "duration": 16.65,
+      "processingMs": 3288,
+      "metrics": {
+        "referenceWords": 26,
+        "recognizedWords": 27,
+        "edits": 2,
+        "knownWords": 26,
+        "correctlyNamedWords": 24,
+        "namedWords": 26,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 1,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 1,
+        "correctClosingWords": 2
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 15,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "known-long",
+      "route": "zipformer-plus-delayed-turns",
+      "overlap": false,
+      "duration": 16.65,
+      "processingMs": 8781,
+      "metrics": {
+        "referenceWords": 26,
+        "recognizedWords": 27,
+        "edits": 2,
+        "knownWords": 26,
+        "correctlyNamedWords": 22,
+        "namedWords": 24,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 1,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 2,
+        "correctClosingWords": 0
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 15,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "known-long",
+      "route": "whisper-plus-delayed-turns",
+      "overlap": false,
+      "duration": 16.65,
+      "processingMs": 7014,
+      "metrics": {
+        "referenceWords": 26,
+        "recognizedWords": 26,
+        "edits": 0,
+        "knownWords": 26,
+        "correctlyNamedWords": 24,
+        "namedWords": 24,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 2
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 15,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "known-long",
+      "route": "whisper-regions-plus-delayed-turns",
+      "overlap": false,
+      "duration": 16.65,
+      "processingMs": 9222,
+      "metrics": {
+        "referenceWords": 26,
+        "recognizedWords": 26,
+        "edits": 0,
+        "knownWords": 26,
+        "correctlyNamedWords": 22,
+        "namedWords": 22,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 1
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 15,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "known-long",
+      "route": "oracle-turns-and-identity-NOT-A-ROUTE",
+      "overlap": false,
+      "duration": 16.65,
+      "processingMs": null,
+      "metrics": {
+        "referenceWords": 26,
+        "recognizedWords": 26,
+        "edits": 0,
+        "knownWords": 26,
+        "correctlyNamedWords": 25,
+        "namedWords": 25,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 1,
+        "correctOpeningWords": 1,
+        "correctClosingWords": 2
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 15,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "known-long",
+      "route": "regional-oracle-NOT-A-ROUTE",
+      "overlap": false,
+      "duration": 16.65,
+      "processingMs": null,
+      "metrics": {
+        "referenceWords": 26,
+        "recognizedWords": 26,
+        "edits": 0,
+        "knownWords": 26,
+        "correctlyNamedWords": 25,
+        "namedWords": 25,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 1,
+        "correctOpeningWords": 1,
+        "correctClosingWords": 2
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 15,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "known-long",
+      "route": "reference-word-onsets-speaker-probe-NOT-A-ROUTE",
+      "overlap": false,
+      "duration": 16.65,
+      "processingMs": 5493,
+      "metrics": {
+        "referenceWords": 26,
+        "recognizedWords": 26,
+        "edits": 0,
+        "knownWords": 26,
+        "correctlyNamedWords": 24,
+        "namedWords": 24,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 1,
+        "correctClosingWords": 2
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 15,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "known-unknown-known",
+      "route": "current-local-components",
+      "overlap": false,
+      "duration": 17.98,
+      "processingMs": 3696,
+      "metrics": {
+        "referenceWords": 37,
+        "recognizedWords": 39,
+        "edits": 4,
+        "knownWords": 22,
+        "correctlyNamedWords": 18,
+        "namedWords": 20,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 15,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 1,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 2,
+        "correctClosingWords": 1
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 11,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 15,
+          "enrolled": false
+        },
+        {
+          "utterance": 2,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "known-unknown-known",
+      "route": "zipformer-plus-delayed-turns",
+      "overlap": false,
+      "duration": 17.98,
+      "processingMs": 10990,
+      "metrics": {
+        "referenceWords": 37,
+        "recognizedWords": 39,
+        "edits": 4,
+        "knownWords": 22,
+        "correctlyNamedWords": 19,
+        "namedWords": 35,
+        "wrongNamesOnAlignedWords": 13,
+        "unknownReferenceWords": 15,
+        "falseNamesOnUnknownAlignedWords": 13,
+        "unalignedNamedInsertions": 2,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 2,
+        "correctClosingWords": 0
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 11,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 15,
+          "enrolled": false
+        },
+        {
+          "utterance": 2,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "known-unknown-known",
+      "route": "whisper-plus-delayed-turns",
+      "overlap": false,
+      "duration": 17.98,
+      "processingMs": 8902,
+      "metrics": {
+        "referenceWords": 37,
+        "recognizedWords": 37,
+        "edits": 0,
+        "knownWords": 22,
+        "correctlyNamedWords": 21,
+        "namedWords": 35,
+        "wrongNamesOnAlignedWords": 14,
+        "unknownReferenceWords": 15,
+        "falseNamesOnUnknownAlignedWords": 14,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 1,
+        "correctOpeningWords": 1,
+        "correctClosingWords": 2
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 11,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 15,
+          "enrolled": false
+        },
+        {
+          "utterance": 2,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "known-unknown-known",
+      "route": "whisper-regions-plus-delayed-turns",
+      "overlap": false,
+      "duration": 17.98,
+      "processingMs": 12218,
+      "metrics": {
+        "referenceWords": 37,
+        "recognizedWords": 37,
+        "edits": 0,
+        "knownWords": 22,
+        "correctlyNamedWords": 20,
+        "namedWords": 33,
+        "wrongNamesOnAlignedWords": 13,
+        "unknownReferenceWords": 15,
+        "falseNamesOnUnknownAlignedWords": 13,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 2
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 11,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 15,
+          "enrolled": false
+        },
+        {
+          "utterance": 2,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "known-unknown-known",
+      "route": "oracle-turns-and-identity-NOT-A-ROUTE",
+      "overlap": false,
+      "duration": 17.98,
+      "processingMs": null,
+      "metrics": {
+        "referenceWords": 37,
+        "recognizedWords": 37,
+        "edits": 0,
+        "knownWords": 22,
+        "correctlyNamedWords": 21,
+        "namedWords": 21,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 15,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 1,
+        "correctOpeningWords": 1,
+        "correctClosingWords": 2
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 11,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 15,
+          "enrolled": false
+        },
+        {
+          "utterance": 2,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "known-unknown-known",
+      "route": "regional-oracle-NOT-A-ROUTE",
+      "overlap": false,
+      "duration": 17.98,
+      "processingMs": null,
+      "metrics": {
+        "referenceWords": 37,
+        "recognizedWords": 37,
+        "edits": 0,
+        "knownWords": 22,
+        "correctlyNamedWords": 22,
+        "namedWords": 22,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 15,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 2,
+        "correctOpeningWords": 2,
+        "correctClosingWords": 2
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 11,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 15,
+          "enrolled": false
+        },
+        {
+          "utterance": 2,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "known-unknown-known",
+      "route": "reference-word-onsets-speaker-probe-NOT-A-ROUTE",
+      "overlap": false,
+      "duration": 17.98,
+      "processingMs": 7294,
+      "metrics": {
+        "referenceWords": 37,
+        "recognizedWords": 37,
+        "edits": 0,
+        "knownWords": 22,
+        "correctlyNamedWords": 20,
+        "namedWords": 34,
+        "wrongNamesOnAlignedWords": 14,
+        "unknownReferenceWords": 15,
+        "falseNamesOnUnknownAlignedWords": 14,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 2
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 11,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 15,
+          "enrolled": false
+        },
+        {
+          "utterance": 2,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "two-enrolled",
+      "route": "current-local-components",
+      "overlap": false,
+      "duration": 17.98,
+      "processingMs": 3557,
+      "metrics": {
+        "referenceWords": 37,
+        "recognizedWords": 39,
+        "edits": 4,
+        "knownWords": 37,
+        "correctlyNamedWords": 29,
+        "namedWords": 31,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 1,
+        "knownUtterances": 3,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 3,
+        "correctClosingWords": 1
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 11,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 15,
+          "enrolled": true
+        },
+        {
+          "utterance": 2,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "two-enrolled",
+      "route": "zipformer-plus-delayed-turns",
+      "overlap": false,
+      "duration": 17.98,
+      "processingMs": 10936,
+      "metrics": {
+        "referenceWords": 37,
+        "recognizedWords": 39,
+        "edits": 4,
+        "knownWords": 37,
+        "correctlyNamedWords": 0,
+        "namedWords": 0,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 3,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 0
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 11,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 15,
+          "enrolled": true
+        },
+        {
+          "utterance": 2,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "two-enrolled",
+      "route": "whisper-plus-delayed-turns",
+      "overlap": false,
+      "duration": 17.98,
+      "processingMs": 8973,
+      "metrics": {
+        "referenceWords": 37,
+        "recognizedWords": 37,
+        "edits": 0,
+        "knownWords": 37,
+        "correctlyNamedWords": 0,
+        "namedWords": 0,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 3,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 0
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 11,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 15,
+          "enrolled": true
+        },
+        {
+          "utterance": 2,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "two-enrolled",
+      "route": "whisper-regions-plus-delayed-turns",
+      "overlap": false,
+      "duration": 17.98,
+      "processingMs": 12374,
+      "metrics": {
+        "referenceWords": 37,
+        "recognizedWords": 37,
+        "edits": 0,
+        "knownWords": 37,
+        "correctlyNamedWords": 0,
+        "namedWords": 0,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 3,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 0
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 11,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 15,
+          "enrolled": true
+        },
+        {
+          "utterance": 2,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "two-enrolled",
+      "route": "oracle-turns-and-identity-NOT-A-ROUTE",
+      "overlap": false,
+      "duration": 17.98,
+      "processingMs": null,
+      "metrics": {
+        "referenceWords": 37,
+        "recognizedWords": 37,
+        "edits": 0,
+        "knownWords": 37,
+        "correctlyNamedWords": 36,
+        "namedWords": 36,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 3,
+        "completeCorrectKnownUtterances": 2,
+        "correctOpeningWords": 2,
+        "correctClosingWords": 3
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 11,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 15,
+          "enrolled": true
+        },
+        {
+          "utterance": 2,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "two-enrolled",
+      "route": "regional-oracle-NOT-A-ROUTE",
+      "overlap": false,
+      "duration": 17.98,
+      "processingMs": null,
+      "metrics": {
+        "referenceWords": 37,
+        "recognizedWords": 37,
+        "edits": 0,
+        "knownWords": 37,
+        "correctlyNamedWords": 36,
+        "namedWords": 36,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 3,
+        "completeCorrectKnownUtterances": 2,
+        "correctOpeningWords": 2,
+        "correctClosingWords": 3
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 11,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 15,
+          "enrolled": true
+        },
+        {
+          "utterance": 2,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "two-enrolled",
+      "route": "reference-word-onsets-speaker-probe-NOT-A-ROUTE",
+      "overlap": false,
+      "duration": 17.98,
+      "processingMs": 7379,
+      "metrics": {
+        "referenceWords": 37,
+        "recognizedWords": 37,
+        "edits": 0,
+        "knownWords": 37,
+        "correctlyNamedWords": 0,
+        "namedWords": 0,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 3,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 0
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 11,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 15,
+          "enrolled": true
+        },
+        {
+          "utterance": 2,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "short-and-pause",
+      "route": "current-local-components",
+      "overlap": false,
+      "duration": 15.43,
+      "processingMs": 2486,
+      "metrics": {
+        "referenceWords": 16,
+        "recognizedWords": 18,
+        "edits": 3,
+        "knownWords": 16,
+        "correctlyNamedWords": 14,
+        "namedWords": 16,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 2,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 2,
+        "correctClosingWords": 0
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 5,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "short-and-pause",
+      "route": "zipformer-plus-delayed-turns",
+      "overlap": false,
+      "duration": 15.43,
+      "processingMs": 5524,
+      "metrics": {
+        "referenceWords": 16,
+        "recognizedWords": 18,
+        "edits": 3,
+        "knownWords": 16,
+        "correctlyNamedWords": 14,
+        "namedWords": 15,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 1,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 2,
+        "correctClosingWords": 0
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 5,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "short-and-pause",
+      "route": "whisper-plus-delayed-turns",
+      "overlap": false,
+      "duration": 15.43,
+      "processingMs": 4389,
+      "metrics": {
+        "referenceWords": 16,
+        "recognizedWords": 16,
+        "edits": 2,
+        "knownWords": 16,
+        "correctlyNamedWords": 12,
+        "namedWords": 13,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 1
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 5,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "short-and-pause",
+      "route": "whisper-regions-plus-delayed-turns",
+      "overlap": false,
+      "duration": 15.43,
+      "processingMs": 5681,
+      "metrics": {
+        "referenceWords": 16,
+        "recognizedWords": 16,
+        "edits": 2,
+        "knownWords": 16,
+        "correctlyNamedWords": 13,
+        "namedWords": 14,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 2
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 5,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "short-and-pause",
+      "route": "oracle-turns-and-identity-NOT-A-ROUTE",
+      "overlap": false,
+      "duration": 15.43,
+      "processingMs": null,
+      "metrics": {
+        "referenceWords": 16,
+        "recognizedWords": 16,
+        "edits": 2,
+        "knownWords": 16,
+        "correctlyNamedWords": 13,
+        "namedWords": 14,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 2
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 5,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "short-and-pause",
+      "route": "regional-oracle-NOT-A-ROUTE",
+      "overlap": false,
+      "duration": 15.43,
+      "processingMs": null,
+      "metrics": {
+        "referenceWords": 16,
+        "recognizedWords": 16,
+        "edits": 2,
+        "knownWords": 16,
+        "correctlyNamedWords": 14,
+        "namedWords": 16,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 1,
+        "correctOpeningWords": 1,
+        "correctClosingWords": 2
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 5,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "short-and-pause",
+      "route": "reference-word-onsets-speaker-probe-NOT-A-ROUTE",
+      "overlap": false,
+      "duration": 15.43,
+      "processingMs": 3038,
+      "metrics": {
+        "referenceWords": 16,
+        "recognizedWords": 16,
+        "edits": 0,
+        "knownWords": 16,
+        "correctlyNamedWords": 14,
+        "namedWords": 14,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 2
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 5,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "intentional-repeat",
+      "route": "current-local-components",
+      "overlap": false,
+      "duration": 13,
+      "processingMs": 2634,
+      "metrics": {
+        "referenceWords": 22,
+        "recognizedWords": 24,
+        "edits": 4,
+        "knownWords": 22,
+        "correctlyNamedWords": 19,
+        "namedWords": 21,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 1,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 2,
+        "correctClosingWords": 0
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 11,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "intentional-repeat",
+      "route": "zipformer-plus-delayed-turns",
+      "overlap": false,
+      "duration": 13,
+      "processingMs": 5319,
+      "metrics": {
+        "referenceWords": 22,
+        "recognizedWords": 24,
+        "edits": 4,
+        "knownWords": 22,
+        "correctlyNamedWords": 20,
+        "namedWords": 22,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 2,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 2,
+        "correctClosingWords": 0
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 11,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "intentional-repeat",
+      "route": "whisper-plus-delayed-turns",
+      "overlap": false,
+      "duration": 13,
+      "processingMs": 4198,
+      "metrics": {
+        "referenceWords": 22,
+        "recognizedWords": 11,
+        "edits": 11,
+        "knownWords": 22,
+        "correctlyNamedWords": 10,
+        "namedWords": 10,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 1
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 11,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "intentional-repeat",
+      "route": "whisper-regions-plus-delayed-turns",
+      "overlap": false,
+      "duration": 13,
+      "processingMs": 5424,
+      "metrics": {
+        "referenceWords": 22,
+        "recognizedWords": 22,
+        "edits": 0,
+        "knownWords": 22,
+        "correctlyNamedWords": 20,
+        "namedWords": 20,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 2
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 11,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "intentional-repeat",
+      "route": "oracle-turns-and-identity-NOT-A-ROUTE",
+      "overlap": false,
+      "duration": 13,
+      "processingMs": null,
+      "metrics": {
+        "referenceWords": 22,
+        "recognizedWords": 11,
+        "edits": 11,
+        "knownWords": 22,
+        "correctlyNamedWords": 10,
+        "namedWords": 10,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 1
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 11,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "intentional-repeat",
+      "route": "regional-oracle-NOT-A-ROUTE",
+      "overlap": false,
+      "duration": 13,
+      "processingMs": null,
+      "metrics": {
+        "referenceWords": 22,
+        "recognizedWords": 22,
+        "edits": 0,
+        "knownWords": 22,
+        "correctlyNamedWords": 22,
+        "namedWords": 22,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 2,
+        "correctOpeningWords": 2,
+        "correctClosingWords": 2
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 11,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "intentional-repeat",
+      "route": "reference-word-onsets-speaker-probe-NOT-A-ROUTE",
+      "overlap": false,
+      "duration": 13,
+      "processingMs": 2685,
+      "metrics": {
+        "referenceWords": 22,
+        "recognizedWords": 22,
+        "edits": 0,
+        "knownWords": 22,
+        "correctlyNamedWords": 20,
+        "namedWords": 20,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 2
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 11,
+          "enrolled": true
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 11,
+          "enrolled": true
+        }
+      ]
+    },
+    {
+      "fixture": "unknown-only",
+      "route": "current-local-components",
+      "overlap": false,
+      "duration": 14.52,
+      "processingMs": 2810,
+      "metrics": {
+        "referenceWords": 26,
+        "recognizedWords": 27,
+        "edits": 2,
+        "knownWords": 0,
+        "correctlyNamedWords": 0,
+        "namedWords": 0,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 26,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 0,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 0
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 15,
+          "enrolled": false
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 11,
+          "enrolled": false
+        }
+      ]
+    },
+    {
+      "fixture": "unknown-only",
+      "route": "zipformer-plus-delayed-turns",
+      "overlap": false,
+      "duration": 14.52,
+      "processingMs": 6856,
+      "metrics": {
+        "referenceWords": 26,
+        "recognizedWords": 27,
+        "edits": 2,
+        "knownWords": 0,
+        "correctlyNamedWords": 0,
+        "namedWords": 0,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 26,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 0,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 0
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 15,
+          "enrolled": false
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 11,
+          "enrolled": false
+        }
+      ]
+    },
+    {
+      "fixture": "unknown-only",
+      "route": "whisper-plus-delayed-turns",
+      "overlap": false,
+      "duration": 14.52,
+      "processingMs": 6211,
+      "metrics": {
+        "referenceWords": 26,
+        "recognizedWords": 26,
+        "edits": 0,
+        "knownWords": 0,
+        "correctlyNamedWords": 0,
+        "namedWords": 0,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 26,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 0,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 0
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 15,
+          "enrolled": false
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 11,
+          "enrolled": false
+        }
+      ]
+    },
+    {
+      "fixture": "unknown-only",
+      "route": "whisper-regions-plus-delayed-turns",
+      "overlap": false,
+      "duration": 14.52,
+      "processingMs": 8142,
+      "metrics": {
+        "referenceWords": 26,
+        "recognizedWords": 26,
+        "edits": 0,
+        "knownWords": 0,
+        "correctlyNamedWords": 0,
+        "namedWords": 0,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 26,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 0,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 0
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 15,
+          "enrolled": false
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 11,
+          "enrolled": false
+        }
+      ]
+    },
+    {
+      "fixture": "unknown-only",
+      "route": "oracle-turns-and-identity-NOT-A-ROUTE",
+      "overlap": false,
+      "duration": 14.52,
+      "processingMs": null,
+      "metrics": {
+        "referenceWords": 26,
+        "recognizedWords": 26,
+        "edits": 0,
+        "knownWords": 0,
+        "correctlyNamedWords": 0,
+        "namedWords": 0,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 26,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 0,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 0
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 15,
+          "enrolled": false
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 11,
+          "enrolled": false
+        }
+      ]
+    },
+    {
+      "fixture": "unknown-only",
+      "route": "regional-oracle-NOT-A-ROUTE",
+      "overlap": false,
+      "duration": 14.52,
+      "processingMs": null,
+      "metrics": {
+        "referenceWords": 26,
+        "recognizedWords": 26,
+        "edits": 0,
+        "knownWords": 0,
+        "correctlyNamedWords": 0,
+        "namedWords": 0,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 26,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 0,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 0
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 15,
+          "enrolled": false
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 11,
+          "enrolled": false
+        }
+      ]
+    },
+    {
+      "fixture": "unknown-only",
+      "route": "reference-word-onsets-speaker-probe-NOT-A-ROUTE",
+      "overlap": false,
+      "duration": 14.52,
+      "processingMs": 4046,
+      "metrics": {
+        "referenceWords": 26,
+        "recognizedWords": 26,
+        "edits": 0,
+        "knownWords": 0,
+        "correctlyNamedWords": 0,
+        "namedWords": 0,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 26,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 0,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 0
+      },
+      "overlapAssignedWords": null,
+      "utterances": [
+        {
+          "utterance": 0,
+          "expectedWords": 15,
+          "enrolled": false
+        },
+        {
+          "utterance": 1,
+          "expectedWords": 11,
+          "enrolled": false
+        }
+      ]
+    },
+    {
+      "fixture": "overlap",
+      "route": "current-local-components",
+      "overlap": true,
+      "duration": 11.44,
+      "processingMs": 1877,
+      "metrics": null,
+      "overlapAssignedWords": 0,
+      "utterances": null
+    },
+    {
+      "fixture": "overlap",
+      "route": "zipformer-plus-delayed-turns",
+      "overlap": true,
+      "duration": 11.44,
+      "processingMs": 3121,
+      "metrics": null,
+      "overlapAssignedWords": 0,
+      "utterances": null
+    },
+    {
+      "fixture": "overlap",
+      "route": "whisper-plus-delayed-turns",
+      "overlap": true,
+      "duration": 11.44,
+      "processingMs": 2680,
+      "metrics": null,
+      "overlapAssignedWords": 0,
+      "utterances": null
+    },
+    {
+      "fixture": "overlap",
+      "route": "whisper-regions-plus-delayed-turns",
+      "overlap": true,
+      "duration": 11.44,
+      "processingMs": 3920,
+      "metrics": null,
+      "overlapAssignedWords": 0,
+      "utterances": null
+    },
+    {
+      "fixture": "overlap",
+      "route": "oracle-turns-and-identity-NOT-A-ROUTE",
+      "overlap": true,
+      "duration": 11.44,
+      "processingMs": null,
+      "metrics": null,
+      "overlapAssignedWords": 0,
+      "utterances": null
+    },
+    {
+      "fixture": "overlap",
+      "route": "regional-oracle-NOT-A-ROUTE",
+      "overlap": true,
+      "duration": 11.44,
+      "processingMs": null,
+      "metrics": null,
+      "overlapAssignedWords": 0,
+      "utterances": null
+    },
+    {
+      "fixture": "overlap",
+      "route": "reference-word-onsets-speaker-probe-NOT-A-ROUTE",
+      "overlap": true,
+      "duration": 11.44,
+      "processingMs": 1244,
+      "metrics": null,
+      "overlapAssignedWords": 0,
+      "utterances": null
+    },
+    {
+      "fixture": "silence",
+      "route": "current-local-components",
+      "overlap": false,
+      "duration": 10,
+      "processingMs": 450,
+      "metrics": {
+        "referenceWords": 0,
+        "recognizedWords": 0,
+        "edits": 0,
+        "knownWords": 0,
+        "correctlyNamedWords": 0,
+        "namedWords": 0,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 0,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 0
+      },
+      "overlapAssignedWords": null,
+      "utterances": []
+    },
+    {
+      "fixture": "silence",
+      "route": "zipformer-plus-delayed-turns",
+      "overlap": false,
+      "duration": 10,
+      "processingMs": 520,
+      "metrics": {
+        "referenceWords": 0,
+        "recognizedWords": 0,
+        "edits": 0,
+        "knownWords": 0,
+        "correctlyNamedWords": 0,
+        "namedWords": 0,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 0,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 0
+      },
+      "overlapAssignedWords": null,
+      "utterances": []
+    },
+    {
+      "fixture": "silence",
+      "route": "whisper-plus-delayed-turns",
+      "overlap": false,
+      "duration": 10,
+      "processingMs": 1271,
+      "metrics": {
+        "referenceWords": 0,
+        "recognizedWords": 1,
+        "edits": 1,
+        "knownWords": 0,
+        "correctlyNamedWords": 0,
+        "namedWords": 0,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 0,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 0
+      },
+      "overlapAssignedWords": null,
+      "utterances": []
+    },
+    {
+      "fixture": "silence",
+      "route": "whisper-regions-plus-delayed-turns",
+      "overlap": false,
+      "duration": 10,
+      "processingMs": 82,
+      "metrics": {
+        "referenceWords": 0,
+        "recognizedWords": 0,
+        "edits": 0,
+        "knownWords": 0,
+        "correctlyNamedWords": 0,
+        "namedWords": 0,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 0,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 0
+      },
+      "overlapAssignedWords": null,
+      "utterances": []
+    },
+    {
+      "fixture": "silence",
+      "route": "oracle-turns-and-identity-NOT-A-ROUTE",
+      "overlap": false,
+      "duration": 10,
+      "processingMs": null,
+      "metrics": {
+        "referenceWords": 0,
+        "recognizedWords": 1,
+        "edits": 1,
+        "knownWords": 0,
+        "correctlyNamedWords": 0,
+        "namedWords": 0,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 0,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 0
+      },
+      "overlapAssignedWords": null,
+      "utterances": []
+    },
+    {
+      "fixture": "silence",
+      "route": "regional-oracle-NOT-A-ROUTE",
+      "overlap": false,
+      "duration": 10,
+      "processingMs": null,
+      "metrics": {
+        "referenceWords": 0,
+        "recognizedWords": 0,
+        "edits": 0,
+        "knownWords": 0,
+        "correctlyNamedWords": 0,
+        "namedWords": 0,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 0,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 0
+      },
+      "overlapAssignedWords": null,
+      "utterances": []
+    },
+    {
+      "fixture": "silence",
+      "route": "reference-word-onsets-speaker-probe-NOT-A-ROUTE",
+      "overlap": false,
+      "duration": 10,
+      "processingMs": 70,
+      "metrics": {
+        "referenceWords": 0,
+        "recognizedWords": 0,
+        "edits": 0,
+        "knownWords": 0,
+        "correctlyNamedWords": 0,
+        "namedWords": 0,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 0,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 0
+      },
+      "overlapAssignedWords": null,
+      "utterances": []
+    }
+  ]
+}

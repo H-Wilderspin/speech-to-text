@@ -1,5 +1,16 @@
 # Speaker runtime experiment
 
+## Local pipeline comparison (2026-10-13)
+
+The [comparative benchmark](../docs/comparison-benchmark.md) runs the production
+local ASR/window components, existing delayed diarizer and CPU Whisper against
+the same eight generated fixtures. It includes repeat/silence failure cases,
+strict temporal joins, separately labelled oracle diagnostics and reproducible
+Python pins. Models/audio stay in ignored `private/comparison`; no API access or
+production changes are required. See that report for the sequential commands,
+results and limits. This does not benchmark browser speech recognition or modern
+pyannote Community-1.
+
 ## Direct enrolled-voice attribution prototype
 
 After preparing the existing shared pipeline, run:
