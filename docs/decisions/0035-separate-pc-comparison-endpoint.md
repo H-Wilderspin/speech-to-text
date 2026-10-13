@@ -3,6 +3,9 @@
 Date: 2026-10-13
 Status: Accepted for an experimental comparison
 
+Update 2026-10-13: [ADR 0037](0037-browser-plan-collapsible-attribution.md) supersedes
+this as the active rollout plan. The implementation remains as inactive research.
+
 ## Context
 
 The user requested a new endpoint to compare the successful delayed benchmark

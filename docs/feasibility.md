@@ -1,5 +1,23 @@
 # Feasibility evidence
 
+## 2026-10-13 - Browser plan with collapsible attribution
+
+- **Decision:** the user considers the PC route impractical for available hardware
+  and returns to the main browser app. No personal-PC installation is needed for
+  the active plan. The separate comparison remains inactive research (ADR 0037).
+- **UI:** Who said what defaults to a collapsed 48px title row, persists its state
+  and expands back into the split view. Browser recognition and local delayed
+  attribution remain the same; hiding does not reduce model processing or improve
+  assignment accuracy. Unknown speech is still absent from the assigned pane.
+- **Initial checks:** typecheck, lint, 231 unit tests, pinned assets and production
+  build pass. Chromium mobile-width screenshots were inspected in both states;
+  collapsed Live has over 650px of reading height in a 390x844 viewport. Keyboard
+  toggling, focus, persistence and nonduplicated live text across toggles pass.
+  The full local browser run passes 58 cases in 3.8 minutes; six existing Web Audio
+  cases skip on Windows WebKit because its APIs are unavailable. Existing local
+  attribution, colours, speaker visibility and profile management pass. Linux CI
+  and publication remain pending at this commit. No physical phone check yet.
+
 ## 2026-10-13 - Personal Windows computer preparation
 
 - **Selection:** user chose a personal Windows computer outside the work VPN;

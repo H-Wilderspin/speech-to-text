@@ -228,6 +228,7 @@ test('Android provisional words receive delayed names and activity filters only 
   const stats = () => page.evaluate(() => (window as Window & { localMicrophoneStats?: () => { calls: number; stops: number } }).localMicrophoneStats?.());
   expect(await stats()).toEqual({ calls: 0, stops: 0 });
   await page.getByRole('button', { name: 'Back to captions' }).click();
+  await page.getByRole('button', { name: 'Who said what', exact: true }).click();
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   const transcript = page.getByRole('region', { name: 'Live transcript' });
   const assigned = page.getByRole('region', { name: 'Assigned transcript' });

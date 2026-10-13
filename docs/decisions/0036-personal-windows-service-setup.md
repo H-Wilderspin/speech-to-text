@@ -3,6 +3,9 @@
 Date: 2026-10-13
 Status: Accepted
 
+Update 2026-10-13: [ADR 0037](0037-browser-plan-collapsible-attribution.md) supersedes
+the personal-PC rollout. Setup remains available as inactive research.
+
 ## Context
 
 The user confirms the failing PC uses a required work VPN. Both DNS resolver

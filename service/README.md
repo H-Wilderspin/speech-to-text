@@ -1,5 +1,9 @@
 # PC comparison service
 
+**Inactive experiment:** the user returned to the browser-only plan. This service
+is retained for research; it is not required to use the main app. See
+[ADR 0037](../docs/decisions/0037-browser-plan-collapsible-attribution.md).
+
 Original app: <https://h-wilderspin.github.io/speech-to-text/>.
 Separate page: <https://h-wilderspin.github.io/speech-to-text/compare.html>.
 The separate page requires a running PC service. Its Settings accepts the service

@@ -1,5 +1,8 @@
 # Run the comparison on a personal Windows PC
 
+**Inactive experiment:** personal-PC hosting is no longer the active plan. Use
+the [main browser app](https://h-wilderspin.github.io/speech-to-text/) for normal use.
+
 Use a personal **Windows x64** computer on an unmanaged home connection. Keep the
 work computer and its required VPN unchanged. No paid hosting is involved.
 The phone continues using the existing GitHub Pages comparison page; this PC does

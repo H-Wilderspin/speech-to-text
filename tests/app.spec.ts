@@ -24,6 +24,7 @@ async function result(page: Page, text: string, isFinal: boolean) {
 
 test('dark live captions keep unknown speech below and remember text preferences', async ({ page }) => {
   await mockRecognition(page); await page.setViewportSize({ width: 390, height: 844 }); await page.goto('/');
+  await page.getByRole('button', { name: 'Who said what', exact: true }).click();
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await page.getByRole('button', { name: 'Larger text' }).click();
   await page.getByLabel('Speech language').selectOption('en-US');
@@ -99,13 +100,13 @@ test('permission denial is actionable and a new gesture can recover', async ({ p
 
 test('three top controls leave the viewport to captions and settings preserve an active session', async ({ page }) => {
   await mockRecognition(page); await page.setViewportSize({ width: 390, height: 844 }); await page.goto('/');
-  await expect(page.getByRole('button')).toHaveText(['Listen', 'Clear', 'Settings']);
+  await expect(page.getByRole('banner').getByRole('button')).toHaveText(['Listen', 'Clear', 'Settings']);
   await expect(page.getByRole('button', { name: 'Clear', exact: true })).toBeDisabled();
   const transcript = page.getByRole('region', { name: 'Live transcript' });
   const box = await transcript.boundingBox();
-  expect(box!.height).toBeGreaterThan(330);
-  const top = await page.getByRole('region', { name: 'Assigned transcript' }).boundingBox();
-  expect(top!.y + top!.height).toBeLessThan(box!.y);
+  expect(box!.height).toBeGreaterThan(650);
+  await expect(page.getByRole('button', { name: 'Who said what', exact: true })).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.getByRole('region', { name: 'Assigned transcript' })).toBeHidden();
   expect(box!.y + box!.height).toBeLessThanOrEqual(844);
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await page.getByLabel('Speech language').selectOption('en-US');
@@ -113,7 +114,7 @@ test('three top controls leave the viewport to captions and settings preserve an
   await page.getByRole('button', { name: 'Back to captions' }).click();
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   await result(page, 'The captions fill this page.', true);
-  await expect(page.getByRole('button')).toHaveText(['Stop', 'Clear', 'Settings']);
+  await expect(page.getByRole('banner').getByRole('button')).toHaveText(['Stop', 'Clear', 'Settings']);
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await expect(page.getByLabel('Speech language')).toBeDisabled();
   await page.getByRole('button', { name: 'Larger text' }).click();
@@ -125,6 +126,35 @@ test('three top controls leave the viewport to captions and settings preserve an
   await page.getByRole('button', { name: 'Clear', exact: true }).click();
   await expect(page.locator('.confirmed')).toHaveCount(0);
   await page.screenshot({ path: `test-results/clean-page-${test.info().project.name}.png` });
+});
+
+test('assigned pane toggles with keyboard, preserves live speech and remembers its state', async ({ page }) => {
+  await mockRecognition(page); await page.setViewportSize({ width: 390, height: 844 }); await page.goto('/');
+  const toggle = page.getByRole('button', { name: 'Who said what', exact: true });
+  const live = page.getByRole('region', { name: 'Live transcript' });
+  const assigned = page.getByRole('region', { name: 'Assigned transcript' });
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  const fullHeight = (await live.boundingBox())!.height;
+  await page.getByRole('button', { name: 'Listen', exact: true }).click();
+  await result(page, 'One sentence', false);
+  await toggle.focus(); await page.keyboard.press('Enter');
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(assigned).toBeVisible();
+  expect((await live.boundingBox())!.height).toBeLessThan(fullHeight * .65);
+  await result(page, 'One sentence grows once.', true);
+  await expect(live.locator('.caption')).toHaveCount(1);
+  await expect(live).toContainText('One sentence grows once.');
+  await toggle.focus(); await page.keyboard.press('Space');
+  await expect(toggle).toBeFocused();
+  await expect(assigned).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeEnabled();
+  await expect(live).toContainText('One sentence grows once.');
+  await page.getByRole('button', { name: 'Stop', exact: true }).click();
+  await page.reload(); await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await toggle.click(); await page.reload();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(assigned).toBeVisible();
+  await page.screenshot({ path: `test-results/expanded-pane-${test.info().project.name}.png` });
 });
 
 test('growing hypotheses render once, listening restarts, and a spoken command stops it', async ({ page }) => {
@@ -312,7 +342,7 @@ test('reading earlier speech preserves scroll and returning to bottom resumes fo
   await result(page, 'A readable sentence. '.repeat(200), true);
   const region = page.getByRole('region', { name: 'Live transcript' });
   await region.evaluate((element) => { element.scrollTop = 0; element.dispatchEvent(new Event('scroll')); });
-  await expect(page.getByRole('button')).toHaveCount(3);
+  await expect(page.getByRole('banner').getByRole('button')).toHaveCount(3);
   await page.evaluate(() => {
     const host = window as Window & { testRecognition?: { onresult: (event: unknown) => void } };
     host.testRecognition?.onresult({ results: [

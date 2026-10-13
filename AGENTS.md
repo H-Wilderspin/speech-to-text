@@ -22,6 +22,11 @@ Deliver a **small, accessible, static-hosted TypeScript PWA** for live speech tr
 
 ## Architecture rules
 
+**Browser plan restored (2026-10-13):** the PC service is inactive research, not a
+required setup path. The main app's Who said what pane starts collapsed and keeps
+its display choice in preferences; toggling must preserve captions and listening.
+Local attribution still runs while hidden. See ADR 0037.
+
 **Family UX update (2026-10-12, explicit user instruction):** registration uses a
 name and Record action without consent text/checkboxes. Preserve legacy consent
 metadata when reading old profiles; do not fabricate it for new recordings. Keep

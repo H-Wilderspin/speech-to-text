@@ -1,5 +1,5 @@
 import { assignedSegments, liveSegments } from './streams';
-import { useLayoutEffect, useRef } from 'react';
+import { useId, useLayoutEffect, useRef } from 'react';
 import type { TranscriptSegment } from '../../transcription/types';
 import { speakerColour, unknownColour, type SpeakerColourChoices } from '../speakers/colours';
 
@@ -13,22 +13,27 @@ export function Caption({ segment, showName = true, colours = {}, live = false }
   </div>;
 }
 
-export function Transcript({ segments, textSize, assigned = false, colours = {}, hiddenSpeakers = [] }: { segments: readonly TranscriptSegment[]; textSize: number; assigned?: boolean; colours?: SpeakerColourChoices; hiddenSpeakers?: readonly string[] }) {
+export function Transcript({ segments, textSize, assigned = false, colours = {}, hiddenSpeakers = [], collapsed = false, onToggle }: { segments: readonly TranscriptSegment[]; textSize: number; assigned?: boolean; colours?: SpeakerColourChoices; hiddenSpeakers?: readonly string[]; collapsed?: boolean; onToggle?: () => void }) {
   const viewport = useRef<HTMLDivElement>(null);
   const following = useRef(true);
+  const transcriptId = useId();
 
   useLayoutEffect(() => {
     const element = viewport.current;
-    if (element && following.current) element.scrollTop = element.scrollHeight;
-  }, [segments, textSize, hiddenSpeakers]);
+    if (element && !collapsed && following.current) element.scrollTop = element.scrollHeight;
+  }, [segments, textSize, hiddenSpeakers, collapsed]);
 
   const visible = assigned ? assignedSegments(segments, hiddenSpeakers) : liveSegments(segments);
   return <section className="transcript-area" aria-label={assigned ? 'Who said what' : 'Live captions'}>
-    <h2 className="pane-title">{assigned ? 'Who said what' : 'Live'}</h2>
-    <div className="transcript" ref={viewport} role="region" aria-label={assigned ? 'Assigned transcript' : 'Live transcript'} tabIndex={0}
+    <h2 className={onToggle ? 'pane-title collapsible-title' : 'pane-title'}>{onToggle ? <button className="pane-toggle"
+      aria-expanded={!collapsed} aria-controls={transcriptId} onClick={onToggle}>
+      {assigned ? 'Who said what' : 'Live'}
+      <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24"><path d={collapsed ? 'm9 5 7 7-7 7' : 'm5 9 7 7 7-7'} fill="none" stroke="currentColor" strokeWidth="2" /></svg>
+    </button> : assigned ? 'Who said what' : 'Live'}</h2>
+    <div id={transcriptId} hidden={collapsed} className="transcript" ref={viewport} role="region" aria-label={assigned ? 'Assigned transcript' : 'Live transcript'} tabIndex={0}
       style={{ fontSize: `${textSize / 16}rem` }} onScroll={() => {
         const element = viewport.current;
-        if (!element) return;
+        if (!element || collapsed) return;
         following.current = element.scrollHeight - element.scrollTop - element.clientHeight < 64;
       }}>
       {visible.length === 0 ? <div className="empty-state">

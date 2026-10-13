@@ -19,9 +19,13 @@ main { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .quiet { border-color: transparent; background: transparent; }
 .text-controls button { font-size: 1.2rem; padding: .5rem .7rem; }
 .caption-panes { flex: 1; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
+.caption-panes.assigned-collapsed { grid-template-rows: auto minmax(0, 1fr); }
 .transcript-area { display: flex; flex-direction: column; min-height: 0; }
 .transcript-area + .transcript-area { border-top: 1px solid #46515c; }
 .pane-title { flex-shrink: 0; color: #aeb7c0; font-size: .75rem; font-weight: 600; margin: .5rem .25rem 0; }
+.collapsible-title { margin: 0; }
+.pane-toggle { display: flex; align-items: center; justify-content: space-between; gap: .5rem; width: 100%; padding: .5rem .25rem; border: 0; border-radius: 0; background: transparent; color: inherit; font: inherit; text-align: left; }
+.pane-toggle svg { flex-shrink: 0; }
 .transcript { flex: 1; min-height: 0; width: 100%; overflow-y: auto; overscroll-behavior: contain; padding: .5rem .25rem; scrollbar-color: #73808b transparent; overflow-wrap: anywhere; }
 .empty-state { padding-top: .5rem; }
 .empty-state p { color: #aeb7c0; line-height: 1.5; font-size: .82em; margin: 0; }

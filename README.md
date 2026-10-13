@@ -1,19 +1,17 @@
 # Speech-to-Text PWA
 
-**Separate PC comparison (2026-10-13):** the published
-[comparison page](https://h-wilderspin.github.io/speech-to-text/compare.html) keeps the native live
-captions below and uses the new Python pipeline for delayed names above. It shares
-saved profiles/settings with the original app. The user chose PC hosting through
-a temporary HTTPS link; no hosting subscription is enabled. See
-[start/stop and test instructions](service/README.md) and
-[ADR 0035](docs/decisions/0035-separate-pc-comparison-endpoint.md).
-The original page and listening engines remain available unchanged. The page is
-deployed; phone access to the PC service is blocked by tunnel DNS discovery,
-including the reported normal-terminal launch. Public connectivity and physical-device acceptance are tracked in
-the feasibility notes.
-The user has selected a personal Windows PC outside the managed network;
-[first-time setup and launch instructions](service/WINDOWS-SETUP.md) prepare that
-machine without copying credentials or Python environments from the work PC.
+**Current plan (2026-10-13):** use the [browser-based app](https://h-wilderspin.github.io/speech-to-text/).
+The user has withdrawn the PC-hosting rollout because of available hardware.
+No Python server, tunnel or hosting subscription is required for this app.
+“Who said what” starts collapsed; tap its title to expand/collapse it. Live captions
+fill the remaining space and the display choice is remembered. Collapsing changes
+the display only; existing local attribution continues and its accuracy limitations
+remain. See [ADR 0037](docs/decisions/0037-browser-plan-collapsible-attribution.md).
+
+The separate [PC comparison](https://h-wilderspin.github.io/speech-to-text/compare.html)
+and [service setup](service/README.md) are retained as inactive research, not the
+current deployment plan. No personal-PC installation or working public tunnel was
+verified before this decision.
 
 **Local comparison (2026-10-13):** delayed Whisper, Community-1 speech turns,
 per-turn identity matching and word alignment correctly name 120/123 known words,
