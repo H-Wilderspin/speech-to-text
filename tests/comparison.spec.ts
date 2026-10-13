@@ -44,6 +44,14 @@ test('project-path comparison consumes private fragment without leaking it to re
 });
 
 test('comparison flushes real worklet capture on voice Stop and names only the upper pane', async ({ page }) => {
+  let receivedSamples = 0;
+  page.on('console', (message) => {
+    const line = message.text();
+    if (line.startsWith('[who-said-what] capture.received ')) {
+      const counts = JSON.parse(line.slice(line.indexOf('{')));
+      receivedSamples = counts.receivedSamples;
+    }
+  });
   await page.goto('/compare.html');
   const supported = await page.evaluate(() => Boolean(globalThis.AudioContext && globalThis.AudioWorkletNode));
   test.skip(process.platform === 'win32' && test.info().project.name === 'mobile-webkit' && !supported, 'Windows WebKit lacks Web Audio; physical Safari remains untested.');
@@ -53,7 +61,8 @@ test('comparison flushes real worklet capture on voice Stop and names only the u
       start() { Object.assign(window, { comparisonRecognition: this }); this.onstart?.(); }
       stop() { this.onend?.(); } abort() {}
     }
-    const NativeContext = AudioContext; const contexts: AudioContext[] = []; let stopped = 0;
+    const NativeContext = AudioContext; const contexts: AudioContext[] = [];
+    const destinations: MediaStreamAudioDestinationNode[] = []; const tracks: MediaStreamTrack[] = [];
     class Context extends NativeContext {
       constructor(options?: AudioContextOptions) { super(options); contexts.push(this); }
       createMediaStreamSource() {
@@ -61,11 +70,11 @@ test('comparison flushes real worklet capture on voice Stop and names only the u
         return source as unknown as MediaStreamAudioSourceNode;
       }
     }
-    Object.assign(window, { SpeechRecognition: Recognition, AudioContext: Context, comparisonStopped: () => stopped });
+    Object.assign(window, { SpeechRecognition: Recognition, AudioContext: Context,
+      comparisonTracks: () => ({ total: tracks.length, ended: tracks.filter((track) => track.readyState === 'ended').length }) });
     Object.defineProperty(navigator, 'mediaDevices', { value: { getUserMedia: async () => {
-      const stream = contexts.at(-1)!.createMediaStreamDestination().stream;
-      const track = stream.getAudioTracks()[0]!; const stop = track.stop.bind(track);
-      track.stop = () => { stopped++; stop(); }; return stream;
+      const destination = contexts.at(-1)!.createMediaStreamDestination(); destinations.push(destination);
+      const stream = destination.stream; tracks.push(...stream.getAudioTracks()); return stream;
     } } });
   });
   await page.evaluate(async (modelVersion) => {
@@ -91,18 +100,24 @@ test('comparison flushes real worklet capture on voice Stop and names only the u
     await route.fulfill({ headers, json: { index: payload.index, processingMs: 1,
       words: [{ text: 'Complete.', start: .1, end: .3, speakerId: 'synthetic' }, { text: 'Unknown.', start: .4, end: .5 }] } });
   });
-  await page.goto('/compare.html?capture-test=1#service=https%3A%2F%2Fcomparison.test&key=synthetic-test-code');
+  await page.goto('/compare.html?debugSpeakers=1#service=https%3A%2F%2Fcomparison.test&key=synthetic-test-code');
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
-  await page.waitForTimeout(1500); // Collect >0.5 s on the real audio-worklet clock.
+  const trackState = () => page.evaluate(() => (window as Window & { comparisonTracks?: () => { total: number; ended: number } }).comparisonTracks?.());
+  await expect.poll(() => receivedSamples, { timeout: 10000 }).toBeGreaterThanOrEqual(16000).catch(async (error: unknown) => {
+    console.error('Comparison capture status:', await page.locator('#captions > [role=status]').textContent()); throw error;
+  });
+  expect(await trackState()).toEqual({ total: 1, ended: 0 });
   await page.evaluate(() => {
     const host = window as Window & { comparisonRecognition?: { onresult: (event: unknown) => void } };
     host.comparisonRecognition?.onresult({ results: [{ 0: { transcript: 'Complete. command stop', confidence: .9 }, length: 1, isFinal: true }] });
   });
   await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeVisible();
-  await expect(page.getByRole('region', { name: 'Assigned transcript' })).toContainText('Example (estimate)');
+  await expect(page.getByRole('region', { name: 'Assigned transcript' })).toContainText('Example (estimate)').catch(async (error: unknown) => {
+    console.error('Comparison result status:', await page.locator('#captions > [role=status]').textContent()); throw error;
+  });
   await expect(page.getByRole('region', { name: 'Assigned transcript' })).not.toContainText('Unknown.');
   await expect(page.getByRole('region', { name: 'Live transcript' })).toContainText('Complete.');
   await expect(page.getByRole('region', { name: 'Live transcript' }).locator('.caption-speaker')).toHaveCount(0);
-  expect(await page.evaluate(() => (window as Window & { comparisonStopped?: () => number }).comparisonStopped?.())).toBe(1);
+  expect(await trackState()).toEqual({ total: 1, ended: 1 });
   expect(uploads).toBe(1);
 });

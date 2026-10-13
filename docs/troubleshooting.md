@@ -28,6 +28,14 @@
 - **Check ordering:** a preview started while Vite was replacing `dist` returned
   root 404 and the first UI test timed out. Waiting for build completion before
   starting preview resolves it; the unchanged original-page test then passes.
+- **Initial Linux CI:** 59 browser checks pass; the existing generated Android
+  capture fails its audio-clock continuity guard, and the new comparison test
+  fails on missing upper text in Chromium and a zero intercepted-stop count in
+  WebKit. The comparison test now waits for measured worklet sample delivery
+  instead of a fixed 1.5-second delay, retains its destination node, and checks
+  native track `readyState` before/after Stop rather than overriding a wrapper's
+  method. The corrected test passes locally in Chromium; Linux confirmation
+  remains pending. Production capture/continuity checks are unchanged.
 
 
 ## 2026-10-13 - Mixed cluster identity and early word timestamps isolated
