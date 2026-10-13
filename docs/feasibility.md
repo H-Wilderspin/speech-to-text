@@ -1,5 +1,33 @@
 # Feasibility evidence
 
+## 2026-10-13 - Community-1 plus per-turn identity and aligned words
+
+- **Setup:** user verified Hugging Face login/model access. Same eight generated
+  recordings (117 seconds), Whisper words, ERes2Net references and 0.60 threshold.
+  Community-1/pyannote.audio 4.0.7 ran locally on CPU, four threads; normal overlapping
+  turns, no supplied speaker count. No human audio or hosted inference used.
+- **Model-only replacement:** 75/123 correct known words, 13/41 false unknown-word
+  names, 0/11 complete utterances, identical aggregate accuracy to the old diarizer.
+  Community-1 also merges these alternating synthetic voices into one cluster.
+- **Structural follow-ups:** identifying each detected turn separately reaches
+  108/123 known words and zero false names. Adding WhisperX/wav2vec2 alignment of
+  the unchanged recognized text reaches 120/123 (97.6%), zero false names and 9/11
+  complete utterances. All eleven endings are retained; remaining misses are two
+  ASR substitutions and one unassigned opening word in the repeated-phrase case.
+- **Control:** cluster-wide identity plus alignment still falsely names 15 unknown
+  words. Alignment alone is insufficient. No threshold lowering, reference-text
+  injection, boundary extension or nearest-speaker filling was used.
+- **Cost:** serial measured components total 56.1 seconds for 117 seconds audio,
+  excluding collection, startup, transport and queueing. Desktop throughput only;
+  neither phone performance nor live end-to-end delay is established.
+- **Limits:** same-set exploratory follow-ups on two synthetic voices, not held-out
+  human accuracy/calibration. Alignment uses only WhisperX's module with explicitly
+  partial/conflicting full-application dependencies; service packaging remains work.
+  See [results and reproduction](community-benchmark.md), [ADR 0034](decisions/0034-community-diarization-comparison.md).
+- **Checks:** 223 tests, typecheck/lint, pinned assets and build pass; all eight model
+  and alignment cases complete. Exact recognized word preservation asserted. No
+  deployed application changes or new physical-device acceptance claimed.
+
 ## 2026-10-13 - Local comparative screen: better words, unresolved identity
 
 - **Scope:** user requested a small comparison, then confirmed no API access and

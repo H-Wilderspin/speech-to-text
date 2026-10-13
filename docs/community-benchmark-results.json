@@ -1,0 +1,1626 @@
+{
+  "date": "2026-10-13T10:33:24.224Z",
+  "syntheticOnly": true,
+  "model": "pyannote/speaker-diarization-community-1",
+  "revision": "3533c8cf8e369892e6b79ff1bf80f7b0286a54ee",
+  "versions": {
+    "pyannote.audio": "4.0.7",
+    "torch": "2.14.1",
+    "torchaudio": "2.11.0",
+    "huggingface-hub": "2.2.0"
+  },
+  "hashes": {
+    ".gitattributes": "5ca5d721264b62c84e55b912e7cdb019439cad30d41df8aeea3a23f9b1f86ef3",
+    "config.yaml": "5ce2bfa9a938dc132cec1172592d65173cbb8f444ea1e4133f10f9391de155be",
+    "diarization.gif": "0d925ad38995d89009260e493b0ae2e684c3e1397f495265ed841c45c4f73a35",
+    "README.md": "2db91f9265bd81f1653ff088b5bff22bf6aebebea03328513af65501643f8a31",
+    "embedding/pytorch_model.bin": "6f10ff60898a1d185fa22e1d11e0bfa8a92efec811f11bca48cb8cafebefd929",
+    "embedding/README.md": "fa9e5105ae95edb231d841476cdb91eef4be0621c372ed4f7d3421294b5f8ad7",
+    "plda/plda.npz": "9b77bcd840692710dd3496f62ecfeed8d8e5f002fd991b785079b244eab7d255",
+    "plda/README.md": "e1316dbbeb3261431478d48ceebbd4bba395c3587e7b80c254dbab00f1209d0a",
+    "plda/xvec_transform.npz": "325f1ce8e48f7e55e9c8aa47e05d2766b7c48c4b25b8de8dd751e7a4cc5fbe8f",
+    "segmentation/pytorch_model.bin": "7ad24338d844fb95985486eb1a464e32d229f6d7a03c9abe60f978bacf3f816e"
+  },
+  "initializationMs": 1131,
+  "device": "cpu",
+  "threads": 4,
+  "identityModel": "unchanged ERes2Net; same enrollment and 0.60 experimental threshold",
+  "summaries": [
+    {
+      "route": "community-cluster-identity",
+      "metrics": {
+        "referenceWords": 164,
+        "recognizedWords": 164,
+        "edits": 2,
+        "knownWords": 123,
+        "correctlyNamedWords": 75,
+        "namedWords": 89,
+        "wrongNamesOnAlignedWords": 13,
+        "unknownReferenceWords": 41,
+        "falseNamesOnUnknownAlignedWords": 13,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 11,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 7
+      },
+      "timings": {
+        "diarizationMs": 20951,
+        "identificationMs": 4485,
+        "transcriptionMs": 25814,
+        "alignmentMs": 0
+      }
+    },
+    {
+      "route": "community-turn-identity",
+      "metrics": {
+        "referenceWords": 164,
+        "recognizedWords": 164,
+        "edits": 2,
+        "knownWords": 123,
+        "correctlyNamedWords": 108,
+        "namedWords": 109,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 41,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 11,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 10
+      },
+      "timings": {
+        "diarizationMs": 20951,
+        "identificationMs": 4404,
+        "transcriptionMs": 25814,
+        "alignmentMs": 0
+      }
+    },
+    {
+      "route": "community-cluster-identity-aligned",
+      "metrics": {
+        "referenceWords": 164,
+        "recognizedWords": 164,
+        "edits": 2,
+        "knownWords": 123,
+        "correctlyNamedWords": 83,
+        "namedWords": 100,
+        "wrongNamesOnAlignedWords": 15,
+        "unknownReferenceWords": 41,
+        "falseNamesOnUnknownAlignedWords": 15,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 11,
+        "completeCorrectKnownUtterances": 6,
+        "correctOpeningWords": 6,
+        "correctClosingWords": 8
+      },
+      "timings": {
+        "diarizationMs": 20951,
+        "identificationMs": 4430,
+        "transcriptionMs": 25814,
+        "alignmentMs": 4826
+      }
+    },
+    {
+      "route": "community-turn-identity-aligned",
+      "metrics": {
+        "referenceWords": 164,
+        "recognizedWords": 164,
+        "edits": 2,
+        "knownWords": 123,
+        "correctlyNamedWords": 120,
+        "namedWords": 122,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 41,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 11,
+        "completeCorrectKnownUtterances": 9,
+        "correctOpeningWords": 9,
+        "correctClosingWords": 11
+      },
+      "timings": {
+        "diarizationMs": 20951,
+        "identificationMs": 4531,
+        "transcriptionMs": 25814,
+        "alignmentMs": 4826
+      }
+    }
+  ],
+  "rows": [
+    {
+      "route": "community-cluster-identity",
+      "fixture": "known-long",
+      "duration": 16.65,
+      "clusters": 1,
+      "diarizationMs": 3811,
+      "identificationMs": 758,
+      "transcriptionMs": 3729,
+      "alignmentMs": 0,
+      "metrics": {
+        "referenceWords": 26,
+        "recognizedWords": 26,
+        "edits": 0,
+        "knownWords": 26,
+        "correctlyNamedWords": 22,
+        "namedWords": 22,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 1
+      },
+      "evidence": [
+        {
+          "cluster": "SPEAKER_00",
+          "seconds": 8.4373125,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.9192271386033656
+            }
+          ]
+        }
+      ],
+      "overlapAssignedWords": null
+    },
+    {
+      "route": "community-turn-identity",
+      "fixture": "known-long",
+      "duration": 16.65,
+      "clusters": 1,
+      "diarizationMs": 3811,
+      "identificationMs": 735,
+      "transcriptionMs": 3729,
+      "alignmentMs": 0,
+      "metrics": {
+        "referenceWords": 26,
+        "recognizedWords": 26,
+        "edits": 0,
+        "knownWords": 26,
+        "correctlyNamedWords": 22,
+        "namedWords": 22,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 1
+      },
+      "evidence": [
+        {
+          "cluster": 0,
+          "seconds": 2.3455625,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.8718841523416628
+            }
+          ]
+        },
+        {
+          "cluster": 1,
+          "seconds": 2.4130625,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.8463202787732279
+            }
+          ]
+        },
+        {
+          "cluster": 2,
+          "seconds": 3.6786875,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.8838071230530861
+            }
+          ]
+        }
+      ],
+      "overlapAssignedWords": null
+    },
+    {
+      "route": "community-cluster-identity-aligned",
+      "fixture": "known-long",
+      "duration": 16.65,
+      "clusters": 1,
+      "diarizationMs": 3811,
+      "identificationMs": 760,
+      "transcriptionMs": 3729,
+      "alignmentMs": 764,
+      "metrics": {
+        "referenceWords": 26,
+        "recognizedWords": 26,
+        "edits": 0,
+        "knownWords": 26,
+        "correctlyNamedWords": 26,
+        "namedWords": 26,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 2,
+        "correctOpeningWords": 2,
+        "correctClosingWords": 2
+      },
+      "evidence": [
+        {
+          "cluster": "SPEAKER_00",
+          "seconds": 8.4373125,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.9192271386033656
+            }
+          ]
+        }
+      ],
+      "overlapAssignedWords": null
+    },
+    {
+      "route": "community-turn-identity-aligned",
+      "fixture": "known-long",
+      "duration": 16.65,
+      "clusters": 1,
+      "diarizationMs": 3811,
+      "identificationMs": 769,
+      "transcriptionMs": 3729,
+      "alignmentMs": 764,
+      "metrics": {
+        "referenceWords": 26,
+        "recognizedWords": 26,
+        "edits": 0,
+        "knownWords": 26,
+        "correctlyNamedWords": 26,
+        "namedWords": 26,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 2,
+        "correctOpeningWords": 2,
+        "correctClosingWords": 2
+      },
+      "evidence": [
+        {
+          "cluster": 0,
+          "seconds": 2.3455625,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.8718841523416628
+            }
+          ]
+        },
+        {
+          "cluster": 1,
+          "seconds": 2.4130625,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.8463202787732279
+            }
+          ]
+        },
+        {
+          "cluster": 2,
+          "seconds": 3.6786875,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.8838071230530861
+            }
+          ]
+        }
+      ],
+      "overlapAssignedWords": null
+    },
+    {
+      "route": "community-cluster-identity",
+      "fixture": "known-unknown-known",
+      "duration": 17.98,
+      "clusters": 1,
+      "diarizationMs": 4156,
+      "identificationMs": 974,
+      "transcriptionMs": 4924,
+      "alignmentMs": 0,
+      "metrics": {
+        "referenceWords": 37,
+        "recognizedWords": 37,
+        "edits": 0,
+        "knownWords": 22,
+        "correctlyNamedWords": 20,
+        "namedWords": 33,
+        "wrongNamesOnAlignedWords": 13,
+        "unknownReferenceWords": 15,
+        "falseNamesOnUnknownAlignedWords": 13,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 2
+      },
+      "evidence": [
+        {
+          "cluster": "SPEAKER_00",
+          "seconds": 10.73225,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.7460605635445506
+            }
+          ]
+        }
+      ],
+      "overlapAssignedWords": null
+    },
+    {
+      "route": "community-turn-identity",
+      "fixture": "known-unknown-known",
+      "duration": 17.98,
+      "clusters": 1,
+      "diarizationMs": 4156,
+      "identificationMs": 938,
+      "transcriptionMs": 4924,
+      "alignmentMs": 0,
+      "metrics": {
+        "referenceWords": 37,
+        "recognizedWords": 37,
+        "edits": 0,
+        "knownWords": 22,
+        "correctlyNamedWords": 20,
+        "namedWords": 20,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 15,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 2
+      },
+      "evidence": [
+        {
+          "cluster": 0,
+          "seconds": 2.8855625,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.8017786269077903
+            }
+          ]
+        },
+        {
+          "cluster": 1,
+          "seconds": 2.1599375,
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.2576839103031022
+            }
+          ]
+        },
+        {
+          "cluster": 2,
+          "seconds": 2.0080625,
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.22974573693544573
+            }
+          ]
+        },
+        {
+          "cluster": 3,
+          "seconds": 3.6786875,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.8757818861697885
+            }
+          ]
+        }
+      ],
+      "overlapAssignedWords": null
+    },
+    {
+      "route": "community-cluster-identity-aligned",
+      "fixture": "known-unknown-known",
+      "duration": 17.98,
+      "clusters": 1,
+      "diarizationMs": 4156,
+      "identificationMs": 933,
+      "transcriptionMs": 4924,
+      "alignmentMs": 899,
+      "metrics": {
+        "referenceWords": 37,
+        "recognizedWords": 37,
+        "edits": 0,
+        "knownWords": 22,
+        "correctlyNamedWords": 22,
+        "namedWords": 37,
+        "wrongNamesOnAlignedWords": 15,
+        "unknownReferenceWords": 15,
+        "falseNamesOnUnknownAlignedWords": 15,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 2,
+        "correctOpeningWords": 2,
+        "correctClosingWords": 2
+      },
+      "evidence": [
+        {
+          "cluster": "SPEAKER_00",
+          "seconds": 10.73225,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.7460605635445506
+            }
+          ]
+        }
+      ],
+      "overlapAssignedWords": null
+    },
+    {
+      "route": "community-turn-identity-aligned",
+      "fixture": "known-unknown-known",
+      "duration": 17.98,
+      "clusters": 1,
+      "diarizationMs": 4156,
+      "identificationMs": 956,
+      "transcriptionMs": 4924,
+      "alignmentMs": 899,
+      "metrics": {
+        "referenceWords": 37,
+        "recognizedWords": 37,
+        "edits": 0,
+        "knownWords": 22,
+        "correctlyNamedWords": 22,
+        "namedWords": 22,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 15,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 2,
+        "correctOpeningWords": 2,
+        "correctClosingWords": 2
+      },
+      "evidence": [
+        {
+          "cluster": 0,
+          "seconds": 2.8855625,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.8017786269077903
+            }
+          ]
+        },
+        {
+          "cluster": 1,
+          "seconds": 2.1599375,
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.2576839103031022
+            }
+          ]
+        },
+        {
+          "cluster": 2,
+          "seconds": 2.0080625,
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.22974573693544573
+            }
+          ]
+        },
+        {
+          "cluster": 3,
+          "seconds": 3.6786875,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.8757818861697885
+            }
+          ]
+        }
+      ],
+      "overlapAssignedWords": null
+    },
+    {
+      "route": "community-cluster-identity",
+      "fixture": "two-enrolled",
+      "duration": 17.98,
+      "clusters": 1,
+      "diarizationMs": 4219,
+      "identificationMs": 945,
+      "transcriptionMs": 4995,
+      "alignmentMs": 0,
+      "metrics": {
+        "referenceWords": 37,
+        "recognizedWords": 37,
+        "edits": 0,
+        "knownWords": 37,
+        "correctlyNamedWords": 0,
+        "namedWords": 0,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 3,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 0
+      },
+      "evidence": [
+        {
+          "cluster": "SPEAKER_00",
+          "seconds": 10.73225,
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.7460605635445506
+            },
+            {
+              "id": "Zira",
+              "score": 0.7483486015697101
+            }
+          ]
+        }
+      ],
+      "overlapAssignedWords": null
+    },
+    {
+      "route": "community-turn-identity",
+      "fixture": "two-enrolled",
+      "duration": 17.98,
+      "clusters": 1,
+      "diarizationMs": 4219,
+      "identificationMs": 933,
+      "transcriptionMs": 4995,
+      "alignmentMs": 0,
+      "metrics": {
+        "referenceWords": 37,
+        "recognizedWords": 37,
+        "edits": 0,
+        "knownWords": 37,
+        "correctlyNamedWords": 33,
+        "namedWords": 33,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 3,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 3
+      },
+      "evidence": [
+        {
+          "cluster": 0,
+          "seconds": 2.8855625,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.8017786269077903
+            },
+            {
+              "id": "Zira",
+              "score": 0.4009238979559968
+            }
+          ]
+        },
+        {
+          "cluster": 1,
+          "seconds": 2.1599375,
+          "speakerId": "Zira",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.2576839103031022
+            },
+            {
+              "id": "Zira",
+              "score": 0.8622370384080698
+            }
+          ]
+        },
+        {
+          "cluster": 2,
+          "seconds": 2.0080625,
+          "speakerId": "Zira",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.22974573693544573
+            },
+            {
+              "id": "Zira",
+              "score": 0.7649159573729526
+            }
+          ]
+        },
+        {
+          "cluster": 3,
+          "seconds": 3.6786875,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.8757818861697885
+            },
+            {
+              "id": "Zira",
+              "score": 0.40402228805406937
+            }
+          ]
+        }
+      ],
+      "overlapAssignedWords": null
+    },
+    {
+      "route": "community-cluster-identity-aligned",
+      "fixture": "two-enrolled",
+      "duration": 17.98,
+      "clusters": 1,
+      "diarizationMs": 4219,
+      "identificationMs": 940,
+      "transcriptionMs": 4995,
+      "alignmentMs": 798,
+      "metrics": {
+        "referenceWords": 37,
+        "recognizedWords": 37,
+        "edits": 0,
+        "knownWords": 37,
+        "correctlyNamedWords": 0,
+        "namedWords": 0,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 3,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 0
+      },
+      "evidence": [
+        {
+          "cluster": "SPEAKER_00",
+          "seconds": 10.73225,
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.7460605635445506
+            },
+            {
+              "id": "Zira",
+              "score": 0.7483486015697101
+            }
+          ]
+        }
+      ],
+      "overlapAssignedWords": null
+    },
+    {
+      "route": "community-turn-identity-aligned",
+      "fixture": "two-enrolled",
+      "duration": 17.98,
+      "clusters": 1,
+      "diarizationMs": 4219,
+      "identificationMs": 1015,
+      "transcriptionMs": 4995,
+      "alignmentMs": 798,
+      "metrics": {
+        "referenceWords": 37,
+        "recognizedWords": 37,
+        "edits": 0,
+        "knownWords": 37,
+        "correctlyNamedWords": 37,
+        "namedWords": 37,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 3,
+        "completeCorrectKnownUtterances": 3,
+        "correctOpeningWords": 3,
+        "correctClosingWords": 3
+      },
+      "evidence": [
+        {
+          "cluster": 0,
+          "seconds": 2.8855625,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.8017786269077903
+            },
+            {
+              "id": "Zira",
+              "score": 0.4009238979559968
+            }
+          ]
+        },
+        {
+          "cluster": 1,
+          "seconds": 2.1599375,
+          "speakerId": "Zira",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.2576839103031022
+            },
+            {
+              "id": "Zira",
+              "score": 0.8622370384080698
+            }
+          ]
+        },
+        {
+          "cluster": 2,
+          "seconds": 2.0080625,
+          "speakerId": "Zira",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.22974573693544573
+            },
+            {
+              "id": "Zira",
+              "score": 0.7649159573729526
+            }
+          ]
+        },
+        {
+          "cluster": 3,
+          "seconds": 3.6786875,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.8757818861697885
+            },
+            {
+              "id": "Zira",
+              "score": 0.40402228805406937
+            }
+          ]
+        }
+      ],
+      "overlapAssignedWords": null
+    },
+    {
+      "route": "community-cluster-identity",
+      "fixture": "short-and-pause",
+      "duration": 15.43,
+      "clusters": 1,
+      "diarizationMs": 3003,
+      "identificationMs": 407,
+      "transcriptionMs": 2643,
+      "alignmentMs": 0,
+      "metrics": {
+        "referenceWords": 16,
+        "recognizedWords": 16,
+        "edits": 2,
+        "knownWords": 16,
+        "correctlyNamedWords": 13,
+        "namedWords": 14,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 2
+      },
+      "evidence": [
+        {
+          "cluster": "SPEAKER_00",
+          "seconds": 4.522375,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.8932768818989435
+            }
+          ]
+        }
+      ],
+      "overlapAssignedWords": null
+    },
+    {
+      "route": "community-turn-identity",
+      "fixture": "short-and-pause",
+      "duration": 15.43,
+      "clusters": 1,
+      "diarizationMs": 3003,
+      "identificationMs": 388,
+      "transcriptionMs": 2643,
+      "alignmentMs": 0,
+      "metrics": {
+        "referenceWords": 16,
+        "recognizedWords": 16,
+        "edits": 2,
+        "knownWords": 16,
+        "correctlyNamedWords": 13,
+        "namedWords": 14,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 2
+      },
+      "evidence": [
+        {
+          "cluster": 0,
+          "seconds": 1.7211875,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.8603719495456276
+            }
+          ]
+        },
+        {
+          "cluster": 1,
+          "seconds": 2.8011875,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.8096912386627555
+            }
+          ]
+        }
+      ],
+      "overlapAssignedWords": null
+    },
+    {
+      "route": "community-cluster-identity-aligned",
+      "fixture": "short-and-pause",
+      "duration": 15.43,
+      "clusters": 1,
+      "diarizationMs": 3003,
+      "identificationMs": 397,
+      "transcriptionMs": 2643,
+      "alignmentMs": 659,
+      "metrics": {
+        "referenceWords": 16,
+        "recognizedWords": 16,
+        "edits": 2,
+        "knownWords": 16,
+        "correctlyNamedWords": 14,
+        "namedWords": 16,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 1,
+        "correctOpeningWords": 1,
+        "correctClosingWords": 2
+      },
+      "evidence": [
+        {
+          "cluster": "SPEAKER_00",
+          "seconds": 4.522375,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.8932768818989435
+            }
+          ]
+        }
+      ],
+      "overlapAssignedWords": null
+    },
+    {
+      "route": "community-turn-identity-aligned",
+      "fixture": "short-and-pause",
+      "duration": 15.43,
+      "clusters": 1,
+      "diarizationMs": 3003,
+      "identificationMs": 392,
+      "transcriptionMs": 2643,
+      "alignmentMs": 659,
+      "metrics": {
+        "referenceWords": 16,
+        "recognizedWords": 16,
+        "edits": 2,
+        "knownWords": 16,
+        "correctlyNamedWords": 14,
+        "namedWords": 16,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 1,
+        "correctOpeningWords": 1,
+        "correctClosingWords": 2
+      },
+      "evidence": [
+        {
+          "cluster": 0,
+          "seconds": 1.7211875,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.8603719495456276
+            }
+          ]
+        },
+        {
+          "cluster": 1,
+          "seconds": 2.8011875,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.8096912386627555
+            }
+          ]
+        }
+      ],
+      "overlapAssignedWords": null
+    },
+    {
+      "route": "community-cluster-identity",
+      "fixture": "intentional-repeat",
+      "duration": 13,
+      "clusters": 1,
+      "diarizationMs": 1805,
+      "identificationMs": 485,
+      "transcriptionMs": 2739,
+      "alignmentMs": 0,
+      "metrics": {
+        "referenceWords": 22,
+        "recognizedWords": 22,
+        "edits": 0,
+        "knownWords": 22,
+        "correctlyNamedWords": 20,
+        "namedWords": 20,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 2
+      },
+      "evidence": [
+        {
+          "cluster": "SPEAKER_00",
+          "seconds": 5.534875,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.8048044739164232
+            }
+          ]
+        }
+      ],
+      "overlapAssignedWords": null
+    },
+    {
+      "route": "community-turn-identity",
+      "fixture": "intentional-repeat",
+      "duration": 13,
+      "clusters": 1,
+      "diarizationMs": 1805,
+      "identificationMs": 497,
+      "transcriptionMs": 2739,
+      "alignmentMs": 0,
+      "metrics": {
+        "referenceWords": 22,
+        "recognizedWords": 22,
+        "edits": 0,
+        "knownWords": 22,
+        "correctlyNamedWords": 20,
+        "namedWords": 20,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 2
+      },
+      "evidence": [
+        {
+          "cluster": 0,
+          "seconds": 2.7674375,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.7914424371461761
+            }
+          ]
+        },
+        {
+          "cluster": 1,
+          "seconds": 2.7674375,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.8085835451161199
+            }
+          ]
+        }
+      ],
+      "overlapAssignedWords": null
+    },
+    {
+      "route": "community-cluster-identity-aligned",
+      "fixture": "intentional-repeat",
+      "duration": 13,
+      "clusters": 1,
+      "diarizationMs": 1805,
+      "identificationMs": 484,
+      "transcriptionMs": 2739,
+      "alignmentMs": 562,
+      "metrics": {
+        "referenceWords": 22,
+        "recognizedWords": 22,
+        "edits": 0,
+        "knownWords": 22,
+        "correctlyNamedWords": 21,
+        "namedWords": 21,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 1,
+        "correctOpeningWords": 1,
+        "correctClosingWords": 2
+      },
+      "evidence": [
+        {
+          "cluster": "SPEAKER_00",
+          "seconds": 5.534875,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.8048044739164232
+            }
+          ]
+        }
+      ],
+      "overlapAssignedWords": null
+    },
+    {
+      "route": "community-turn-identity-aligned",
+      "fixture": "intentional-repeat",
+      "duration": 13,
+      "clusters": 1,
+      "diarizationMs": 1805,
+      "identificationMs": 481,
+      "transcriptionMs": 2739,
+      "alignmentMs": 562,
+      "metrics": {
+        "referenceWords": 22,
+        "recognizedWords": 22,
+        "edits": 0,
+        "knownWords": 22,
+        "correctlyNamedWords": 21,
+        "namedWords": 21,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 2,
+        "completeCorrectKnownUtterances": 1,
+        "correctOpeningWords": 1,
+        "correctClosingWords": 2
+      },
+      "evidence": [
+        {
+          "cluster": 0,
+          "seconds": 2.7674375,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.7914424371461761
+            }
+          ]
+        },
+        {
+          "cluster": 1,
+          "seconds": 2.7674375,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.8085835451161199
+            }
+          ]
+        }
+      ],
+      "overlapAssignedWords": null
+    },
+    {
+      "route": "community-cluster-identity",
+      "fixture": "unknown-only",
+      "duration": 14.52,
+      "clusters": 1,
+      "diarizationMs": 2637,
+      "identificationMs": 705,
+      "transcriptionMs": 4096,
+      "alignmentMs": 0,
+      "metrics": {
+        "referenceWords": 26,
+        "recognizedWords": 26,
+        "edits": 0,
+        "knownWords": 0,
+        "correctlyNamedWords": 0,
+        "namedWords": 0,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 26,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 0,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 0
+      },
+      "evidence": [
+        {
+          "cluster": "SPEAKER_00",
+          "seconds": 7.948,
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.2769568252416615
+            }
+          ]
+        }
+      ],
+      "overlapAssignedWords": null
+    },
+    {
+      "route": "community-turn-identity",
+      "fixture": "unknown-only",
+      "duration": 14.52,
+      "clusters": 1,
+      "diarizationMs": 2637,
+      "identificationMs": 700,
+      "transcriptionMs": 4096,
+      "alignmentMs": 0,
+      "metrics": {
+        "referenceWords": 26,
+        "recognizedWords": 26,
+        "edits": 0,
+        "knownWords": 0,
+        "correctlyNamedWords": 0,
+        "namedWords": 0,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 26,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 0,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 0
+      },
+      "evidence": [
+        {
+          "cluster": 0,
+          "seconds": 4.8599375,
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.24999379340915284
+            }
+          ]
+        },
+        {
+          "cluster": 1,
+          "seconds": 3.0880625,
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.27809895356552905
+            }
+          ]
+        }
+      ],
+      "overlapAssignedWords": null
+    },
+    {
+      "route": "community-cluster-identity-aligned",
+      "fixture": "unknown-only",
+      "duration": 14.52,
+      "clusters": 1,
+      "diarizationMs": 2637,
+      "identificationMs": 700,
+      "transcriptionMs": 4096,
+      "alignmentMs": 639,
+      "metrics": {
+        "referenceWords": 26,
+        "recognizedWords": 26,
+        "edits": 0,
+        "knownWords": 0,
+        "correctlyNamedWords": 0,
+        "namedWords": 0,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 26,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 0,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 0
+      },
+      "evidence": [
+        {
+          "cluster": "SPEAKER_00",
+          "seconds": 7.948,
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.2769568252416615
+            }
+          ]
+        }
+      ],
+      "overlapAssignedWords": null
+    },
+    {
+      "route": "community-turn-identity-aligned",
+      "fixture": "unknown-only",
+      "duration": 14.52,
+      "clusters": 1,
+      "diarizationMs": 2637,
+      "identificationMs": 705,
+      "transcriptionMs": 4096,
+      "alignmentMs": 639,
+      "metrics": {
+        "referenceWords": 26,
+        "recognizedWords": 26,
+        "edits": 0,
+        "knownWords": 0,
+        "correctlyNamedWords": 0,
+        "namedWords": 0,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 26,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 0,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 0
+      },
+      "evidence": [
+        {
+          "cluster": 0,
+          "seconds": 4.8599375,
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.24999379340915284
+            }
+          ]
+        },
+        {
+          "cluster": 1,
+          "seconds": 3.0880625,
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.27809895356552905
+            }
+          ]
+        }
+      ],
+      "overlapAssignedWords": null
+    },
+    {
+      "route": "community-cluster-identity",
+      "fixture": "overlap",
+      "duration": 11.44,
+      "clusters": 2,
+      "diarizationMs": 1301,
+      "identificationMs": 211,
+      "transcriptionMs": 2676,
+      "alignmentMs": 0,
+      "metrics": null,
+      "evidence": [
+        {
+          "cluster": "SPEAKER_00",
+          "seconds": 2.4130625,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.8606030346840947
+            }
+          ]
+        },
+        {
+          "cluster": "SPEAKER_01",
+          "seconds": 0
+        }
+      ],
+      "overlapAssignedWords": 2
+    },
+    {
+      "route": "community-turn-identity",
+      "fixture": "overlap",
+      "duration": 11.44,
+      "clusters": 2,
+      "diarizationMs": 1301,
+      "identificationMs": 213,
+      "transcriptionMs": 2676,
+      "alignmentMs": 0,
+      "metrics": null,
+      "evidence": [
+        {
+          "cluster": 0,
+          "seconds": 2.4130625,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.8606030346840947
+            }
+          ]
+        },
+        {
+          "cluster": 1,
+          "seconds": 0
+        },
+        {
+          "cluster": 2,
+          "seconds": 0
+        }
+      ],
+      "overlapAssignedWords": 0
+    },
+    {
+      "route": "community-cluster-identity-aligned",
+      "fixture": "overlap",
+      "duration": 11.44,
+      "clusters": 2,
+      "diarizationMs": 1301,
+      "identificationMs": 216,
+      "transcriptionMs": 2676,
+      "alignmentMs": 505,
+      "metrics": null,
+      "evidence": [
+        {
+          "cluster": "SPEAKER_00",
+          "seconds": 2.4130625,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.8606030346840947
+            }
+          ]
+        },
+        {
+          "cluster": "SPEAKER_01",
+          "seconds": 0
+        }
+      ],
+      "overlapAssignedWords": 3
+    },
+    {
+      "route": "community-turn-identity-aligned",
+      "fixture": "overlap",
+      "duration": 11.44,
+      "clusters": 2,
+      "diarizationMs": 1301,
+      "identificationMs": 213,
+      "transcriptionMs": 2676,
+      "alignmentMs": 505,
+      "metrics": null,
+      "evidence": [
+        {
+          "cluster": 0,
+          "seconds": 2.4130625,
+          "speakerId": "Hazel",
+          "scores": [
+            {
+              "id": "Hazel",
+              "score": 0.8606030346840947
+            }
+          ]
+        },
+        {
+          "cluster": 1,
+          "seconds": 0
+        },
+        {
+          "cluster": 2,
+          "seconds": 0
+        }
+      ],
+      "overlapAssignedWords": 0
+    },
+    {
+      "route": "community-cluster-identity",
+      "fixture": "silence",
+      "duration": 10,
+      "clusters": 0,
+      "diarizationMs": 19,
+      "identificationMs": 0,
+      "transcriptionMs": 12,
+      "alignmentMs": 0,
+      "metrics": {
+        "referenceWords": 0,
+        "recognizedWords": 0,
+        "edits": 0,
+        "knownWords": 0,
+        "correctlyNamedWords": 0,
+        "namedWords": 0,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 0,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 0
+      },
+      "evidence": [],
+      "overlapAssignedWords": null
+    },
+    {
+      "route": "community-turn-identity",
+      "fixture": "silence",
+      "duration": 10,
+      "clusters": 0,
+      "diarizationMs": 19,
+      "identificationMs": 0,
+      "transcriptionMs": 12,
+      "alignmentMs": 0,
+      "metrics": {
+        "referenceWords": 0,
+        "recognizedWords": 0,
+        "edits": 0,
+        "knownWords": 0,
+        "correctlyNamedWords": 0,
+        "namedWords": 0,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 0,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 0
+      },
+      "evidence": [],
+      "overlapAssignedWords": null
+    },
+    {
+      "route": "community-cluster-identity-aligned",
+      "fixture": "silence",
+      "duration": 10,
+      "clusters": 0,
+      "diarizationMs": 19,
+      "identificationMs": 0,
+      "transcriptionMs": 12,
+      "alignmentMs": 0,
+      "metrics": {
+        "referenceWords": 0,
+        "recognizedWords": 0,
+        "edits": 0,
+        "knownWords": 0,
+        "correctlyNamedWords": 0,
+        "namedWords": 0,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 0,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 0
+      },
+      "evidence": [],
+      "overlapAssignedWords": null
+    },
+    {
+      "route": "community-turn-identity-aligned",
+      "fixture": "silence",
+      "duration": 10,
+      "clusters": 0,
+      "diarizationMs": 19,
+      "identificationMs": 0,
+      "transcriptionMs": 12,
+      "alignmentMs": 0,
+      "metrics": {
+        "referenceWords": 0,
+        "recognizedWords": 0,
+        "edits": 0,
+        "knownWords": 0,
+        "correctlyNamedWords": 0,
+        "namedWords": 0,
+        "wrongNamesOnAlignedWords": 0,
+        "unknownReferenceWords": 0,
+        "falseNamesOnUnknownAlignedWords": 0,
+        "unalignedNamedInsertions": 0,
+        "knownUtterances": 0,
+        "completeCorrectKnownUtterances": 0,
+        "correctOpeningWords": 0,
+        "correctClosingWords": 0
+      },
+      "evidence": [],
+      "overlapAssignedWords": null
+    }
+  ],
+  "alignment": {
+    "model": "facebook/wav2vec2-base-960h",
+    "revision": "22aad52d435eb6dbaf354bdad9b0da84ce7d6156",
+    "versions": {
+      "whisperx": "3.8.6",
+      "transformers": "5.19.0",
+      "torch": "2.14.1",
+      "nltk": "3.10.3"
+    },
+    "initializationMs": 482,
+    "hashes": {
+      "config.json": "d3ec255c063d9f95057b553b19c20135b259875834a4fe9deb218a6be25b4cf3",
+      "feature_extractor_config.json": "d3de0c797bf9b65f90bc65c30cb7b303ebeda341f6fc80af33628c4b26b95632",
+      "model.safetensors": "8aa76ab2243c81747a1f832954586bc566090c83a0ac167df6f31f0fa917d74a",
+      "preprocessor_config.json": "b225d617c025463b9e157e06afea8b90dc7078fc70b013c533328423e0486b4a",
+      "pytorch_model.bin": "c34f9827b034a1b9141dbf6f652f8a60eda61cdf5771c9e05bfa99033c92cd96",
+      "special_tokens_map.json": "bb7068de1150661a10b55f9e4b12a0e77af8bf91f5e45e1b58afaf1d0e17f675",
+      "tokenizer_config.json": "dc790594f5bc351a4311c6624f40acd95850d4aaf2a5cb3c656c9b610720b608",
+      "vocab.json": "19727f8944fe6459fc3f240ae2c198395b740f6a029bd23e06656266b83bcf64"
+    }
+  },
+  "limitations": [
+    "Synthetic fixtures only; not human accuracy or threshold calibration.",
+    "Whisper words reused; optional alignment only changes their times, with interpolation disabled.",
+    "Per-turn identity and alignment are exploratory follow-ups on the same set, not held-out validation.",
+    "Regular non-exclusive diarization retains overlap; no nearest-speaker or boundary filling.",
+    "Offline CPU timing; not live capture latency or phone performance."
+  ]
+}

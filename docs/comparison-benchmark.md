@@ -1,5 +1,10 @@
 # Local comparative benchmark — 2026-10-13
 
+**Follow-up completed:** [Community-1, per-turn identity and word alignment](community-benchmark.md)
+reach 120/123 correctly named words and 9/11 complete utterances with zero false
+names on 41 unknown words in this generated set. The original comparison below
+is retained as evidence; the follow-up supersedes its pending Community-1 test.
+
 **Recommendation: pursue a separate delayed Python pipeline, starting with
 speech-region Whisper transcription. Replace and test the speaker-turn model
 before connecting that pipeline to the app.** The tested delayed diarizer makes

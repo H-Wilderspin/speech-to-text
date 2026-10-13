@@ -2,6 +2,11 @@
 
 ## Local pipeline comparison (2026-10-13)
 
+The [Community-1 and alignment follow-up](../docs/community-benchmark.md) now
+compares cluster-wide and per-turn identity with original/aligned word times.
+It includes pinned isolated environments and reproduction steps; the alignment
+environment exercises only the WhisperX alignment module, not its full CLI.
+
 The [comparative benchmark](../docs/comparison-benchmark.md) runs the production
 local ASR/window components, existing delayed diarizer and CPU Whisper against
 the same eight generated fixtures. It includes repeat/silence failure cases,
@@ -9,7 +14,7 @@ strict temporal joins, separately labelled oracle diagnostics and reproducible
 Python pins. Models/audio stay in ignored `private/comparison`; no API access or
 production changes are required. See that report for the sequential commands,
 results and limits. This does not benchmark browser speech recognition or modern
-pyannote Community-1.
+pyannote Community-1; that model is measured in the separate follow-up above.
 
 ## Direct enrolled-voice attribution prototype
 

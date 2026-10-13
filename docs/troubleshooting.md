@@ -1,5 +1,30 @@
 # Troubleshooting
 
+## 2026-10-13 - Mixed cluster identity and early word timestamps isolated
+
+- **Evidence:** replacing the old delayed diarizer with Community-1 still groups
+  two alternating generated voices into one cluster. Cluster-aggregated ERes2Net
+  matching falsely labels 13 unknown words; with two profiles it rejects the mixed
+  cluster as ambiguous. Separate per-turn matching eliminates those false names
+  on this same synthetic set without changing the 0.60 threshold.
+- **Boundary evidence:** with original Whisper intervals, no known utterance has
+  its opening word correctly named. Forced alignment changes timing without
+  changing a recognized word; per-turn matching then retains 9/11 openings and
+  all 11 endings. Strict interval containment and unknown/overlap vetoes remain.
+- **Result:** 120/123 correctly named known words, 0/41 false names on unknown
+  words, 9/11 complete utterances. This is a research candidate, not a runtime fix;
+  human voice changes/overlap and one repeated-phrase boundary remain unverified.
+- **Environment:** pyannote inference accepts in-memory PCM, avoiding file decoder
+  dependencies. The WhisperX alignment module is used with a directly loaded
+  Transformers model, bypassing its torchaudio bundle loader. Its full-package
+  dependency requirements are intentionally not satisfied; the exact exercised
+  snapshot and reproduction commands are in [the report](community-benchmark.md).
+  A supported service environment is still needed before production integration.
+- **Model warning:** wav2vec2 reports a missing `masked_spec_embed` parameter.
+  Installed source uses it for supplied masks/training augmentation; this probe
+  runs evaluation without masks. All eight alignments finish with unchanged word
+  sequences and no missing timings. Do not generalize that observation to training.
+
 ## 2026-10-13 - Local benchmark library compatibility and chunking
 
 - **Environment:** Windows/Python 3.13, faster-whisper 1.2.1, PyAV 19.0.1.

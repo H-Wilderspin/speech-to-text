@@ -1,9 +1,10 @@
 # Speech-to-Text PWA
 
-**Local comparison (2026-10-13):** speech-region Whisper substantially improves
-generated-speech transcription, but the tested delayed diarizer merges speakers
-and still clips assigned words. No replacement is ready to deploy. See the
-[measured comparison and recommended next step](docs/comparison-benchmark.md).
+**Local comparison (2026-10-13):** delayed Whisper, Community-1 speech turns,
+per-turn identity matching and word alignment correctly name 120/123 known words,
+with zero false names on 41 unknown words and 9/11 complete utterances in generated
+speech. Human validation and service integration remain outstanding. See the
+[measured comparison and recommended next step](docs/community-benchmark.md).
 Live captions and the published app are unchanged.
 
 ## Implementation status — 2026-10-12
