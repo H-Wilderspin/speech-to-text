@@ -9,7 +9,14 @@
 - **Checks:** typecheck, lint, 231 unit tests, pinned assets and production build
   pass. Eight focused Chromium/WebKit cases pass, including 320px, enlarged text,
   protected speaker controls, modal dismissal and focus. Desktop/mobile screenshots
-  inspected; physical phone layout remains unverified. Publication pending.
+  inspected. Additional synthetic-profile checks confirm centred titles and equal
+  adjacent registration inputs at 1440px, 390px and 320px in both browsers.
+- **Publication:** commit `0e77a49`,
+  [run 38425606162](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38425606162),
+  passed the full CI suite and deployed successfully. Published Chromium/WebKit
+  checks verify the new bundle, .2em tracking, 24px side padding, centred title,
+  registration flex layout and outside dismissal without page errors. Physical
+  phone layout remains unverified.
 
 ## 2026-10-13 - Poppins and Settings layout
 
