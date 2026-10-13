@@ -8,8 +8,8 @@ a temporary HTTPS link; no hosting subscription is enabled. See
 [start/stop and test instructions](service/README.md) and
 [ADR 0035](docs/decisions/0035-separate-pc-comparison-endpoint.md).
 The original page and listening engines remain available unchanged. The page is
-deployed; phone access to the PC service still needs a successful local-terminal
-tunnel launch. Public connectivity and physical-device acceptance are tracked in
+deployed; phone access to the PC service is blocked by tunnel DNS discovery,
+including the reported normal-terminal launch. Public connectivity and physical-device acceptance are tracked in
 the feasibility notes.
 
 **Local comparison (2026-10-13):** delayed Whisper, Community-1 speech turns,

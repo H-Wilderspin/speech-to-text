@@ -22,7 +22,9 @@
   the default resolver and 1.1.1.1 unexpectedly return A records in this execution
   environment. Local service `/health` succeeds; public address returns 1033/530.
   No working phone endpoint is claimed. Launcher now requires public health before
-  publishing a private link. A normal local-terminal launch remains to be tested.
+  publishing a private link. The user subsequently reports the same pre-connection
+  failure from their normal terminal; this is not a working workaround. Resolver
+  comparison and network context remain outstanding (see troubleshooting).
 - **Checks:** 231 JS tests/typecheck/lint/build, four Python HTTP/policy tests,
   and all runnable Chromium/WebKit browser cases pass across the full and focused
   runs. Six Web Audio cases are skipped on this Windows WebKit port; this is not
@@ -40,7 +42,7 @@
   pages verify one evolving live line, no lower-pane names, Stop and Settings,
   with no page errors. Recognition was simulated; neither physical microphone
   capture nor a public connection to the PC was exercised. The service is stopped
-  after the failed tunnel attempt; normal-terminal launch is still pending.
+  after the failed tunnel attempt; the later normal-terminal launch also failed.
 
 
 ## 2026-10-13 - Community-1 plus per-turn identity and aligned words

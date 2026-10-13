@@ -60,5 +60,13 @@ try {
 } catch {
     if ($relay -and !$relay.HasExited) { Stop-Process -Id $relay.Id }
     if (!$server.HasExited) { Stop-Process -Id $server.Id }
+    # Explain the known discovery failure without dumping private connection logs.
+    # Only inspect a log written by this launch, not a stale earlier attempt.
+    if ($relay -and (Test-Path -LiteralPath $relayLog)) {
+        $failureLog = Get-Content -LiteralPath $relayLog -Raw -ErrorAction SilentlyContinue
+        if ($failureLog -match 'SRV only returned 0') {
+            throw 'Cloudflare DNS discovery failed: no tunnel-server SRV records were returned. The comparison server has been stopped. Run Resolve-DnsName _v2-origintunneld._tcp.argotunnel.com -Type SRV in your normal PowerShell terminal, then repeat with -Server 1.1.1.1. See service/README.md for the network checks.'
+        }
+    }
     throw
 }

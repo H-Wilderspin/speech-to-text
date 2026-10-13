@@ -1,5 +1,25 @@
 # Troubleshooting
 
+## 2026-10-13 - Normal-terminal tunnel launch also fails (Unresolved)
+
+- **Evidence:** user reports the launcher's pre-connection failure from normal
+  PowerShell. The available tunnel log ends with `SRV only returned 0`; a fresh
+  read-only SRV lookup in the execution environment again returns an A record
+  instead. The exact filtering/resolver component is not established. The normal
+  terminal is therefore not a verified workaround.
+- **Change:** launcher now reports this specific DNS discovery failure after
+  cleaning up its own processes. It checks only a relay log from the current
+  attempt and does not print the private connection link, key or complete log.
+- **Next:** compare default-resolver and explicit `1.1.1.1` SRV lookups in the
+  user's terminal and establish whether this is a home or managed/VPN network.
+  No system DNS, firewall or TLS changes were made. Phone connectivity remains
+  unavailable; changing transport to HTTP/2 would not supply missing SRV records.
+- **Verification:** a real launcher retry reproduced the discovery failure and
+  emitted the new specific error. No comparison processes or private ready link
+  remained. PowerShell syntax, typecheck, lint, 231 unit tests, pinned asset checks
+  and production build pass; frontend bundle hashes are unchanged.
+- **Reference:** [Cloudflare's DNS diagnosis](https://developers.cloudflare.com/tunnel/troubleshooting/#dns-resolution-failures).
+
 ## 2026-10-13 - PC service packaging and tunnel connectivity
 
 - **Verified packaging:** use the fully resolved Windows service environment,

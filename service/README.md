@@ -57,6 +57,22 @@ If its log says SRV returned zero regions, run the launcher from a normal local
 PowerShell terminal and check the network. A printed temporary URL alone does not
 prove a connected tunnel; public `/health` must succeed.
 
+If the normal-terminal launch also fails with zero SRV records, run these read-only
+checks in that terminal:
+
+```powershell
+Resolve-DnsName _v2-origintunneld._tcp.argotunnel.com -Type SRV
+Resolve-DnsName _v2-origintunneld._tcp.argotunnel.com -Type SRV -Server 1.1.1.1
+```
+
+The result should contain SRV records with target names and ports. An A record
+alone is not a successful SRV lookup. If only the second lookup works, investigate
+the current DNS resolver. If neither works, investigate DNS filtering or network
+restrictions with the network administrator. The responsible component has not
+been isolated here. Switching QUIC to HTTP/2 does not fix this earlier discovery
+failure. No Hugging Face payment is needed to resolve it. See
+[Cloudflare DNS troubleshooting](https://developers.cloudflare.com/tunnel/troubleshooting/#dns-resolution-failures).
+
 ## Data flow and limits
 
 Browser speech recognition supplies only the lower live pane. The PC independently
