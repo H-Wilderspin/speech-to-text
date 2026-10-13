@@ -1,5 +1,16 @@
 # Feasibility evidence
 
+## 2026-10-13 - Bottom caption controls
+
+- Moved Listen/Stop, Clear and Settings after the reading content in both app
+  entry points. A non-shrinking footer uses the existing viewport layout and bottom
+  safe-area padding; it does not cover captions or require scrolling to reach.
+- Typecheck, lint, 232 unit tests, pinned assets and production build pass. Ten
+  Chromium/WebKit checks verify bottom-edge placement, captions above the bar,
+  stable current speech, modal focus/dismissal, pane toggling and 320px enlarged
+  text. Mobile screenshot reviewed. Physical safe-area/device testing remains
+  unverified; deployment is automatic after push.
+
 ## 2026-10-13 - Light theme and steady Live reading
 
 - **Change:** off-white surfaces, dark neutral captions, darker speaker colours,

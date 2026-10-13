@@ -53,14 +53,6 @@ export function App({ engine: browserEngine, createSpeakers, localEngine }: {
   return <div className="app-shell">
     <a className="skip-link" href="#captions">Skip to captions</a>
     <h1 className="sr-only">Speech to Text</h1>
-    <header className="toolbar" aria-label="Caption controls">
-      <button className={active ? 'listen is-active' : 'listen'} disabled={Boolean(engine.unavailableReason) || snapshot.phase === 'stopping'}
-        aria-describedby="processing-note" onClick={() => active ? engine.stop() : engine.start(language)}>
-        {snapshot.phase === 'stopping' ? 'Stopping…' : active ? 'Stop' : 'Listen'}
-      </button>
-      <button disabled={active || snapshot.segments.length === 0} onClick={() => engine.clear()}>Clear</button>
-      <button ref={settingsButton} onClick={() => setSettingsOpen(true)}>Settings</button>
-    </header>
     <main id="captions">
       <p className={snapshot.phase === 'error' ? 'notice error' : snapshot.notice ? 'notice' : 'sr-only'} role="status" aria-live="polite" aria-atomic="true">{snapshot.message}</p>
       {engine.unavailableReason && <p className="notice" role="alert">{engine.unavailableReason}</p>}
@@ -71,6 +63,14 @@ export function App({ engine: browserEngine, createSpeakers, localEngine }: {
         <Transcript segments={snapshot.segments} textSize={textSize} />
       </div>
     </main>
+    <footer className="toolbar" aria-label="Caption controls">
+      <button className={active ? 'listen is-active' : 'listen'} disabled={Boolean(engine.unavailableReason) || snapshot.phase === 'stopping'}
+        aria-describedby="processing-note" onClick={() => active ? engine.stop() : engine.start(language)}>
+        {snapshot.phase === 'stopping' ? 'Stopping…' : active ? 'Stop' : 'Listen'}
+      </button>
+      <button disabled={active || snapshot.segments.length === 0} onClick={() => engine.clear()}>Clear</button>
+      <button ref={settingsButton} onClick={() => setSettingsOpen(true)}>Settings</button>
+    </footer>
     <p className="sr-only" id="processing-note">Listen uses your browser’s speech service, which may send audio to its provider. Delayed name estimates use saved voiceprints on this device. Captions are kept only until you clear or reload. Details are in Settings.</p>
     {settingsOpen && <SettingsDialog active={active} textSize={textSize} onTextSize={(textSize) => changePreferences({ textSize })}
       localEngine={localEngine} createSpeakers={createSpeakers} colours={colours} onColours={(colours) => changePreferences({ colours })}

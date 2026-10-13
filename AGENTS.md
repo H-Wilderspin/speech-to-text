@@ -22,6 +22,10 @@ Deliver a **small, accessible, static-hosted TypeScript PWA** for live speech tr
 
 ## Architecture rules
 
+**Bottom controls (2026-10-13):** Listen, Clear and Settings sit after the captions
+in a non-scrolling bottom bar, respecting the bottom safe area. Keep reading first
+in both the visual layout and DOM order; do not overlay or duplicate controls.
+
 **Light theme and stable reading (2026-10-13):** light backgrounds with dark text
 supersede the earlier dark theme. Map saved speaker colour families to dark,
 high-contrast equivalents. The newest browser utterance stays at the top of Live

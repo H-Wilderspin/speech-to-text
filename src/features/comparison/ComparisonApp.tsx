@@ -61,14 +61,6 @@ export function ComparisonApp({ browser, remote, database }: { browser: Transcri
   return <div className="app-shell">
     <a className="skip-link" href="#captions">Skip to captions</a>
     <h1 className="sr-only">Speech to Text — PC comparison</h1>
-    <header className="toolbar" aria-label="Caption controls">
-      <button className={active ? 'listen is-active' : 'listen'} disabled={Boolean(browser.unavailableReason) || live.phase === 'stopping'}
-        aria-describedby="processing-note" onClick={() => {
-          if (active) stop(); else { remote.start(connection, preferences.language); browser.start(preferences.language); }
-        }}>{live.phase === 'stopping' ? 'Stopping…' : active ? 'Stop' : 'Listen'}</button>
-      <button disabled={active} onClick={() => { browser.clear(); remote.clear(); }}>Clear</button>
-      <button ref={settingsButton} onClick={() => setSettings(true)}>Settings</button>
-    </header>
     <main id="captions">
       <p className="notice" role="status">{delayed.status}</p>
       {(live.phase === 'error' || browser.unavailableReason) && <p className="notice error" role="alert">{browser.unavailableReason ?? live.message}</p>}
@@ -77,6 +69,14 @@ export function ComparisonApp({ browser, remote, database }: { browser: Transcri
         <Transcript segments={live.segments} textSize={preferences.textSize} />
       </div>
     </main>
+    <footer className="toolbar" aria-label="Caption controls">
+      <button className={active ? 'listen is-active' : 'listen'} disabled={Boolean(browser.unavailableReason) || live.phase === 'stopping'}
+        aria-describedby="processing-note" onClick={() => {
+          if (active) stop(); else { remote.start(connection, preferences.language); browser.start(preferences.language); }
+        }}>{live.phase === 'stopping' ? 'Stopping…' : active ? 'Stop' : 'Listen'}</button>
+      <button disabled={active} onClick={() => { browser.clear(); remote.clear(); }}>Clear</button>
+      <button ref={settingsButton} onClick={() => setSettings(true)}>Settings</button>
+    </footer>
     <p id="processing-note" className="sr-only">{processing}</p>
     {settings && <SettingsDialog active={active || delayed.pending} textSize={preferences.textSize} onTextSize={(textSize) => change({ textSize })}
       language={preferences.language} onLanguage={(language) => change({ language })} installFailed={false} onStop={stop}
