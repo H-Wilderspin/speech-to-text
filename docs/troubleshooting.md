@@ -36,6 +36,13 @@
   native track `readyState` before/after Stop rather than overriding a wrapper's
   method. The corrected test passes locally in Chromium; Linux confirmation
   remains pending. Production capture/continuity checks are unchanged.
+- **Follow-up:** the revised Linux run and an unchanged rerun both pass 61/62
+  tests; only the comparison's oscillator fails before the first captured frame,
+  with the exact clock-interruption status. WebKit's native track-state check now
+  passes. Replace that oscillator with the in-context 16 kHz PCM buffer source
+  used by the passing existing streaming fixture, and add a fast three-start CI
+  check before the full suite. This is a test-source experiment; the browser's
+  underlying clock-discontinuity cause is not yet established.
 
 
 ## 2026-10-13 - Mixed cluster identity and early word timestamps isolated

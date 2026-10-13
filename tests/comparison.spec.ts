@@ -51,6 +51,15 @@ test('comparison flushes real worklet capture on voice Stop and names only the u
       const counts = JSON.parse(line.slice(line.indexOf('{')));
       receivedSamples = counts.receivedSamples;
     }
+    if (line.startsWith('[comparison-clock]')) console.error(line);
+  });
+  await page.route('**/assets/stream-worklet-*.js', async (route) => {
+    const response = await route.fetch(); const source = await response.text();
+    const marker = "this.fail('The audio clock was interrupted.')";
+    expect(source).toContain(marker);
+    // Diagnostics only: retain the exact rejection branch and capture behavior.
+    const instrumented = source.replace(marker, `(console.info('[comparison-clock] ' + JSON.stringify({expected: this.expectedRenderFrame, actual: currentFrame, samples: input.length})), ${marker})`);
+    await route.fulfill({ response, body: instrumented });
   });
   await page.goto('/compare.html');
   const supported = await page.evaluate(() => Boolean(globalThis.AudioContext && globalThis.AudioWorkletNode));
@@ -66,7 +75,11 @@ test('comparison flushes real worklet capture on voice Stop and names only the u
     class Context extends NativeContext {
       constructor(options?: AudioContextOptions) { super(options); contexts.push(this); }
       createMediaStreamSource() {
-        const source = this.createOscillator(); source.start();
+        // Use the same in-context PCM source as the existing streaming fixture.
+        // An oscillator repeatedly loses its initial clock continuity on Linux CI.
+        const source = this.createBufferSource(); source.buffer = this.createBuffer(1, 160000, 16000);
+        source.buffer.copyToChannel(Float32Array.from({ length: 160000 }, (_, i) => .1 * Math.sin(i * 2 * Math.PI * 173 / 16000)), 0);
+        source.loop = true; source.start();
         return source as unknown as MediaStreamAudioSourceNode;
       }
     }

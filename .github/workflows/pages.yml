@@ -37,6 +37,8 @@ jobs:
           "$RUNNER_TEMP/comparison-tests/bin/python" -m unittest service.test_service
       - name: Install test browsers
         run: npx playwright install --with-deps chromium webkit
+      - name: Check comparison capture startup repeatedly
+        run: npm run test:e2e -- tests/comparison.spec.ts --project=chromium --grep "flushes real" --repeat-each=3 --workers=1
       - name: Test production app at root and project paths
         # Real-time audio must not compete with another test's accelerated ML
         # inference/model preparation on the shared runner. Keep every test.
