@@ -82,6 +82,7 @@ export function SpeakerSettings({ onStop, createServices, canRecord, colours, on
     }} />}
     <section aria-labelledby="add-speaker-title">
       <h3 id="add-speaker-title">Add a speaker</h3>
+      <div className="registration-fields">
       {profiles.length > 0 && <label className="speaker-name">Voice to record<select value={profileId} disabled={busy || comparing}
         onChange={(event) => setProfileId(event.target.value)}>
         <option value="">New speaker</option>
@@ -89,6 +90,7 @@ export function SpeakerSettings({ onStop, createServices, canRecord, colours, on
       </select></label>}
       {!selectedProfile && <label className="speaker-name">Display name<input value={displayName} maxLength={60} autoComplete="off" disabled={busy || comparing}
         onChange={(event) => setDisplayName(event.target.value)} /></label>}
+      </div>
       <div ref={passage} className="reading-passage" aria-labelledby="reading-passage-title">
         <h4 id="reading-passage-title">Read aloud</h4>
         <p>{READING_PASSAGE}</p>

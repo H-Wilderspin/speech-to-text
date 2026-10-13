@@ -1,5 +1,16 @@
 # Feasibility evidence
 
+## 2026-10-13 - Settings spacing refinement
+
+- **Change:** user-requested .2em uppercase label spacing (superseding ADR 0038's
+  .08em), centred Settings title with a balanced return-button column, 24px side
+  padding, adjacent equal-width registration fields and inherited pill left
+  padding. Registration inputs align along their bottom edge when labels wrap.
+- **Checks:** typecheck, lint, 231 unit tests, pinned assets and production build
+  pass. Eight focused Chromium/WebKit cases pass, including 320px, enlarged text,
+  protected speaker controls, modal dismissal and focus. Desktop/mobile screenshots
+  inspected; physical phone layout remains unverified. Publication pending.
+
 ## 2026-10-13 - Poppins and Settings layout
 
 - **Change:** three typography roles (14px, 16px, adjustable 32px caption default)

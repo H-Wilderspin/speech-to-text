@@ -10,9 +10,11 @@ remain. See [ADR 0037](docs/decisions/0037-browser-plan-collapsible-attribution.
 
 **Typography and Settings:** Poppins is bundled for online/offline use. The UI has
 small (14px), medium (16px) and large caption sizes (32px initially, adjustable).
-Descriptions/captions use weight 400; labels use uppercase, spaced lettering.
+Descriptions/captions use weight 400; labels use uppercase with .2em letter spacing.
 Settings centres at up to 1000px, closes on outside click and lists People first.
 Text size and language share the final row; the size number previews caption size.
+The Settings title is centred, with 24px side padding around the panel content.
+Voice to record and Display name share a row when both fields are available.
 Values scale with browser text settings. See ADR 0038.
 
 The separate [PC comparison](https://h-wilderspin.github.io/speech-to-text/compare.html)

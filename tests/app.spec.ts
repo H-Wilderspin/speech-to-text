@@ -173,7 +173,7 @@ test('Poppins settings centre, order people first, preview size and dismiss only
   await expect(page.locator('.settings-content > :last-child')).toHaveAttribute('aria-label', 'Caption preferences');
   await expect(page.getByRole('heading', { name: 'Text size', exact: true })).toHaveCount(0);
   await expect(page.locator('#text-size-label')).toHaveCSS('text-transform', 'uppercase');
-  await expect(page.locator('#text-size-label')).toHaveCSS('letter-spacing', '1.12px');
+  await expect(page.locator('#text-size-label')).toHaveCSS('letter-spacing', '2.8px');
   await expect(page.getByText('No speakers yet.', { exact: true })).toHaveCSS('font-size', '14px');
   await expect(page.getByText('No speakers yet.', { exact: true })).toHaveCSS('font-weight', '400');
   await expect(page.locator('.size-preview')).toHaveCSS('font-size', '32px');
