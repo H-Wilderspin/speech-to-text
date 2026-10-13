@@ -172,7 +172,6 @@ test('Android provisional words receive delayed names and activity filters only 
   const stages = new Set<string>();
   let voiceDiagnosticsComplete = false;
   page.on('console', (message) => {
-    if (message.text().startsWith('[generated-clock]')) console.error(message.text());
     if (message.type() === 'info' && message.text().startsWith('[who-said-what]')) {
       const line = message.text(); stages.add(line.split(' ')[1]!);
       // Text copied directly from DevTools must retain the complete JSON payload.
@@ -186,14 +185,6 @@ test('Android provisional words receive delayed names and activity filters only 
         voiceDiagnosticsComplete = true;
       }
     }
-  });
-  await page.route('**/assets/stream-worklet-*.js', async (route) => {
-    const response = await route.fetch(); const source = await response.text();
-    const marker = "this.fail('The audio clock was interrupted.')";
-    expect(source).toContain(marker);
-    // Generated test audio only. Keep the exact production rejection branch.
-    await route.fulfill({ response, body: source.replace(marker,
-      `(console.info('[generated-clock] ' + JSON.stringify({expected: this.expectedRenderFrame, actual: currentFrame, samples: input.length, accepted: this.nextSample, partial: this.used})), ${marker})`) });
   });
   await page.goto('/?debugSpeakers=1');
   const supported = await page.evaluate(() => Boolean(globalThis.AudioContext && globalThis.AudioWorkletNode));
@@ -213,7 +204,24 @@ test('Android provisional words receive delayed names and activity filters only 
     const NativeAudioContext = globalThis.AudioContext;
     const sources = new WeakMap<MediaStream, { destination: MediaStreamAudioDestinationNode; release: () => void }>();
     class FixtureContext extends NativeAudioContext {
-      constructor(options?: AudioContextOptions) { super(options); contexts.push(this); }
+      constructor(options?: AudioContextOptions) {
+        // CI plays a generated buffer; prefer sustained playback to low output latency.
+        // The app's actual context options and continuity guard remain unchanged.
+        super({ ...options, latencyHint: 'playback' }); contexts.push(this);
+        const addModule = this.audioWorklet.addModule.bind(this.audioWorklet);
+        this.audioWorklet.addModule = async (url, moduleOptions) => {
+          if (!String(url).includes('stream-worklet-')) return addModule(url, moduleOptions);
+          const source = await (await fetch(url)).text();
+          const marker = "this.fail('The audio clock was interrupted.')";
+          if (!source.includes(marker)) throw new Error('Missing generated clock diagnostic marker.');
+          // Instrument even when the original source comes from the installed PWA cache.
+          // Include only clock/sample counts in the existing failure payload, never PCM.
+          const instrumented = source.replace(marker, `this.fail('The audio clock was interrupted. ' + JSON.stringify({expected: this.expectedRenderFrame, actual: currentFrame, samples: input.length, accepted: this.nextSample, partial: this.used}))`);
+          const diagnosticUrl = URL.createObjectURL(new Blob([instrumented], { type: 'text/javascript' }));
+          try { await addModule(diagnosticUrl, moduleOptions); }
+          finally { URL.revokeObjectURL(diagnosticUrl); }
+        };
+      }
       createMediaStreamSource(stream: MediaStream) {
         const fixture = sources.get(stream); if (!fixture) return super.createMediaStreamSource(stream);
         const samples = new Float32Array(48000 + speech.length + 48000 + command.length + 96000);

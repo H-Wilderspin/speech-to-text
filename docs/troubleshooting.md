@@ -16,6 +16,14 @@
   Compare speaker colour against the current live neutral colour rather than the
   old dark-theme literal. Stop CI on the first failure, retaining all tests on a
   successful run. Linux verification and publication are pending.
+- **Diagnostic follow-up:** run `38433223926` reproduces the same failure; explicit
+  destination ownership does not fix it. Page routing did not expose worklet
+  diagnostics after PWA installation. The fixture now instruments the source at
+  `audioWorklet.addModule`, including cached source, and retains rejection with
+  numeric frame counts in its error. Its generated playback context requests
+  `latencyHint: 'playback'`, which the [Web Audio specification](https://www.w3.org/TR/webaudio-1.0/#enumdef-audiocontextlatencycategory)
+  defines as favouring uninterrupted playback over output latency. This is a
+  test-environment experiment; production context options remain unchanged.
 - **Prevention:** pushing is not deployment confirmation. Check the workflow result
   and served bundle before telling the user a change is live. When Pages has
   updated, the installed PWA still waits for old tabs to close before activating
