@@ -86,7 +86,7 @@ dialog section { border-top: 1px solid #46515c; margin-top: 1.5rem; padding-top:
 .toggle input { flex-shrink: 0; width: 24px; height: 24px; margin: .25rem 0; }
 .speaker-list { list-style: none; padding: 0; }
 .speaker-entry { margin: .75rem 0; overflow-wrap: anywhere; }
-.speaker-pill { display: flex; align-items: center; gap: .35rem; border: 1px solid; border-radius: 999px; padding: .4rem .5rem .4rem 1rem; padding-left: inherit; }
+.speaker-pill { display: flex; align-items: center; gap: .35rem; border: 1px solid; border-radius: 999px; padding: .4rem .5rem .4rem 2rem; }
 .speaker-pill strong { flex: 1; min-width: 0; }
 .speaker-pill .icon-button { flex-shrink: 0; border-radius: 50%; }
 .speaker-activity[aria-pressed=true] { color: #99dfd0; border-color: #99dfd0; }

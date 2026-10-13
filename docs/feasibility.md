@@ -1,5 +1,13 @@
 # Feasibility evidence
 
+## 2026-10-13 - Speaker pill padding correction
+
+- Replaced inherited left padding (zero from the parent) with explicit `2rem`,
+  as requested after visual review. This supersedes the inherited padding below.
+- Typecheck, lint, all 231 unit tests, pinned assets and production build pass.
+  Four existing Chromium/WebKit layout and speaker-control checks pass, including
+  the 320px enlarged-text form. No physical-device verification is claimed.
+
 ## 2026-10-13 - Settings spacing refinement
 
 - **Change:** user-requested .2em uppercase label spacing (superseding ADR 0038's
