@@ -1,5 +1,21 @@
 # Feasibility evidence
 
+## 2026-10-13 - Light UI publication confirmed
+
+- Earlier push-only handoffs did not reach Pages: runs for padding, light mode and
+  pane ordering were blocked by the generated Chromium audio-clock test. Direct
+  HTTPS inspection still returned the dark `main-CFr_ckOU.js` bundle.
+- Following test-fixture diagnostics and a test-only sustained-playback latency
+  hint, commit `915d0eb` passed all 68 Linux browser cases with no skips in 6.1m,
+  plus three capture probes, in
+  [run 38434066037](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38434066037).
+  Production capture settings and clock/identity guards were not changed.
+- Pages now serves `main-D-E0zGxe.js`. Published Windows Chromium/WebKit checks
+  verify light backgrounds, Live then Who said what, bottom controls, a single
+  stable evolving caption and light Settings; no page errors. Speech was simulated.
+  The test's underlying native clock interruption remains unproven; see the
+  troubleshooting record. Physical-device readability still needs user feedback.
+
 ## 2026-10-13 - Live before assigned speech
 
 - Live now precedes Who said what in visual and DOM order in both app entry points.

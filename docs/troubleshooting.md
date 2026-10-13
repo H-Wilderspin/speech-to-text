@@ -24,6 +24,15 @@
   `latencyHint: 'playback'`, which the [Web Audio specification](https://www.w3.org/TR/webaudio-1.0/#enumdef-audiocontextlatencycategory)
   defines as favouring uninterrupted playback over output latency. This is a
   test-environment experiment; production context options remain unchanged.
+- **Publication restored:** commit `915d0eb`,
+  [run 38434066037](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38434066037),
+  passes all 68 Linux Chromium/WebKit tests (6.1m), plus three capture-start probes.
+  Pages deployment succeeded. Windows Chromium/WebKit published-page checks verify
+  `main-D-E0zGxe.js`, light mode, Live-first ordering, bottom controls, steady
+  captions and light Settings without page errors. The revised fixture also passed
+  twice locally (53.2s). This validates the buffered fixture in this run, not a
+  proven explanation or fix for every native clock interruption. Production
+  bundles are unchanged from the requested pane-order update.
 - **Prevention:** pushing is not deployment confirmation. Check the workflow result
   and served bundle before telling the user a change is live. When Pages has
   updated, the installed PWA still waits for old tabs to close before activating
