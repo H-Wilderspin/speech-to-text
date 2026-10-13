@@ -1,5 +1,39 @@
 # Feasibility evidence
 
+## 2026-10-13 - Packaged PC service and separate comparison page
+
+- **Scope:** user chose a separate endpoint and PC hosting through a temporary
+  Cloudflare HTTPS relay, with no subscription. Original native live engine remains;
+  `compare.html` uses independent delayed PCM inference and existing local profiles.
+- **Packaging:** Python 3.13, Torch/torchaudio 2.8.0, Transformers 4.57.6,
+  WhisperX 3.8.6 and pyannote.audio 4.0.7 resolve without declared dependency
+  conflicts (`pip check` passes). Native sherpa-onnx 1.13.8 uses the pinned ERes2Net
+  bytes; generated browser/native reference cosines are 0.99999994 and 1.00000002.
+- **Reproduction:** same eight generated fixtures, 117 seconds: 120/123 correct
+  known words, 0/41 false unknown names, 9/11 complete utterances, all 11 endings,
+  zero assigned overlap words. Measured serial processing totals 57.876 seconds.
+  These are still synthetic same-set results, not held-out human validation.
+- **HTTP windows:** three consecutive copies of the known-long fixture (49.95s)
+  traverse three overlapping jobs against the actual local HTTP service. Jobs
+  return 37, 30 and 11 owned/named words, with processing 14.249s, 15.247s and
+  2.515s. See [aggregate scoring](service-benchmark-results.json).
+- **Network unresolved:** public tunnel allocation succeeds but the client exits:
+  SRV lookup returns zero Cloudflare regions. Explicit SRV queries through both
+  the default resolver and 1.1.1.1 unexpectedly return A records in this execution
+  environment. Local service `/health` succeeds; public address returns 1033/530.
+  No working phone endpoint is claimed. Launcher now requires public health before
+  publishing a private link. A normal local-terminal launch remains to be tested.
+- **Checks:** 231 JS tests/typecheck/lint/build, four Python HTTP/policy tests,
+  and all runnable Chromium/WebKit browser cases pass across the full and focused
+  runs. Six Web Audio cases are skipped on this Windows WebKit port; this is not
+  physical Safari verification. An initial preview/build race returned root 404;
+  the original-page rerun passed after build completion. The comparison's real
+  worklet/HTTP-adapter test verifies voice Stop releases capture, flushes one
+  payload, preserves live words, and shows names only above (mocked inference).
+  A same-document private-link update regression is covered in both browsers.
+  No physical Pixel 8 or iPhone test has been performed on this new route.
+
+
 ## 2026-10-13 - Community-1 plus per-turn identity and aligned words
 
 - **Setup:** user verified Hugging Face login/model access. Same eight generated

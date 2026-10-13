@@ -1,5 +1,35 @@
 # Troubleshooting
 
+## 2026-10-13 - PC service packaging and tunnel connectivity
+
+- **Verified packaging:** use the fully resolved Windows service environment,
+  not the partial research WhisperX installation. `pip check` passes with Torch
+  2.8.0, Transformers 4.57.6 and the pinned full freeze in `service/`. All eight
+  actual model probes reproduce the research aggregate attribution result.
+- **Decoder warning:** TorchCodec cannot load its FFmpeg DLLs here. The exercised
+  service accepts only already decoded PCM arrays/tensors, so its paths do not
+  invoke that decoder; all eight cases complete. Arbitrary file decoding is not
+  supported by this service. The existing wav2vec2 training-only mask warning also
+  remains; evaluation results match the prior probe.
+- **HTTPS test client:** HTTPX's default certificate bundle rejected the local
+  network's chain. Python `ssl.create_default_context()` includes the Windows
+  trust store and verifies it successfully; TLS checks remain enabled.
+- **Unresolved relay:** Cloudflare 2026.10.0 obtains a URL then exits with
+  `expected at least 2 Cloudflare Regions regions, but SRV only returned 0`.
+  Both explicit resolver probes return an A record instead of SRV in the tool
+  environment. The public endpoint consequently reports 1033; local HTTP works.
+  No DNS/system security changes were made. Launcher now verifies public health
+  and cleans up on failure. Next check: launch from a normal local PowerShell
+  terminal. A URL printed during allocation is not evidence of a connected tunnel.
+- **Comparison connection link:** navigating to another fragment on an already
+  open page does not remount React. Listen therefore kept the old/missing service
+  setting. A hash-change handler now stops the prior session, imports the new
+  connection and removes the fragment. Chromium/WebKit regression verifies this.
+- **Check ordering:** a preview started while Vite was replacing `dist` returned
+  root 404 and the first UI test timed out. Waiting for build completion before
+  starting preview resolves it; the unchanged original-page test then passes.
+
+
 ## 2026-10-13 - Mixed cluster identity and early word timestamps isolated
 
 - **Evidence:** replacing the old delayed diarizer with Community-1 still groups

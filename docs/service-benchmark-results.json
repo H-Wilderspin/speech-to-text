@@ -1,0 +1,45 @@
+{
+  "syntheticOnly": true,
+  "metrics": {
+    "referenceWords": 164,
+    "recognizedWords": 164,
+    "edits": 2,
+    "knownWords": 123,
+    "correctlyNamedWords": 120,
+    "namedWords": 122,
+    "wrongNamesOnAlignedWords": 0,
+    "unknownReferenceWords": 41,
+    "falseNamesOnUnknownAlignedWords": 0,
+    "unalignedNamedInsertions": 0,
+    "knownUtterances": 11,
+    "completeCorrectKnownUtterances": 9,
+    "correctOpeningWords": 9,
+    "correctClosingWords": 11
+  },
+  "overlapAssignedWords": 0,
+  "nativeWasmCosine": {
+    "Hazel": 0.9999999420445647,
+    "Zira": 1.0000000246625227
+  },
+  "totalProcessingMs": 57876,
+  "httpWindows": {
+    "seconds": 49.95,
+    "windows": 3,
+    "metrics": {
+      "referenceWords": 78,
+      "recognizedWords": 78,
+      "edits": 0,
+      "knownWords": 78,
+      "correctlyNamedWords": 78,
+      "namedWords": 78,
+      "wrongNamesOnAlignedWords": 0,
+      "unknownReferenceWords": 0,
+      "falseNamesOnUnknownAlignedWords": 0,
+      "unalignedNamedInsertions": 0,
+      "knownUtterances": 6,
+      "completeCorrectKnownUtterances": 6,
+      "correctOpeningWords": 6,
+      "correctClosingWords": 6
+    }
+  }
+}

@@ -5,3 +5,4 @@ playwright-report/
 *.local
 research/private/
 debug.log
+__pycache__/

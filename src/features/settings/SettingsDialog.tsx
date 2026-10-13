@@ -1,17 +1,18 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { NameSuggestions } from './NameSuggestions';
 import type { LocalListeningEngine } from '../../transcription/local/types';
 import { SpeakerSettings, type SpeakerServices } from '../speakers/SpeakerSettings';
 import type { SpeakerColourChoices } from '../speakers/colours';
 import { Icon } from '../../shared/Icon';
 
-export function SettingsDialog({ active, textSize, onTextSize, language, onLanguage, installFailed, onClose, localEngine, createSpeakers, colours, onColours, onStop, hiddenSpeakers, onHiddenSpeakers }: {
+export function SettingsDialog({ active, textSize, onTextSize, language, onLanguage, installFailed, onClose, localEngine, createSpeakers, colours, onColours, onStop, hiddenSpeakers, onHiddenSpeakers, extraSettings, processingDescription }: {
   active: boolean; textSize: number; onTextSize: (size: number) => void;
   language: string; onLanguage: (language: string) => void; installFailed: boolean;
   onClose: () => void; onStop: () => void;
   localEngine?: LocalListeningEngine; createSpeakers: () => SpeakerServices;
   colours: SpeakerColourChoices; onColours: (colours: SpeakerColourChoices) => void;
   hiddenSpeakers: string[]; onHiddenSpeakers: (ids: string[]) => void;
+  extraSettings?: ReactNode; processingDescription?: string;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -24,6 +25,7 @@ export function SettingsDialog({ active, textSize, onTextSize, language, onLangu
       <h2 id="settings-title">Settings</h2>
     </header>
     <div className="settings-content">
+    {extraSettings}
     <section aria-label="Caption preferences">
       <h3>Text size</h3>
       <div className="text-controls" role="group" aria-label="Text size">
@@ -43,7 +45,7 @@ export function SettingsDialog({ active, textSize, onTextSize, language, onLangu
     {localEngine && <NameSuggestions engine={localEngine} />}
     {installFailed && <p role="status">Offline installation unavailable.</p>}
     <details><summary>About</summary>
-      <p>Speech uses your browser’s provider. Voiceprints stay on this device.</p>
+      <p>{processingDescription ?? 'Speech uses your browser’s provider. Voiceprints stay on this device.'}</p>
       <p><a href={`${import.meta.env.BASE_URL}speaker/THIRD-PARTY-NOTICES.txt`} target="_blank" rel="noreferrer">Voice model licences</a>
         {' · '}<a href={`${import.meta.env.BASE_URL}local/THIRD-PARTY-NOTICES.txt`} target="_blank" rel="noreferrer">Speech model licences</a></p>
     </details>

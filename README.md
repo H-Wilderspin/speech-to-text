@@ -1,11 +1,20 @@
 # Speech-to-Text PWA
 
+**Separate PC comparison (2026-10-13):** `compare.html` keeps the native live
+captions below and uses the new Python pipeline for delayed names above. It shares
+saved profiles/settings with the original app. The user chose PC hosting through
+a temporary HTTPS link; no hosting subscription is enabled. See
+[start/stop and test instructions](service/README.md) and
+[ADR 0035](docs/decisions/0035-separate-pc-comparison-endpoint.md).
+The original page and listening engines remain available unchanged. Public tunnel
+connectivity and physical-device acceptance are tracked in the feasibility notes.
+
 **Local comparison (2026-10-13):** delayed Whisper, Community-1 speech turns,
 per-turn identity matching and word alignment correctly name 120/123 known words,
 with zero false names on 41 unknown words and 9/11 complete utterances in generated
-speech. Human validation and service integration remain outstanding. See the
+speech. The separate service reproduces those results; human validation remains outstanding. See the
 [measured comparison and recommended next step](docs/community-benchmark.md).
-Live captions and the published app are unchanged.
+The original app's live captions are unchanged.
 
 ## Implementation status — 2026-10-12
 
