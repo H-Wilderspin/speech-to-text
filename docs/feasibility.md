@@ -7,7 +7,7 @@
   locally served and included in the offline precache. No runtime font-provider
   request. Settings max-width 1000px, outside dismissal, People first, final
   equal-width text/language fields and a real-size number preview.
-- **Checks so far:** typecheck, lint, 231 unit tests, pinned assets and production
+- **Checks:** typecheck, lint, 231 unit tests, pinned assets and production
   build pass. New desktop dismissal/drag/focus/active-session checks pass in both
   Chromium and WebKit. Both engines load font files from the project-path cache
   after offline reload; 320px and enlarged-system-text layout checks pass.
@@ -15,7 +15,15 @@
   it is now near the top. The scroll check targets the final language control.
   Matching thresholds, voice processing and caption reconciliation are unchanged.
   After that correction all 14 focused browser cases pass across the initial run
-  and two-case rerun. Full Linux CI and publication are pending at this commit.
+  and two-case rerun.
+- **Publication:** commit `5e9e674654706c3bf7c91525d0ff7e6dc6173142`,
+  [run 38421314108](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38421314108),
+  passed three repeated capture starts and all 66 Linux Chromium/WebKit cases
+  in 6.1 minutes, with no skips. Build and Pages deployment succeeded. Published
+  page checks on Windows Chromium/WebKit verify the new bundle, loaded Poppins
+  weights, centred 1000px settings, field order, equal columns, actual-size preview,
+  backdrop dismissal, restored focus and preserved active captions with no page
+  errors. Recognition was simulated; no new matching-accuracy claim is made.
 - **Visual review:** 1440x900 desktop and 390x844 mobile screenshots inspected.
   Physical phone typography and touch dismissal remain unverified.
 
