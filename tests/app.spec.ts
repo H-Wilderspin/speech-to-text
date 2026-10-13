@@ -157,6 +157,48 @@ test('assigned pane toggles with keyboard, preserves live speech and remembers i
   await page.screenshot({ path: `test-results/expanded-pane-${test.info().project.name}.png` });
 });
 
+test('Poppins settings centre, order people first, preview size and dismiss only outside the panel', async ({ page }) => {
+  await mockRecognition(page); await page.setViewportSize({ width: 1440, height: 900 }); await page.goto('/');
+  await page.getByRole('button', { name: 'Listen', exact: true }).click();
+  await result(page, 'A clear live sentence.', true);
+  const text = page.getByRole('region', { name: 'Live transcript' }).locator('p.confirmed');
+  await expect(text).toHaveCSS('font-weight', '400');
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.evaluate(() => document.fonts.ready);
+  expect(await page.evaluate(() => document.fonts.check('400 32px Poppins') && document.fonts.check('600 14px Poppins'))).toBe(true);
+  await expect(page.locator('body')).toHaveCSS('font-family', 'Poppins, sans-serif');
+  const dialog = page.getByRole('dialog');
+  expect(await dialog.boundingBox()).toEqual({ x: 220, y: 0, width: 1000, height: 900 });
+  await expect(page.locator('.settings-content > section').first()).toHaveAttribute('aria-labelledby', 'saved-speakers-title');
+  await expect(page.locator('.settings-content > :last-child')).toHaveAttribute('aria-label', 'Caption preferences');
+  await expect(page.getByRole('heading', { name: 'Text size', exact: true })).toHaveCount(0);
+  await expect(page.locator('#text-size-label')).toHaveCSS('text-transform', 'uppercase');
+  await expect(page.locator('#text-size-label')).toHaveCSS('letter-spacing', '1.12px');
+  await expect(page.getByText('No speakers yet.', { exact: true })).toHaveCSS('font-size', '14px');
+  await expect(page.getByText('No speakers yet.', { exact: true })).toHaveCSS('font-weight', '400');
+  await expect(page.locator('.size-preview')).toHaveCSS('font-size', '32px');
+  await page.getByRole('button', { name: 'Larger text' }).click();
+  await expect(page.locator('.size-preview')).toHaveCSS('font-size', '36px');
+  await expect(page.getByLabel('Speech language')).toBeDisabled();
+  const controls = await page.locator('.display-control').evaluateAll((elements) => elements.map((element) => {
+    const box = element.getBoundingClientRect(); return { x: box.x, y: box.y, width: box.width };
+  }));
+  expect(controls[0]!.width).toBe(controls[1]!.width);
+  expect(controls[0]!.y).toBe(controls[1]!.y);
+  expect(controls[1]!.x).toBeGreaterThan(controls[0]!.x + controls[0]!.width);
+  await page.screenshot({ path: `test-results/settings-desktop-${test.info().project.name}.png` });
+  // An inside click or a drag out of the panel must not dismiss it.
+  await page.locator('#settings-title').click(); await expect(dialog).toBeVisible();
+  await page.mouse.move(600, 40); await page.mouse.down(); await page.mouse.move(40, 40); await page.mouse.up();
+  await expect(dialog).toBeVisible();
+  await page.mouse.click(40, 150); await expect(dialog).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Settings', exact: true })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeEnabled();
+  await expect(text).toHaveText('A clear live sentence.');
+  await expect(text).toHaveCSS('font-size', '36px');
+  await page.getByRole('button', { name: 'Stop', exact: true }).click();
+});
+
 test('growing hypotheses render once, listening restarts, and a spoken command stops it', async ({ page }) => {
   await mockRecognition(page); await page.goto('/');
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
@@ -334,6 +376,12 @@ test('subdirectory deployment installs scoped assets and opens offline', async (
   await page.reload(); await context.setOffline(true); await page.reload();
   await expect(page.getByRole('button', { name: 'Settings', exact: true })).toBeVisible();
   await expect(page.getByText('You’re offline.', { exact: false })).toBeVisible();
+  const fonts = await page.evaluate(async () => Promise.all(['Poppins-Regular.ttf', 'Poppins-SemiBold.ttf'].map(async (file) => {
+    const response = await fetch(`./fonts/${file}`); return { ok: response.ok, bytes: (await response.arrayBuffer()).byteLength };
+  })));
+  expect(fonts).toEqual([{ ok: true, bytes: 160316 }, { ok: true, bytes: 157312 }]);
+  await page.evaluate(() => document.fonts.ready);
+  expect(await page.evaluate(() => document.fonts.check('400 32px Poppins'))).toBe(true);
 });
 
 test('reading earlier speech preserves scroll and returning to bottom resumes following', async ({ page }) => {

@@ -330,7 +330,7 @@ test('settings fills the viewport with inline protected speaker pills and a retu
   await page.getByRole('button', { name: 'Confirm delete Alex', exact: true }).click();
   await expect(pill).toHaveCount(0);
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('speech-to-text-display:/')!).hiddenSpeakers)).toEqual([]);
-  await page.locator('#add-speaker-title').scrollIntoViewIfNeeded();
+  await page.getByLabel('Speech language').scrollIntoViewIfNeeded();
   expect(await page.getByRole('dialog').evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
   await page.screenshot({ path: `test-results/settings-single-pane-${test.info().project.name}.png` });
   await page.getByRole('button', { name: 'Back to captions' }).click();

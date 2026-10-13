@@ -8,6 +8,13 @@ fill the remaining space and the display choice is remembered. Collapsing change
 the display only; existing local attribution continues and its accuracy limitations
 remain. See [ADR 0037](docs/decisions/0037-browser-plan-collapsible-attribution.md).
 
+**Typography and Settings:** Poppins is bundled for online/offline use. The UI has
+small (14px), medium (16px) and large caption sizes (32px initially, adjustable).
+Descriptions/captions use weight 400; labels use uppercase, spaced lettering.
+Settings centres at up to 1000px, closes on outside click and lists People first.
+Text size and language share the final row; the size number previews caption size.
+Values scale with browser text settings. See ADR 0038.
+
 The separate [PC comparison](https://h-wilderspin.github.io/speech-to-text/compare.html)
 and [service setup](service/README.md) are retained as inactive research, not the
 current deployment plan. No personal-PC installation or working public tunnel was

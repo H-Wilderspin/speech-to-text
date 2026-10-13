@@ -22,6 +22,14 @@ Deliver a **small, accessible, static-hosted TypeScript PWA** for live speech tr
 
 ## Architecture rules
 
+**Typography/settings update (2026-10-13):** locally hosted Poppins, three size
+roles (small labels/descriptions, medium controls/headings, adjustable large
+captions). Descriptions/captions use weight 400; labels uppercase with added
+tracking/line spacing. Settings remains full-height and scrollable, but is centred
+with max-width 1000px and dismisses on backdrop clicks. People first; text size
+and language last, in equal adjacent columns. This supersedes the earlier
+unlimited settings width. See ADR 0038.
+
 **Browser plan restored (2026-10-13):** the PC service is inactive research, not a
 required setup path. The main app's Who said what pane starts collapsed and keeps
 its display choice in preferences; toggling must preserve captions and listening.
