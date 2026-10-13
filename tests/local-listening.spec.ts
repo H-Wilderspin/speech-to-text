@@ -172,6 +172,7 @@ test('Android provisional words receive delayed names and activity filters only 
   const stages = new Set<string>();
   let voiceDiagnosticsComplete = false;
   page.on('console', (message) => {
+    if (message.text().startsWith('[generated-clock]')) console.error(message.text());
     if (message.type() === 'info' && message.text().startsWith('[who-said-what]')) {
       const line = message.text(); stages.add(line.split(' ')[1]!);
       // Text copied directly from DevTools must retain the complete JSON payload.
@@ -185,6 +186,14 @@ test('Android provisional words receive delayed names and activity filters only 
         voiceDiagnosticsComplete = true;
       }
     }
+  });
+  await page.route('**/assets/stream-worklet-*.js', async (route) => {
+    const response = await route.fetch(); const source = await response.text();
+    const marker = "this.fail('The audio clock was interrupted.')";
+    expect(source).toContain(marker);
+    // Generated test audio only. Keep the exact production rejection branch.
+    await route.fulfill({ response, body: source.replace(marker,
+      `(console.info('[generated-clock] ' + JSON.stringify({expected: this.expectedRenderFrame, actual: currentFrame, samples: input.length, accepted: this.nextSample, partial: this.used})), ${marker})`) });
   });
   await page.goto('/?debugSpeakers=1');
   const supported = await page.evaluate(() => Boolean(globalThis.AudioContext && globalThis.AudioWorkletNode));
@@ -202,7 +211,7 @@ test('Android provisional words receive delayed names and activity filters only 
     Object.defineProperty(navigator, 'userAgent', { value: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) Chrome/130.0.0.0 Mobile Safari/537.36' });
     let calls = 0; let stops = 0; const contexts: AudioContext[] = [];
     const NativeAudioContext = globalThis.AudioContext;
-    const sources = new WeakMap<MediaStream, { release: () => void }>();
+    const sources = new WeakMap<MediaStream, { destination: MediaStreamAudioDestinationNode; release: () => void }>();
     class FixtureContext extends NativeAudioContext {
       constructor(options?: AudioContextOptions) { super(options); contexts.push(this); }
       createMediaStreamSource(stream: MediaStream) {
@@ -217,7 +226,9 @@ test('Android provisional words receive delayed names and activity filters only 
     }
     Object.assign(globalThis, { AudioContext: FixtureContext });
     Object.defineProperty(navigator, 'mediaDevices', { value: { getUserMedia: async () => {
-      calls++; const destination = contexts.pop()!.createMediaStreamDestination(); const fixture = { release: () => {} };
+      calls++; const destination = contexts.pop()!.createMediaStreamDestination();
+      // Own the native destination for the lifetime of its simulated microphone.
+      const fixture = { destination, release: () => {} };
       sources.set(destination.stream, fixture); const track = destination.stream.getAudioTracks()[0]!; const stop = track.stop.bind(track);
       track.stop = () => { stops++; stop(); fixture.release(); sources.delete(destination.stream); };
       return destination.stream;
@@ -256,7 +267,7 @@ test('Android provisional words receive delayed names and activity filters only 
   const known = assigned.locator('.caption').filter({ hasText: 'Generated test voice (estimate)' }).first();
   const textColour = await known.locator('p').evaluate((element) => getComputedStyle(element).color);
   expect(textColour).toBe(await known.locator('.caption-speaker').evaluate((element) => getComputedStyle(element).color));
-  expect(textColour).not.toBe('rgb(209, 213, 219)'); // Unknown's neutral colour.
+  expect(textColour).not.toBe(await transcript.locator('.caption').first().evaluate((element) => getComputedStyle(element).color));
   expect(await transcript.locator('p.interim').evaluate((element) => element.firstChild?.textContent)).toBe(browserText);
   await expect(transcript.locator('p.interim')).toHaveCount(1);
   await expect(transcript.locator('.caption-speaker')).toHaveCount(0);

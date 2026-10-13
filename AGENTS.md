@@ -101,6 +101,8 @@ For each change:
 - Verify failure modes: permission denial, unsupported API, app interruption, model loading failure, microphone release, no network (where applicable).
 - Meet accessibility expectations: scalable typography, contrast, touch targets, meaningful speaker labels, accessible status messages.
 - Before marking done, check acceptance criteria; report what passed, what was untested and any known limitations.
+- When publishing changes, follow CI through deployment and verify the served page.
+  A successful push alone does not confirm publication; investigate failed checks.
 
 ## Self-documentation and continuous learning
 

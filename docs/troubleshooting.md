@@ -1,5 +1,26 @@
 # Troubleshooting
 
+## 2026-10-13 - Pushed UI changes absent from Pages (audio-clock cause unresolved)
+
+- **Symptom:** user still sees dark mode after light-theme, toolbar and pane-order
+  changes were pushed. Direct HTTPS HTML still references `main-CFr_ckOU.js` and
+  the dark theme. This is withheld deployment, not evidence of a phone cache fault.
+- **Evidence:** runs `38427842847`, `38430443334` and `38430958781` all fail the
+  generated Android attribution test in Chromium: audio clock interrupted, one
+  microphone opened/released, no matching name. The last run passes 67 other cases.
+  Two unchanged local Windows Chromium repetitions pass (52.7s total).
+- **Investigation:** retain the simulated destination explicitly in its fixture
+  record and instrument the existing worklet rejection branch with expected/actual
+  render frames and sample counts. This is diagnostic hardening, not a proven
+  clock fix. No production clock check, recognition or identity threshold changes.
+  Compare speaker colour against the current live neutral colour rather than the
+  old dark-theme literal. Stop CI on the first failure, retaining all tests on a
+  successful run. Linux verification and publication are pending.
+- **Prevention:** pushing is not deployment confirmation. Check the workflow result
+  and served bundle before telling the user a change is live. When Pages has
+  updated, the installed PWA still waits for old tabs to close before activating
+  its new worker; do not clear voiceprint storage to resolve this.
+
 ## 2026-10-13 - Preparing a different Windows PC
 
 - **Cause of setup gap:** the original launcher expected an ignored local venv,
