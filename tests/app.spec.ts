@@ -133,6 +133,7 @@ test('three bottom controls leave the viewport to captions and settings preserve
 
 test('assigned pane toggles with keyboard, preserves live speech and remembers its state', async ({ page }) => {
   await mockRecognition(page); await page.setViewportSize({ width: 390, height: 844 }); await page.goto('/');
+  expect(await page.locator('.caption-panes > section').evaluateAll((elements) => elements.map((element) => element.getAttribute('aria-label')))).toEqual(['Live captions', 'Who said what']);
   const toggle = page.getByRole('button', { name: 'Who said what', exact: true });
   const live = page.getByRole('region', { name: 'Live transcript' });
   const assigned = page.getByRole('region', { name: 'Assigned transcript' });
@@ -143,6 +144,7 @@ test('assigned pane toggles with keyboard, preserves live speech and remembers i
   await toggle.focus(); await page.keyboard.press('Enter');
   await expect(toggle).toHaveAttribute('aria-expanded', 'true');
   await expect(assigned).toBeVisible();
+  expect((await live.boundingBox())!.y + (await live.boundingBox())!.height).toBeLessThanOrEqual((await toggle.boundingBox())!.y);
   expect((await live.boundingBox())!.height).toBeLessThan(fullHeight * .65);
   await result(page, 'One sentence grows once.', true);
   await expect(live.locator('.caption')).toHaveCount(1);

@@ -1,5 +1,15 @@
 # Feasibility evidence
 
+## 2026-10-13 - Live before assigned speech
+
+- Live now precedes Who said what in visual and DOM order in both app entry points.
+  The collapsed layout gives the first row the remaining reading space and keeps
+  Who said what immediately above the bottom controls.
+- Typecheck, lint, 232 unit tests, assets and production build pass. Six focused
+  Chromium/WebKit cases pass: pane order in expanded/collapsed layouts, persisted
+  collapse, keyboard use, stable live text, Settings and bottom controls. Mobile
+  screenshot reviewed; physical-device layout remains unverified.
+
 ## 2026-10-13 - Bottom caption controls
 
 - Moved Listen/Stop, Clear and Settings after the reading content in both app

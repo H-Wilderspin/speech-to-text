@@ -27,7 +27,7 @@ main { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .text-controls button { flex: 0 0 48px; padding: .5rem .25rem; }
 .size-preview { text-align: center; font-weight: 400; line-height: 1.6; }
 .caption-panes { flex: 1; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
-.caption-panes.assigned-collapsed { grid-template-rows: auto minmax(0, 1fr); }
+.caption-panes.assigned-collapsed { grid-template-rows: minmax(0, 1fr) auto; }
 .transcript-area { display: flex; flex-direction: column; min-height: 0; }
 .transcript-area + .transcript-area { border-top: 1px solid #7b8791; }
 .pane-title { flex-shrink: 0; color: #505b65; margin: .5rem .25rem 0; }

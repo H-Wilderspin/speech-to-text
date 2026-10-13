@@ -22,6 +22,10 @@ Deliver a **small, accessible, static-hosted TypeScript PWA** for live speech tr
 
 ## Architecture rules
 
+**Pane order (2026-10-13):** Live comes first, then collapsible Who said what, then
+the bottom controls. This supersedes earlier references to assigned speech above
+Live. Preserve this visual and DOM order in both app entry points.
+
 **Bottom controls (2026-10-13):** Listen, Clear and Settings sit after the captions
 in a non-scrolling bottom bar, respecting the bottom safe area. Keep reading first
 in both the visual layout and DOM order; do not overlay or duplicate controls.

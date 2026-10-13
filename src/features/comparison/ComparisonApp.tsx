@@ -65,8 +65,8 @@ export function ComparisonApp({ browser, remote, database }: { browser: Transcri
       <p className="notice" role="status">{delayed.status}</p>
       {(live.phase === 'error' || browser.unavailableReason) && <p className="notice error" role="alert">{browser.unavailableReason ?? live.message}</p>}
       <div className="caption-panes">
-        <Transcript segments={delayed.segments} textSize={preferences.textSize} assigned colours={preferences.colours} hiddenSpeakers={preferences.hiddenSpeakers} />
         <Transcript segments={live.segments} textSize={preferences.textSize} />
+        <Transcript segments={delayed.segments} textSize={preferences.textSize} assigned colours={preferences.colours} hiddenSpeakers={preferences.hiddenSpeakers} />
       </div>
     </main>
     <footer className="toolbar" aria-label="Caption controls">
