@@ -1,13 +1,16 @@
 # Speech-to-Text PWA
 
-**Separate PC comparison (2026-10-13):** `compare.html` keeps the native live
+**Separate PC comparison (2026-10-13):** the published
+[comparison page](https://h-wilderspin.github.io/speech-to-text/compare.html) keeps the native live
 captions below and uses the new Python pipeline for delayed names above. It shares
 saved profiles/settings with the original app. The user chose PC hosting through
 a temporary HTTPS link; no hosting subscription is enabled. See
 [start/stop and test instructions](service/README.md) and
 [ADR 0035](docs/decisions/0035-separate-pc-comparison-endpoint.md).
-The original page and listening engines remain available unchanged. Public tunnel
-connectivity and physical-device acceptance are tracked in the feasibility notes.
+The original page and listening engines remain available unchanged. The page is
+deployed; phone access to the PC service still needs a successful local-terminal
+tunnel launch. Public connectivity and physical-device acceptance are tracked in
+the feasibility notes.
 
 **Local comparison (2026-10-13):** delayed Whisper, Community-1 speech turns,
 per-turn identity matching and word alignment correctly name 120/123 known words,

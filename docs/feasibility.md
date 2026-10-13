@@ -32,6 +32,15 @@
   payload, preserves live words, and shows names only above (mocked inference).
   A same-document private-link update regression is covered in both browsers.
   No physical Pixel 8 or iPhone test has been performed on this new route.
+- **Publication:** code commit `26ce54f812b0a01aa6d5d193eee26c916eedee9d`,
+  [Actions run 38391457113](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38391457113),
+  passed three repeated comparison capture starts and all 62 Linux browser tests
+  with no skips, then deployed successfully. Published original and comparison
+  pages return HTTP 200. Windows Chromium/WebKit smoke checks on both published
+  pages verify one evolving live line, no lower-pane names, Stop and Settings,
+  with no page errors. Recognition was simulated; neither physical microphone
+  capture nor a public connection to the PC was exercised. The service is stopped
+  after the failed tunnel attempt; normal-terminal launch is still pending.
 
 
 ## 2026-10-13 - Community-1 plus per-turn identity and aligned words

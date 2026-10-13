@@ -43,6 +43,16 @@
   used by the passing existing streaming fixture, and add a fast three-start CI
   check before the full suite. This is a test-source experiment; the browser's
   underlying clock-discontinuity cause is not yet established.
+- **Linux confirmation:** commit `26ce54f` passed the three-start probe (9.6s)
+  and all 62 Chromium/WebKit browser checks (5.3m), without skips, in
+  [run 38391457113](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38391457113).
+  Deployment succeeded. This validates the revised generated source in these runs;
+  it does not establish or repair the oscillator's underlying clock interruption.
+  Published-page Chromium/WebKit checks also pass for both entry points with
+  simulated speech. An initial ad hoc smoke assertion used exact text and timed
+  out because interim captions include the screen-reader-only `Unconfirmed` label;
+  using the suite's containment assertion verifies the displayed words without
+  changing production accessibility markup.
 
 
 ## 2026-10-13 - Mixed cluster identity and early word timestamps isolated
