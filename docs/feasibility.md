@@ -1,5 +1,27 @@
 # Feasibility evidence
 
+## 2026-10-13 - Personal Windows computer preparation
+
+- **Selection:** user chose a personal Windows computer outside the work VPN;
+  specifications unknown. Setup uses the existing CPU pipeline, not hosted inference.
+- **Prepared:** first-time PowerShell setup checks SRV discovery and Windows x64,
+  creates the Python 3.13 environment, installs pinned requirements, prepares the
+  pinned models, checks the Cloudflare binary hash and validates offline startup.
+  The guide explains HF read-token login and continued use of the same phone
+  browser's saved profiles. No private files are transferred from the work PC.
+- **Evidence here:** cached model preparation and one second of silence pass;
+  all four Python boundary tests and `pip check` pass. PowerShell parsing and
+  the native version-check argument pass. The network preflight stops correctly
+  on the reproduced zero-SRV network. Online preparation encounters a certificate
+  trust failure in this managed environment, with TLS verification retained.
+- **Project checks:** typecheck, lint, all 231 JavaScript tests, pinned asset
+  verification and production build pass. Frontend bundle hashes are unchanged;
+  the browser suite was not repeated for this service setup change.
+- **Limits:** no access to the personal PC; full fresh installation, hardware
+  capacity, sustained throughput, public tunnel and phone use remain unverified.
+  Suggested 16 GB RAM/20 GB free space are planning allowances, not measured minima.
+  See [setup instructions](../service/WINDOWS-SETUP.md) and ADR 0036.
+
 ## 2026-10-13 - Packaged PC service and separate comparison page
 
 - **Scope:** user chose a separate endpoint and PC hosting through a temporary

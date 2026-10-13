@@ -1,5 +1,22 @@
 # Troubleshooting
 
+## 2026-10-13 - Preparing a different Windows PC
+
+- **Cause of setup gap:** the original launcher expected an ignored local venv,
+  cached model snapshots and Cloudflare executable; a fresh Git clone lacks them.
+- **Solution:** `service/setup-comparison.ps1` prepares those dependencies locally.
+  Pinned model paths now come from the same module as inference. The setup rejects
+  missing SRV discovery before downloading, without changing DNS or VPN settings.
+- **Verification:** cached offline model initialization and silence processing
+  pass on the existing Windows installation; the known DNS failure stops setup
+  before dependency installation. A fresh personal-PC installation is untested.
+- **Online-download limit:** Requests/Hugging Face's default CA bundle rejects
+  the managed environment's HTTPS chain (`CERTIFICATE_VERIFY_FAILED`). The download
+  command now reports this directly; verification remains enabled. This is separate
+  from SRV discovery. No claim is made that the personal PC will have this issue.
+- **Handoff:** [personal Windows guide](../service/WINDOWS-SETUP.md). The work VPN
+  remains untouched; no work-PC credentials or runtime directory should be copied.
+
 ## 2026-10-13 - Normal-terminal tunnel launch also fails (Unresolved)
 
 - **Evidence:** user reports the launcher's pre-connection failure from normal

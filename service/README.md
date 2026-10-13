@@ -6,6 +6,10 @@ The separate page requires a running PC service. Its Settings accepts the servic
 address and private access code; the launcher's private link supplies both.
 Existing profiles on the original GitHub origin/path are reused automatically.
 
+**New personal Windows PC:** follow [the one-time setup](WINDOWS-SETUP.md).
+`setup-comparison.ps1` installs the tested environment and prepares the pinned
+models; it does not need the work PC's caches, credentials or Node.js installation.
+
 ## Start and stop (Windows)
 
 From the repository root:
@@ -46,7 +50,7 @@ The service uses the already downloaded, pinned benchmark model snapshots and
 NLTK files in `research/private/comparison` (see `pipeline.py` and the Community-1
 benchmark report). It starts offline and never downloads models in response to
 phone audio. Model preparation on another PC requires the approved HF model
-access and benchmark download steps; don't commit or publish gated weights.
+access and `setup-comparison.ps1`; don't commit or publish gated weights.
 The voice model's checksum is verified at startup.
 
 Cloudflare client: official `cloudflare/cloudflared` release **2026.10.0**, Windows

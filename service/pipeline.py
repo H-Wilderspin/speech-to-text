@@ -1,6 +1,5 @@
 """The winning synthetic benchmark route, with all models loaded once on CPU."""
 import os
-from pathlib import Path
 import hashlib
 import time
 
@@ -9,9 +8,8 @@ os.environ["PYANNOTE_METRICS_ENABLED"] = "0"
 os.environ["HF_HUB_OFFLINE"] = "1"
 
 from .policy import isolated, unique_identity, word_identity
+from .model_assets import CACHE, VOICE, VOICE_SHA256, model_path
 
-ROOT = Path(__file__).resolve().parents[1]
-CACHE = ROOT / "research/private/comparison"
 os.environ["NLTK_DATA"] = str(CACHE / "nltk")
 
 
@@ -25,11 +23,8 @@ class Pipeline:
 
         torch.set_num_threads(4)
         torch.set_num_interop_threads(1)
-        whisper = CACHE / "models/models--Systran--faster-whisper-small.en/snapshots/d1d751a5f8271d482d14ca55d9e2deeebbae577f"
-        community = CACHE / "community-models/models--pyannote--speaker-diarization-community-1/snapshots/3533c8cf8e369892e6b79ff1bf80f7b0286a54ee"
-        alignment = CACHE / "alignment-models/models--facebook--wav2vec2-base-960h/snapshots/22aad52d435eb6dbaf354bdad9b0da84ce7d6156"
-        voice = ROOT / "public/speaker/v1/embedding.onnx"
-        if hashlib.sha256(voice.read_bytes()).hexdigest() != "c59158379255ad66e161679cca6af8d52d51e389e3224ab7d7a7baae295c2db5":
+        whisper, community, alignment = (model_path(name) for name in ["whisper", "community", "alignment"])
+        if hashlib.sha256(VOICE.read_bytes()).hexdigest() != VOICE_SHA256:
             raise RuntimeError("Voice model checksum mismatch")
         self.whisper = WhisperModel(str(whisper), device="cpu", compute_type="int8", cpu_threads=4, num_workers=1)
         self.diarizer = Diarizer.from_pretrained(community).to(torch.device("cpu"))
@@ -37,7 +32,7 @@ class Pipeline:
         processor = Wav2Vec2Processor.from_pretrained(alignment, local_files_only=True)
         self.metadata = {"language": "en", "dictionary": {char.lower(): code for char, code in processor.tokenizer.get_vocab().items()}, "type": "huggingface"}
         self.extractor = sherpa_onnx.SpeakerEmbeddingExtractor(sherpa_onnx.SpeakerEmbeddingExtractorConfig(
-            model=str(voice), num_threads=2, debug=False, provider="cpu"))
+            model=str(VOICE), num_threads=2, debug=False, provider="cpu"))
 
     def embed(self, audio):
         import numpy as np

@@ -11,6 +11,9 @@ The original page and listening engines remain available unchanged. The page is
 deployed; phone access to the PC service is blocked by tunnel DNS discovery,
 including the reported normal-terminal launch. Public connectivity and physical-device acceptance are tracked in
 the feasibility notes.
+The user has selected a personal Windows PC outside the managed network;
+[first-time setup and launch instructions](service/WINDOWS-SETUP.md) prepare that
+machine without copying credentials or Python environments from the work PC.
 
 **Local comparison (2026-10-13):** delayed Whisper, Community-1 speech turns,
 per-turn identity matching and word alignment correctly name 120/123 known words,
