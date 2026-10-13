@@ -15,8 +15,15 @@
   toggling, focus, persistence and nonduplicated live text across toggles pass.
   The full local browser run passes 58 cases in 3.8 minutes; six existing Web Audio
   cases skip on Windows WebKit because its APIs are unavailable. Existing local
-  attribution, colours, speaker visibility and profile management pass. Linux CI
-  and publication remain pending at this commit. No physical phone check yet.
+  attribution, colours, speaker visibility and profile management pass.
+- **Publication:** commit `e2f3e18283faa1dd5a598eda3fda9bd6592fe9c3`,
+  [run 38414371482](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38414371482),
+  passed three repeated capture starts and all 64 Linux Chromium/WebKit cases
+  in 5.3 minutes, with no skips. Build and Pages deployment succeeded. Published
+  main-page checks on Windows Chromium/WebKit verify default collapse, expansion,
+  over 650px of Live height when collapsed, one evolving sentence, Stop, persisted
+  choices after reload and no page errors. Recognition was simulated; no physical
+  phone verification or new matching-accuracy measurement is claimed.
 
 ## 2026-10-13 - Personal Windows computer preparation
 
