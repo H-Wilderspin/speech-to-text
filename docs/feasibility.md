@@ -10,9 +10,15 @@
   pass. All 40 Windows Chromium and mobile-WebKit app checks exercise repeated active Clear,
   standard/Android revisions, the same recognizer instance, Stop and a fresh Listen.
   Unit coverage includes delayed names arriving after Clear and subsequent names.
+- **Publication:** commit `f37749c` passed all 72 Linux browser cases (4.9m, no
+  skips), plus three capture-start probes, and deployed in
+  [run 38591566893](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38591566893).
+  Published `main-B7im9kQ_.js` passed Chromium/WebKit smoke tests with both standard
+  and simulated Android results: repeated active Clear, suffix-only updates, no
+  capture restart/abort, Stop, fresh Listen and no page errors.
 - **Limit:** simulated recognition and speaker evidence; no new physical-device
   verification. An unfinished hypothesis that changes its earlier word count can
-  shift the display boundary (ADR 0041). GitHub CI/publication pending.
+  shift the display boundary (ADR 0041).
 - **Phone check:** Listen, say a sentence, tap Clear while Stop is still displayed,
   and say another sentence. Only new speech should appear; Stop/command stop should
   still release the microphone. Check both panes if name suggestions are available.
