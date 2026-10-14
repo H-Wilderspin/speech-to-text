@@ -10,7 +10,14 @@
   pass. All 36 Windows Chromium/WebKit app checks pass, including the original DOM
   caption surviving interim/final revisions, complete consecutive sentences, no
   duplication, scrolling, Android cumulative revisions, Stop/Clear and offline use.
-  Mobile screenshot inspected. Full CI and publication pending at this commit.
+  Mobile screenshot inspected. Commit `df21680` passed all 68 Linux browser cases
+  in 6.0m with no skips, plus three capture-startup probes. Pages publication
+  succeeded in [run 38535568659](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38535568659).
+- **Published verification:** Chromium and WebKit loaded `main-CRQH8UAv.js` from
+  the public site. Simulated interim/final sentences update in place, remain
+  complete and chronological in one viewport, and survive Stop before Clear.
+  Both browsers also confirmed light colours, Live-first order, collapsed
+  attribution, bottom controls and no page errors.
 - **Limit:** simulated recognition verifies presentation; physical-device text
   integrity still needs user confirmation. No recognition or matching change, and
   no claim that the reported problem establishes an underlying data-loss cause.
