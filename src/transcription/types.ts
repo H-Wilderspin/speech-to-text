@@ -22,6 +22,8 @@ export interface TranscriptionSnapshot {
   notice?: string;
   /** Short local processing diagnostic, shown only in Settings; no audio/text. */
   speakerStatus?: string;
+  /** Changes once per consumed browser voice Clear, so composed views reset too. */
+  clearRevision?: number;
   segments: readonly TranscriptSegment[];
 }
 

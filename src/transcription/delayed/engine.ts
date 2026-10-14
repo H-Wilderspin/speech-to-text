@@ -28,9 +28,11 @@ export class DelayedNamesEngine implements LocalListeningEngine {
   private trace = createSpeakerTrace('alignment');
   private lastDiagnostic = '';
   private cleared = new ClearBoundary();
+  private clearRevision: number;
   constructor(private readonly browser: TranscriptionEngine, private readonly local: LocalListeningEngine,
     private readonly profiles?: { database: string; createStore(): ProfileStore }) {
     this.snapshot = browser.getSnapshot();
+    this.clearRevision = this.snapshot.clearRevision ?? 0;
     this.hasSpeakers = !profiles;
   }
   get unavailableReason() { return this.browser.unavailableReason; }
@@ -81,6 +83,10 @@ export class DelayedNamesEngine implements LocalListeningEngine {
   private update() {
     if (this.starting) return;
     const browser = this.browser.getSnapshot();
+    if ((browser.clearRevision ?? 0) !== this.clearRevision) {
+      this.clearRevision = browser.clearRevision ?? 0;
+      this.history = []; this.cleared.reset();
+    }
     // A completed background preparation may join the current browser session.
     // Stop/error must win before any late microphone activation.
     if (this.profiles && !this.namesAttempted && this.local.getPreparationSnapshot().phase === 'ready'

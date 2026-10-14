@@ -293,6 +293,50 @@ describe('browser recognition lifecycle', () => {
     engine.stop(); latest().onend?.();
     expect(engine.getSnapshot().segments.map((s) => s.text)).toEqual(['ready.']);
   });
+  it('clears by voice once, retains following words, and processes later commands in order', () => {
+    engine.start('en-GB'); const native = latest(); native.onstart?.();
+    native.result('Old text. Command clear', false);
+    expect(engine.getSnapshot().segments[0]?.text).toContain('Old text');
+    expect(engine.getSnapshot().clearRevision).toBe(0);
+    const text = 'Old text. Command clear. A fresh sentence.';
+    native.result(text);
+    expect(engine.getSnapshot()).toMatchObject({ phase: 'listening', clearRevision: 1 });
+    expect(engine.getSnapshot().segments.map((s) => s.text)).toEqual(['A fresh sentence.']);
+    native.result(text);
+    expect(engine.getSnapshot().clearRevision).toBe(1);
+    expect(engine.getSnapshot().segments.map((s) => s.text)).toEqual(['A fresh sentence.']);
+    expect(native.stop).not.toHaveBeenCalled(); expect(native.abort).not.toHaveBeenCalled();
+    native.result(`${text} Command clear. Keep this. Command stop. Discard this.`);
+    expect(engine.getSnapshot()).toMatchObject({ phase: 'idle', clearRevision: 2 });
+    expect(engine.getSnapshot().segments.map((s) => s.text)).toEqual(['Keep this.']);
+  });
+  it('handles a voice Clear split across native cycles and clears earlier manual sessions', () => {
+    engine.start('en-GB'); latest().onstart?.(); latest().result('Earlier session.'); engine.stop(); latest().onend?.();
+    engine.start('en-GB'); latest().onstart?.(); latest().result('command'); latest().onend?.();
+    vi.runOnlyPendingTimers(); latest().onstart?.(); latest().result('clear. New text.');
+    expect(engine.getSnapshot()).toMatchObject({ phase: 'listening', clearRevision: 1 });
+    expect(engine.getSnapshot().segments.map((s) => s.text)).toEqual(['New text.']);
+  });
+  it('does not complete a voice Clear across separate manual sessions', () => {
+    engine.start('en-GB'); latest().onstart?.(); latest().result('command'); engine.stop(); latest().onend?.();
+    engine.start('en-GB'); latest().onstart?.(); latest().result('clear');
+    expect(engine.getSnapshot().clearRevision).toBe(0);
+    expect(engine.getSnapshot().segments.map((s) => s.text)).toEqual(['command', 'clear']);
+  });
+  it('waits for Android native completion before voice Clear and resumes listening', () => {
+    engine.dispose(); engine = new BrowserTranscriptionEngine(() => {
+      const instance = new FakeRecognizer(); instances.push(instance); return instance;
+    }, null, 'android-cumulative');
+    engine.start('en-GB'); const native = latest(); native.onstart?.();
+    native.result('Old words. Command clear. Fresh words.');
+    expect(engine.getSnapshot().clearRevision).toBe(0);
+    native.onend?.();
+    expect(engine.getSnapshot()).toMatchObject({ phase: 'listening', clearRevision: 1 });
+    expect(engine.getSnapshot().segments.map((s) => s.text)).toEqual(['Fresh words.']);
+    expect(native.stop).not.toHaveBeenCalled(); expect(native.abort).not.toHaveBeenCalled();
+    vi.runOnlyPendingTimers(); latest().onstart?.(); latest().result('More speech.'); latest().onend?.();
+    expect(engine.getSnapshot().segments.map((s) => s.text)).toEqual(['Fresh words.', 'More speech.']);
+  });
   it('disposes capture and listeners on unmount', () => {
     const listener = vi.fn(); engine.subscribe(listener);
     engine.start('en-GB'); const native = latest(); native.result('Discard on unmount.'); engine.dispose();

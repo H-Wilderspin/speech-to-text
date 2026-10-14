@@ -15,10 +15,14 @@ transcript: each sentence composes in place after earlier speech, with no separa
 current-sentence area. Saved speaker colours keep their colour family using darker
 shades for contrast. See ADR 0040 (reading flow) and ADR 0039 (light colours).
 
-**Clear while listening:** Clear empties both panes while listening continues.
+**Clear while listening:** tap Clear or say **"command clear"** to empty both panes
+while listening continues. Say **"command stop"** to stop listening.
+Voice commands act on confirmed recognition; on Android this can wait until a pause.
+Speech following "command clear" in the same result is kept.
 New words appear normally; delayed names do not restore cleared captions. Ongoing
 recognition keeps bounded in-memory context until the session changes; nothing is
-saved. See [ADR 0041](docs/decisions/0041-clear-during-listening.md).
+saved. See [ADR 0041](docs/decisions/0041-clear-during-listening.md) and
+[ADR 0042](docs/decisions/0042-spoken-clear-command.md).
 
 **Typography and Settings:** Poppins is bundled for online/offline use. The UI has
 small (14px), medium (16px) and large caption sizes (32px initially, adjustable).

@@ -124,6 +124,39 @@ for (const android of [false, true]) test(`Clear keeps listening and only shows 
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
 });
 
+for (const android of [false, true]) test(`command clear clears both panes and continues listening (${android ? 'Android' : 'standard'})`, async ({ page }) => {
+  await mockRecognition(page);
+  if (android) await page.addInitScript(() => Object.defineProperty(navigator, 'userAgent', {
+    value: 'Mozilla/5.0 (Linux; Android 10; K) Chrome/156.0.0.0 Mobile Safari/537.36',
+  }));
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Who said what', exact: true }).click();
+  await page.getByRole('button', { name: 'Listen', exact: true }).click();
+  const live = page.getByRole('region', { name: 'Live transcript', exact: true });
+  await result(page, 'Old words. Command clear.', false);
+  await expect(live).toContainText('Old words.');
+  const completed = 'Old words. Command clear. Fresh words.';
+  await result(page, completed, true);
+  if (android) await page.evaluate(() => {
+    const host = window as Window & { testRecognition?: { onend: () => void } };
+    host.testRecognition?.onend();
+  });
+  await expect(live.locator('.caption p')).toHaveText(['Fresh words.']);
+  await expect(page.getByRole('region', { name: 'Assigned transcript' }).locator('.caption')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeEnabled();
+  expect(await page.evaluate(() => (window as Window & { wasAborted?: boolean }).wasAborted)).not.toBe(true);
+  if (!android) {
+    await result(page, completed, true);
+    await expect(live.locator('.caption p')).toHaveText(['Fresh words.']);
+    await result(page, `${completed} Command clear. Keep this. Command stop.`, true);
+    await expect(live.locator('.caption p')).toHaveText(['Keep this.']);
+    await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
+  } else {
+    await page.getByRole('button', { name: 'Stop', exact: true }).click();
+    await expect(live.locator('.caption p')).toHaveText(['Fresh words.']);
+  }
+});
+
 test('permission denial is actionable and a new gesture can recover', async ({ page }) => {
   await mockRecognition(page); await page.goto('/');
   await page.getByRole('button', { name: 'Listen', exact: true }).click();

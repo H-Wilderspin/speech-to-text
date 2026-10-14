@@ -1,5 +1,24 @@
 # Feasibility evidence
 
+## 2026-10-14 - Spoken Clear
+
+- **Change:** confirmed browser "command clear" removes text through the command
+  in both main-app panes while capture continues. Words after it remain. Commands
+  execute in spoken order and cumulative replay cannot clear later speech again.
+  A clear revision synchronizes the composed history and button-Clear boundary.
+- **Checks:** typecheck, lint, all 256 unit tests, pinned assets and production build
+  pass. Coverage includes punctuation/case, near-misses, provisional guesses,
+  split commands, Android native completion, repeated results, following text,
+  subsequent Stop and late name evidence. All 44 Windows Chromium/mobile-WebKit
+  app checks pass, including standard/Android spoken Clear, replay, continuation,
+  button Clear and voice Stop. GitHub checks/publication pending.
+- **Limits:** simulated recognition; no new physical-device claim. Android waits
+  for successful native completion, normally after a pause, as Stop already does.
+  The command uses browser wording, not local model output. See ADR 0042.
+- **Phone check:** Listen, speak, say "command clear" and pause. The panes should
+  clear while Stop remains available. Speak again, then say "command stop"; the
+  new speech should remain and the microphone should release.
+
 ## 2026-10-14 - Clear while listening
 
 - **Change:** the main app permits Clear while listening or draining results.

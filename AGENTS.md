@@ -26,6 +26,8 @@ Deliver a **small, accessible, static-hosted TypeScript PWA** for live speech tr
 It resets both main-app panes without restarting browser/local capture. Retain
 bounded recognition context and hide cleared words after delayed alignment, so
 late results cannot restore them. See ADR 0041 for the display-boundary semantics.
+Confirmed browser "command clear" performs the same display reset without stopping
+capture, preserving words after the command and ignoring cumulative replay (ADR 0042).
 
 **Continuous Live restored (2026-10-14):** Live is one chronological scrolling
 transcript. Interim sentences compose in place; completed sentences stay in the

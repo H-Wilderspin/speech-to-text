@@ -21,7 +21,12 @@ export class ClearBoundary {
 
   mark(segments: readonly TranscriptSegment[]) {
     this.words.clear();
-    for (const [id, text] of sourceText(segments)) this.words.set(id, wordStarts(text).length);
+    this.advance(segments);
+  }
+
+  /** Move beyond a command in the currently visible suffix, retaining old cuts. */
+  advance(segments: readonly TranscriptSegment[]) {
+    for (const [id, text] of sourceText(segments)) this.words.set(id, (this.words.get(id) ?? 0) + wordStarts(text).length);
   }
 
   apply(segments: readonly TranscriptSegment[]): TranscriptSegment[] {

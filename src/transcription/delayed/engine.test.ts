@@ -111,6 +111,24 @@ it('clears both panes while capture continues and late evidence cannot restore c
   f.engine.clear(); expect(f.engine.getSnapshot().segments).toEqual([]);
 });
 
+it('voice Clear resets history and a previous button boundary without stopping names or replaying late evidence', () => {
+  const f = fixture(); f.browser.emit({ segments: words }); f.local.emit({ segments: evidence }); f.engine.stop();
+  f.engine.start('en-GB'); f.browser.emit({ segments: words });
+  f.engine.clear();
+  const next = { id: 'browser', text: 'New words following the spoken clear command.', isFinal: true };
+  f.browser.emit({ clearRevision: 1, segments: [next] });
+  expect(f.engine.getSnapshot().segments).toEqual([next]);
+  f.local.emit({ segments: evidence });
+  expect(f.engine.getSnapshot().segments).toEqual([next]);
+  f.local.emit({ segments: [{ ...evidence[0]!, text: next.text }] });
+  expect(f.engine.getSnapshot().segments[0]).toMatchObject({ text: next.text, speakerId: 'a' });
+  // Only the earlier explicit Stop: the voice Clear never stops either stream.
+  expect(f.local.engine.stop).toHaveBeenCalledTimes(1); expect(f.browser.engine.stop).toHaveBeenCalledTimes(1);
+  expect(f.local.engine.interrupt).not.toHaveBeenCalled();
+  f.browser.emit({ clearRevision: 2, segments: [] }); f.local.emit({ segments: evidence });
+  expect(f.engine.getSnapshot()).toMatchObject({ phase: 'listening', segments: [] });
+});
+
 it('retains browser captions with no prepared model and aborts local capture on browser failure', () => {
   const f = fixture(); f.browser.emit({ phase: 'error', message: 'Permission denied.' }); expect(f.local.engine.interrupt).toHaveBeenCalledOnce();
   f.local.engine.getPreparationSnapshot = () => ({ phase: 'idle', message: 'Prepare.' });

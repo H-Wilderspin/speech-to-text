@@ -1,5 +1,5 @@
 import { collapseCumulativeResults, reconcileResults, type RecognizedSegment } from './reconcile';
-import { consumeStopCommand } from './stop-command';
+import { findVoiceCommand } from './stop-command';
 import { ClearBoundary } from './clear-boundary';
 import { reconcileAndroidResults, usesAndroidRecognition } from './android-results';
 import type { BrowserRecognizer, RecognizerFactory, TranscriptionEngine, TranscriptionSnapshot, TranscriptSegment } from './types';
@@ -33,6 +33,7 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
   private commandStartSessionId = 0;
   private cycleErrored = false;
   private cleared = new ClearBoundary();
+  private clearRevision = 0;
 
   constructor(private factory: RecognizerFactory | null, public readonly unavailableReason: string | null = null,
     private resultMode: 'standard' | 'android-cumulative' = 'standard') {}
@@ -58,7 +59,8 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
         }
       }
     }
-    this.snapshot = { phase, message, segments: this.cleared.apply([...this.history, ...collapseCumulativeResults(this.current)]) };
+    this.snapshot = { phase, message, clearRevision: this.clearRevision,
+      segments: this.cleared.apply([...this.history, ...collapseCumulativeResults(this.current)]) };
     this.listeners.forEach((listener) => listener());
   }
 
@@ -151,7 +153,7 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
           ? reconcileAndroidResults(results, this.sessionId)
           : reconcileResults(this.current, results, this.sessionId, true, this.utterance);
         if (this.current.length) this.restartDelay = 200;
-        if (this.stopByCommand()) return;
+        if (this.handleCommands()) return;
         this.publish(this.snapshot.phase, this.snapshot.message);
       };
       recognizer.onerror = ({ error }) => {
@@ -174,7 +176,7 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
           // Android ends the native session after its completed result callback.
           // Errors/interruptions must not turn a partial guess into confirmed text.
           this.current = this.current.map((segment) => ({ ...segment, isFinal: true }));
-          if (this.stopByCommand()) return;
+          if (this.handleCommands()) return;
         }
         if (this.listeningRequested) this.restart();
         else this.finish('idle', 'Stopped.', false);
@@ -186,15 +188,24 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
     }
   }
 
-  private stopByCommand(): boolean {
-    const earlierSessions = this.history.filter((segment) => Number(segment.id.split(':')[0]) < this.commandStartSessionId);
-    const activeSession = this.history.slice(earlierSessions.length);
-    const beforeCommand = consumeStopCommand([...activeSession, ...collapseCumulativeResults(this.current.filter((segment) => segment.isFinal))]);
-    if (!beforeCommand) return false;
-    this.history = [...earlierSessions, ...beforeCommand];
-    this.current = [];
-    this.finish('idle', 'Stopped by voice command.');
-    return true;
+  private handleCommands(): boolean {
+    // Keep processing in spoken order: Clear may be followed by more speech or
+    // another command in the same result. Its boundary also prevents replay.
+    while (true) {
+      const visible = this.cleared.apply([...this.history, ...collapseCumulativeResults(this.current.filter((segment) => segment.isFinal))]);
+      const earlierSessions = visible.filter((segment) => Number(segment.id.split(':')[0]) < this.commandStartSessionId);
+      const command = findVoiceCommand(visible.slice(earlierSessions.length));
+      if (!command) return false;
+      if (command.action === 'clear') {
+        this.cleared.advance([...earlierSessions, ...command.through]);
+        this.clearRevision++;
+      } else {
+        this.history = [...earlierSessions, ...command.before];
+        this.current = []; this.cleared.reset();
+        this.finish('idle', 'Stopped by voice command.');
+        return true;
+      }
+    }
   }
 
   stop() {
@@ -228,6 +239,7 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
   }
 
   dispose() {
+    this.clearRevision = 0;
     this.cleared.reset();
     this.listeningRequested = false;
     this.abort(this.detach());
