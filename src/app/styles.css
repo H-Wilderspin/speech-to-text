@@ -41,14 +41,6 @@ main { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .transcript-text p { margin: 0 0 .7em; line-height: 1.55; }
 .caption-speaker { display: block; margin-bottom: .5rem; }
 .interim { border-left: 3px dotted currentColor; padding-left: .5em; }
-.live-transcript { display: grid; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); overflow: hidden; padding: 0; }
-.latest-caption, .live-history { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: .5rem .25rem; overflow-anchor: none; }
-.latest-caption { grid-row: 1; }
-.latest-caption p { border-left: 3px solid transparent; padding-left: .5em; }
-.latest-caption .interim { border-left-style: dotted; border-left-color: currentColor; }
-.live-history { grid-row: 2; border-top: 1px solid #7b8791; }
-.live-history:empty { border-top: 0; }
-.live-transcript > .empty-state { grid-row: 1; }
 .listen { background: #c1e9dd; color: #20262c; border-color: #c1e9dd; }
 .listen:hover:not(:disabled) { background: #acdcca; }
 .listen.is-active { background: #f2c4ba; border-color: #853528; }

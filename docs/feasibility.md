@@ -1,5 +1,20 @@
 # Feasibility evidence
 
+## 2026-10-14 - Continuous Live transcript restored
+
+- **Request/change:** the user reports lost text integrity with split Live and asks
+  to revert. Restored the pre-split renderer and removed the separate latest/history
+  containers. One scrolling transcript composes each utterance in place and keeps
+  finalized captions in order. Light colours, pane order and controls remain.
+- **Checks:** typecheck, lint, 232 unit tests, pinned assets and production build
+  pass. All 36 Windows Chromium/WebKit app checks pass, including the original DOM
+  caption surviving interim/final revisions, complete consecutive sentences, no
+  duplication, scrolling, Android cumulative revisions, Stop/Clear and offline use.
+  Mobile screenshot inspected. Full CI and publication pending at this commit.
+- **Limit:** simulated recognition verifies presentation; physical-device text
+  integrity still needs user confirmation. No recognition or matching change, and
+  no claim that the reported problem establishes an underlying data-loss cause.
+
 ## 2026-10-13 - Light UI publication confirmed
 
 - Earlier push-only handoffs did not reach Pages: runs for padding, light mode and

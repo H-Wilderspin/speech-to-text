@@ -389,43 +389,38 @@ test('subdirectory deployment installs scoped assets and opens offline', async (
   expect(await page.evaluate(() => document.fonts.check('400 32px Poppins'))).toBe(true);
 });
 
-test('newest sentence stays anchored through revisions, finalization and new speech', async ({ page }) => {
+test('live sentences compose inline in chronological order without split or duplicate text', async ({ page }) => {
   await mockRecognition(page); await page.setViewportSize({ width: 390, height: 844 }); await page.goto('/');
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
+  const live = page.getByRole('region', { name: 'Live transcript', exact: true });
   await result(page, 'We are', false);
-  const latest = page.getByRole('region', { name: 'Latest sentence', exact: true });
-  const origin = async () => latest.locator('p').evaluate((element) => {
-    const box = element.getBoundingClientRect(); return { x: box.x, y: box.y };
-  });
-  const start = await origin();
+  await live.locator('.caption').evaluate((element) => element.setAttribute('data-original-caption', 'true'));
   await result(page, 'We are reading a longer sentence as it grows across several lines.', false);
-  expect(await origin()).toEqual(start);
+  await expect(live.locator('.caption')).toHaveCount(1);
+  await expect(live.locator('[data-original-caption]')).toContainText('We are reading a longer sentence as it grows across several lines.');
   await result(page, 'We are reading a longer sentence as it grows across several lines.', true);
-  expect(await origin()).toEqual(start);
-  await page.evaluate(() => {
-    const host = window as Window & { testRecognition?: { onresult: (event: unknown) => void } };
-    host.testRecognition?.onresult({ results: [
-      { 0: { transcript: 'We are reading a longer sentence as it grows across several lines.', confidence: .9 }, length: 1, isFinal: true },
-      { 0: { transcript: 'The next sentence starts here.', confidence: .9 }, length: 1, isFinal: false },
-    ] });
-  });
-  expect(await origin()).toEqual(start);
-  await expect(latest).toContainText('The next sentence starts here.');
-  await expect(page.getByRole('region', { name: 'Earlier sentences' }).locator('.caption')).toHaveCount(1);
-  await expect(page.getByRole('region', { name: 'Live transcript', exact: true }).locator('.caption')).toHaveCount(2);
-  await page.screenshot({ path: `test-results/steady-live-${test.info().project.name}.png` });
-  await page.evaluate(() => {
-    const host = window as Window & { testRecognition?: { onresult: (event: unknown) => void } };
-    host.testRecognition?.onresult({ results: [
-      { 0: { transcript: 'We are reading a longer sentence as it grows across several lines.', confidence: .9 }, length: 1, isFinal: true },
-      { 0: { transcript: 'The next sentence starts here.', confidence: .9 }, length: 1, isFinal: true },
-    ] });
-  });
-  expect(await origin()).toEqual(start);
+  await expect(live.locator('[data-original-caption] p')).toHaveClass('confirmed');
+  for (const [text, isFinal] of [['The next sentence', false], ['The next sentence stays complete.', true]] as const) {
+    await page.evaluate(({ text, isFinal }) => {
+      const host = window as Window & { testRecognition?: { onresult: (event: unknown) => void } };
+      host.testRecognition?.onresult({ results: [
+        { 0: { transcript: 'We are reading a longer sentence as it grows across several lines.', confidence: .9 }, length: 1, isFinal: true },
+        { 0: { transcript: text, confidence: .9 }, length: 1, isFinal },
+      ] });
+    }, { text, isFinal });
+    await expect(live.locator('.caption')).toHaveCount(2);
+    await expect(live.locator('.caption').last()).toContainText(text);
+  }
+  await expect(live.locator('p')).toHaveText(['We are reading a longer sentence as it grows across several lines.', 'The next sentence stays complete.']);
+  await expect(live.getByRole('region')).toHaveCount(0);
+  const first = await live.locator('.caption').first().boundingBox();
+  const second = await live.locator('.caption').last().boundingBox();
+  expect(second!.y).toBeGreaterThanOrEqual(first!.y + first!.height);
+  await page.screenshot({ path: `test-results/inline-live-${test.info().project.name}.png` });
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
-  await expect(latest).toContainText('The next sentence starts here.');
+  await expect(live.locator('.confirmed')).toHaveCount(2);
   await page.getByRole('button', { name: 'Clear', exact: true }).click();
-  await expect(latest).toHaveCount(0);
+  await expect(live.locator('.caption')).toHaveCount(0);
   await expect(page.getByText('Tap Listen to start.', { exact: true })).toBeVisible();
 });
 
@@ -440,7 +435,7 @@ test('reading earlier speech preserves scroll and returning to bottom resumes fo
       { 0: { transcript: 'The newest thought.', confidence: .9 }, length: 1, isFinal: true },
     ] });
   });
-  const region = page.getByRole('region', { name: 'Earlier sentences' });
+  const region = page.getByRole('region', { name: 'Live transcript', exact: true });
   await region.evaluate((element) => { element.scrollTop = 0; element.dispatchEvent(new Event('scroll')); });
   await expect(page.getByRole('contentinfo').getByRole('button')).toHaveCount(3);
   await page.evaluate(() => {

@@ -3,6 +3,9 @@
 Date: 2026-10-13
 Status: Accepted; supersedes ADR 0025's dark presentation
 
+The split Live reading layout is superseded by [ADR 0040](0040-restore-continuous-live-transcript.md).
+The light theme and colour migration remain in use.
+
 ## Context
 
 After testing on the target device, the user prefers light mode and needs the

@@ -22,6 +22,11 @@ Deliver a **small, accessible, static-hosted TypeScript PWA** for live speech tr
 
 ## Architecture rules
 
+**Continuous Live restored (2026-10-14):** Live is one chronological scrolling
+transcript. Interim sentences compose in place; completed sentences stay in the
+same flow. No separate current-sentence/history areas. This supersedes ADR 0039's
+split Live layout; light colours, pane order and bottom controls remain. See ADR 0040.
+
 **Pane order (2026-10-13):** Live comes first, then collapsible Who said what, then
 the bottom controls. This supersedes earlier references to assigned speech above
 Live. Preserve this visual and DOM order in both app entry points.
