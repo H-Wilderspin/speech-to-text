@@ -85,6 +85,45 @@ test('anonymous listening, interim revision, stop, resume, clear, and no persist
   expect(await page.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length }))).toEqual({ local: 0, session: 0 });
 });
 
+for (const android of [false, true]) test(`Clear keeps listening and only shows new words (${android ? 'Android' : 'standard'})`, async ({ page }) => {
+  await mockRecognition(page);
+  if (android) await page.addInitScript(() => Object.defineProperty(navigator, 'userAgent', {
+    value: 'Mozilla/5.0 (Linux; Android 10; K) Chrome/156.0.0.0 Mobile Safari/537.36',
+  }));
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Listen', exact: true }).click();
+  await result(page, 'We are', false);
+  await page.evaluate(() => {
+    const host = window as Window & { testRecognition?: unknown; originalRecognition?: unknown };
+    host.originalRecognition = host.testRecognition;
+  });
+  const live = page.getByRole('region', { name: 'Live transcript', exact: true });
+  const clear = page.getByRole('button', { name: 'Clear', exact: true });
+  await expect(clear).toBeEnabled(); await clear.click();
+  await expect(live.locator('.caption')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeEnabled();
+  await expect(clear).toBeDisabled();
+  await result(page, 'We were', false);
+  await expect(live.locator('.caption')).toHaveCount(0);
+  await result(page, 'We were ready to go.', true);
+  await expect(live.locator('.caption')).toHaveCount(1);
+  await expect(live).toContainText('ready to go.');
+  await expect(live).not.toContainText('We were');
+  expect(await page.evaluate(() => {
+    const host = window as Window & { testRecognition?: unknown; originalRecognition?: unknown; wasAborted?: boolean };
+    return host.testRecognition === host.originalRecognition && !host.wasAborted;
+  })).toBe(true);
+  await clear.click(); await result(page, 'We were ready to go.', true);
+  await expect(live.locator('.caption')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Stop', exact: true }).click();
+  await expect(live.locator('.caption')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Listen', exact: true }).click();
+  await result(page, 'A fresh sentence.', true);
+  await expect(live.locator('.caption')).toHaveCount(1);
+  await expect(live).toContainText('A fresh sentence.');
+  await page.getByRole('button', { name: 'Stop', exact: true }).click();
+});
+
 test('permission denial is actionable and a new gesture can recover', async ({ page }) => {
   await mockRecognition(page); await page.goto('/');
   await page.getByRole('button', { name: 'Listen', exact: true }).click();

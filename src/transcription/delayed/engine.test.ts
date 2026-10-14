@@ -89,6 +89,28 @@ it('isolates evidence across manual sessions and Clear', () => {
   expect(f.engine.getSnapshot().segments[0]!.speakerId).toBe('a'); expect(f.engine.getSnapshot().segments[1]!.speakerId).toBeUndefined();
   f.engine.stop(); f.engine.clear(); f.local.emit({ segments: evidence }); expect(f.engine.getSnapshot().segments).toEqual([]);
 });
+it('clears both panes while capture continues and late evidence cannot restore cleared text', () => {
+  const f = fixture(); f.browser.emit({ segments: words });
+  f.local.emit({ segments: evidence });
+  expect(f.engine.getSnapshot().segments[0]?.speakerId).toBe('a');
+  f.engine.clear();
+  expect(f.engine.getSnapshot()).toMatchObject({ phase: 'listening', segments: [] });
+  expect(f.local.engine.stop).not.toHaveBeenCalled(); expect(f.browser.engine.stop).not.toHaveBeenCalled();
+  expect(f.local.engine.interrupt).not.toHaveBeenCalled();
+  f.local.emit({ segments: evidence });
+  expect(f.engine.getSnapshot().segments).toEqual([]);
+  const next = { id: 'next', text: 'Another six clearly spoken words arrive here.', isFinal: true };
+  f.browser.emit({ segments: [...words, next] });
+  f.local.emit({ segments: [...evidence, { ...next, id: 'local-next', speakerId: 'a', speakerName: 'Alex', speakerEstimated: true }] });
+  expect(f.engine.getSnapshot().segments).toHaveLength(1);
+  expect(f.engine.getSnapshot().segments[0]).toMatchObject({ text: next.text, speakerId: 'a' });
+  f.engine.stop();
+  expect(f.engine.getSnapshot().segments).toHaveLength(1);
+  f.engine.start('en-GB');
+  expect(f.engine.getSnapshot().segments).toHaveLength(1);
+  f.engine.clear(); expect(f.engine.getSnapshot().segments).toEqual([]);
+});
+
 it('retains browser captions with no prepared model and aborts local capture on browser failure', () => {
   const f = fixture(); f.browser.emit({ phase: 'error', message: 'Permission denied.' }); expect(f.local.engine.interrupt).toHaveBeenCalledOnce();
   f.local.engine.getPreparationSnapshot = () => ({ phase: 'idle', message: 'Prepare.' });

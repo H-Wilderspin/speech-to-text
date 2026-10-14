@@ -1,5 +1,6 @@
 import { collapseCumulativeResults, reconcileResults, type RecognizedSegment } from './reconcile';
 import { consumeStopCommand } from './stop-command';
+import { ClearBoundary } from './clear-boundary';
 import { reconcileAndroidResults, usesAndroidRecognition } from './android-results';
 import type { BrowserRecognizer, RecognizerFactory, TranscriptionEngine, TranscriptionSnapshot, TranscriptSegment } from './types';
 
@@ -31,6 +32,7 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
   private restartDelay = 200;
   private commandStartSessionId = 0;
   private cycleErrored = false;
+  private cleared = new ClearBoundary();
 
   constructor(private factory: RecognizerFactory | null, public readonly unavailableReason: string | null = null,
     private resultMode: 'standard' | 'android-cumulative' = 'standard') {}
@@ -56,7 +58,7 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
         }
       }
     }
-    this.snapshot = { phase, message, segments: [...this.history, ...collapseCumulativeResults(this.current)] };
+    this.snapshot = { phase, message, segments: this.cleared.apply([...this.history, ...collapseCumulativeResults(this.current)]) };
     this.listeners.forEach((listener) => listener());
   }
 
@@ -214,13 +216,19 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
   }
 
   clear() {
-    if (this.recognizer || this.listeningRequested) return;
+    if (this.recognizer || this.listeningRequested) {
+      this.cleared.mark([...this.history, ...collapseCumulativeResults(this.current)]);
+      this.publish(this.snapshot.phase, this.snapshot.message);
+      return;
+    }
+    this.cleared.reset();
     this.history = [];
     this.current = [];
     this.publish('idle', 'Text cleared. Ready when you are.');
   }
 
   dispose() {
+    this.cleared.reset();
     this.listeningRequested = false;
     this.abort(this.detach());
     this.history = [];

@@ -19,6 +19,7 @@ export function Transcript({ segments, textSize, assigned = false, colours = {},
   const transcriptId = useId();
 
   useLayoutEffect(() => {
+    if (segments.length === 0) following.current = true;
     const element = viewport.current;
     if (element && !collapsed && following.current) element.scrollTop = element.scrollHeight;
   }, [segments, textSize, hiddenSpeakers, collapsed]);

@@ -259,10 +259,39 @@ describe('browser recognition lifecycle', () => {
   });
   it('aborts on interruption, retains finals and allows deletion when idle', () => {
     engine.start('en-GB'); const native = latest(); native.result('Confirmed.');
-    engine.clear(); expect(engine.getSnapshot().segments).toHaveLength(1);
+    expect(engine.getSnapshot().segments).toHaveLength(1);
     engine.interrupt(); expect(native.abort).toHaveBeenCalledOnce();
     expect(engine.getSnapshot().message).toContain('left the app');
     engine.clear(); expect(engine.getSnapshot().segments).toEqual([]);
+  });
+  it.each(['standard', 'android-cumulative'] as const)('clears while %s capture continues through revisions, native end and voice Stop', (mode) => {
+    engine.dispose();
+    engine = new BrowserTranscriptionEngine(() => {
+      const instance = new FakeRecognizer(); instances.push(instance); return instance;
+    }, null, mode);
+    engine.start('en-GB'); const native = latest(); native.onstart?.();
+    native.result('We are', false); engine.clear();
+    expect(engine.getSnapshot()).toMatchObject({ phase: 'listening', segments: [] });
+    expect(native.stop).not.toHaveBeenCalled(); expect(native.abort).not.toHaveBeenCalled();
+    native.result('We were ready to go.', true);
+    expect(engine.getSnapshot().segments.map((s) => s.text)).toEqual(['ready to go.']);
+    engine.clear(); native.result('We were ready to go.', true);
+    expect(engine.getSnapshot().segments).toEqual([]);
+    native.onend?.(); vi.runOnlyPendingTimers(); latest().onstart?.();
+    latest().result('The next sentence.', true);
+    expect(engine.getSnapshot().segments.map((s) => s.text)).toEqual(['The next sentence.']);
+    latest().onend?.(); vi.runOnlyPendingTimers(); latest().onstart?.();
+    latest().result('command stop', true);
+    if (mode === 'android-cumulative') latest().onend?.();
+    expect(engine.getSnapshot().phase).toBe('idle');
+    expect(engine.getSnapshot().segments.map((s) => s.text)).toEqual(['The next sentence.']);
+  });
+  it('keeps cumulative appended slots cleared without losing new words', () => {
+    engine.start('en-GB'); latest().onstart?.(); latest().result('We are'); engine.clear();
+    latest().onresult?.({ results: ['We are', 'We are ready.'].map((text) => ({ 0: { transcript: text, confidence: .9 }, isFinal: true, length: 1 })) });
+    expect(engine.getSnapshot().segments.map((s) => s.text)).toEqual(['ready.']);
+    engine.stop(); latest().onend?.();
+    expect(engine.getSnapshot().segments.map((s) => s.text)).toEqual(['ready.']);
   });
   it('disposes capture and listeners on unmount', () => {
     const listener = vi.fn(); engine.subscribe(listener);

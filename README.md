@@ -15,6 +15,11 @@ transcript: each sentence composes in place after earlier speech, with no separa
 current-sentence area. Saved speaker colours keep their colour family using darker
 shades for contrast. See ADR 0040 (reading flow) and ADR 0039 (light colours).
 
+**Clear while listening:** Clear empties both panes while listening continues.
+New words appear normally; delayed names do not restore cleared captions. Ongoing
+recognition keeps bounded in-memory context until the session changes; nothing is
+saved. See [ADR 0041](docs/decisions/0041-clear-during-listening.md).
+
 **Typography and Settings:** Poppins is bundled for online/offline use. The UI has
 small (14px), medium (16px) and large caption sizes (32px initially, adjustable).
 Descriptions/captions use weight 400; labels use uppercase with .2em letter spacing.

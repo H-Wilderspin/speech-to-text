@@ -5,6 +5,7 @@ import type { ProfileStore } from '../../storage/profiles';
 import { watchProfileChanges } from '../../storage/profile-changes';
 import { speakerModel } from '../../identification/model';
 import { createSpeakerTrace } from '../diagnostics';
+import { ClearBoundary } from '../clear-boundary';
 
 const active = (snapshot: TranscriptionSnapshot) => ['requesting-permission', 'listening', 'stopping'].includes(snapshot.phase);
 
@@ -26,6 +27,7 @@ export class DelayedNamesEngine implements LocalListeningEngine {
   private language = 'en-GB';
   private trace = createSpeakerTrace('alignment');
   private lastDiagnostic = '';
+  private cleared = new ClearBoundary();
   constructor(private readonly browser: TranscriptionEngine, private readonly local: LocalListeningEngine,
     private readonly profiles?: { database: string; createStore(): ProfileStore }) {
     this.snapshot = browser.getSnapshot();
@@ -98,7 +100,7 @@ export class DelayedNamesEngine implements LocalListeningEngine {
       this.notice = `Speaker estimates unavailable: ${local.message}${active(browser) ? ' Browser captions continue.' : ''}`;
     }
     const finishing = !active(browser) && active(local);
-    const currentSegments = delayedNames(browser.segments, this.namesStarted ? local.segments : []);
+    const currentSegments = this.cleared.apply(delayedNames(browser.segments, this.namesStarted ? local.segments : []));
     const diagnostic = {
       browserSegments: browser.segments.length,
       browserCharacters: browser.segments.reduce((sum, segment) => sum + segment.text.length, 0),
@@ -141,6 +143,7 @@ export class DelayedNamesEngine implements LocalListeningEngine {
     if (active(this.snapshot)) return;
     this.connect(); this.starting = true;
     this.history = [...this.snapshot.segments]; this.browser.clear(); this.local.clear();
+    this.cleared.reset();
     this.notice = undefined; this.running = true; this.language = language; this.namesStarted = false; this.namesAttempted = false;
     // Both activation calls stay in the user's original gesture. Browser audio
     // and results remain independent; Android/Safari coexistence needs retesting.
@@ -151,11 +154,18 @@ export class DelayedNamesEngine implements LocalListeningEngine {
   stop() { this.running = false; this.local.stop(); this.browser.stop(); this.update(); }
   interrupt() { this.running = false; this.local.interrupt(); this.browser.interrupt(); this.update(); }
   clear() {
-    if (active(this.snapshot)) return;
+    if (active(this.snapshot)) {
+      this.history = [];
+      this.cleared.mark(this.browser.getSnapshot().segments);
+      this.update();
+      return;
+    }
+    this.cleared.reset();
     this.starting = true; this.history = []; this.namesStarted = false; this.notice = undefined;
     this.local.clear(); this.browser.clear(); this.starting = false; this.update();
   }
   dispose() {
+    this.cleared.reset();
     this.profileGeneration++; this.hasSpeakers = !this.profiles; this.profileError = undefined;
     this.unwatch.splice(0).forEach((unsubscribe) => unsubscribe());
     this.running = false; this.namesStarted = false; this.history = []; this.notice = undefined;

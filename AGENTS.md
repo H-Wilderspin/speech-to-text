@@ -22,6 +22,11 @@ Deliver a **small, accessible, static-hosted TypeScript PWA** for live speech tr
 
 ## Architecture rules
 
+**Clear during listening (2026-10-14):** Clear is enabled whenever captions exist.
+It resets both main-app panes without restarting browser/local capture. Retain
+bounded recognition context and hide cleared words after delayed alignment, so
+late results cannot restore them. See ADR 0041 for the display-boundary semantics.
+
 **Continuous Live restored (2026-10-14):** Live is one chronological scrolling
 transcript. Interim sentences compose in place; completed sentences stay in the
 same flow. No separate current-sentence/history areas. This supersedes ADR 0039's

@@ -68,7 +68,7 @@ export function App({ engine: browserEngine, createSpeakers, localEngine }: {
         aria-describedby="processing-note" onClick={() => active ? engine.stop() : engine.start(language)}>
         {snapshot.phase === 'stopping' ? 'Stopping…' : active ? 'Stop' : 'Listen'}
       </button>
-      <button disabled={active || snapshot.segments.length === 0} onClick={() => engine.clear()}>Clear</button>
+      <button disabled={snapshot.segments.length === 0} onClick={() => engine.clear()}>Clear</button>
       <button ref={settingsButton} onClick={() => setSettingsOpen(true)}>Settings</button>
     </footer>
     <p className="sr-only" id="processing-note">Listen uses your browser’s speech service, which may send audio to its provider. Delayed name estimates use saved voiceprints on this device. Captions are kept only until you clear or reload. Details are in Settings.</p>

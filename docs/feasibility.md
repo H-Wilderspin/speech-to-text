@@ -1,5 +1,22 @@
 # Feasibility evidence
 
+## 2026-10-14 - Clear while listening
+
+- **Change:** the main app permits Clear while listening or draining results.
+  Clears both displays without stopping/restarting capture. A shared word boundary
+  hides cleared prefixes across native revisions and delayed name slices; new
+  words continue inline. Native cumulative slots retain one caption ID.
+- **Checks:** typecheck, lint, 240 unit tests, pinned assets and production build
+  pass. All 40 Windows Chromium and mobile-WebKit app checks exercise repeated active Clear,
+  standard/Android revisions, the same recognizer instance, Stop and a fresh Listen.
+  Unit coverage includes delayed names arriving after Clear and subsequent names.
+- **Limit:** simulated recognition and speaker evidence; no new physical-device
+  verification. An unfinished hypothesis that changes its earlier word count can
+  shift the display boundary (ADR 0041). GitHub CI/publication pending.
+- **Phone check:** Listen, say a sentence, tap Clear while Stop is still displayed,
+  and say another sentence. Only new speech should appear; Stop/command stop should
+  still release the microphone. Check both panes if name suggestions are available.
+
 ## 2026-10-14 - Continuous Live transcript restored
 
 - **Request/change:** the user reports lost text integrity with split Live and asks

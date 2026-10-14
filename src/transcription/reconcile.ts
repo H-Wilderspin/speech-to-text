@@ -38,8 +38,11 @@ export function collapseCumulativeResults(ordered: readonly RecognizedSegment[])
   // never deduplicate separate recognition cycles or repeated words in a phrase.
   return ordered.reduce<RecognizedSegment[]>((segments, segment) => {
     const preceding = segments.at(-1);
-    if (preceding && preceding.utterance === segment.utterance && extendsPhrase(preceding.text, segment.text)) segments.pop();
-    segments.push(segment);
+    if (preceding && preceding.utterance === segment.utterance && extendsPhrase(preceding.text, segment.text)) {
+      segments.pop();
+      // One growing caption keeps its identity, including across Clear.
+      segments.push({ ...segment, id: preceding.id });
+    } else segments.push(segment);
     return segments;
   }, []);
 }
