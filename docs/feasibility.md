@@ -11,7 +11,13 @@
   split commands, Android native completion, repeated results, following text,
   subsequent Stop and late name evidence. All 44 Windows Chromium/mobile-WebKit
   app checks pass, including standard/Android spoken Clear, replay, continuation,
-  button Clear and voice Stop. GitHub checks/publication pending.
+  button Clear and voice Stop.
+- **Publication:** commit `458c6a4` passed all 76 Linux browser cases (6.2m, no
+  skips), plus three capture-start probes. Pages deployed successfully in
+  [run 38593618065](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38593618065).
+  Published `main-BEo5f1hE.js` passed Chromium/WebKit smoke checks with standard
+  and simulated Android results: confirmed Clear, uninterrupted capture, following
+  words, replay handling and subsequent voice Stop, with no page errors.
 - **Limits:** simulated recognition; no new physical-device claim. Android waits
   for successful native completion, normally after a pause, as Stop already does.
   The command uses browser wording, not local model output. See ADR 0042.
