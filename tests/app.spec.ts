@@ -9,7 +9,7 @@ async function mockRecognition(page: Page) {
       onerror?: (event: unknown) => void;
       start() { Object.assign(window, { testRecognition: this }); this.onstart?.(); }
       stop() { this.onend?.(); }
-      abort() { Object.assign(window, { wasAborted: true }); }
+      abort() { Object.assign(window, { wasAborted: true }); queueMicrotask(() => this.onend?.()); }
     }
     Object.assign(window, { SpeechRecognition: Recognition });
   });
@@ -85,7 +85,7 @@ test('anonymous listening, interim revision, stop, resume, clear, and no persist
   expect(await page.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length }))).toEqual({ local: 0, session: 0 });
 });
 
-for (const android of [false, true]) test(`Clear keeps listening and only shows new words (${android ? 'Android' : 'standard'})`, async ({ page }) => {
+for (const android of [false, true]) test(`Clear retires capture and rejects stale callbacks (${android ? 'Android' : 'standard'})`, async ({ page }) => {
   await mockRecognition(page);
   if (android) await page.addInitScript(() => Object.defineProperty(navigator, 'userAgent', {
     value: 'Mozilla/5.0 (Linux; Android 10; K) Chrome/156.0.0.0 Mobile Safari/537.36',
@@ -93,27 +93,32 @@ for (const android of [false, true]) test(`Clear keeps listening and only shows 
   await page.goto('/');
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   await result(page, 'We are', false);
-  await page.evaluate(() => {
-    const host = window as Window & { testRecognition?: unknown; originalRecognition?: unknown };
-    host.originalRecognition = host.testRecognition;
-  });
   const live = page.getByRole('region', { name: 'Live transcript', exact: true });
+  const session = Number(await live.locator('.caption').getAttribute('data-session'));
+  await page.evaluate(() => {
+    const host = window as Window & { testRecognition?: { onresult?: (event: unknown) => void; onerror?: (event: unknown) => void; onend?: () => void } };
+    Object.assign(window, { oldCallbacks: { ...host.testRecognition }, originalRecognition: host.testRecognition });
+  });
   const clear = page.getByRole('button', { name: 'Clear', exact: true });
   await expect(clear).toBeEnabled(); await clear.click();
   await expect(live.locator('.caption')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeEnabled();
   await expect(clear).toBeDisabled();
-  await result(page, 'We were', false);
+  await page.evaluate(() => {
+    const old = (window as Window & { oldCallbacks?: { onresult?: (event: unknown) => void; onerror?: (event: unknown) => void; onend?: () => void } }).oldCallbacks;
+    old?.onresult?.({ results: [{ 0: { transcript: 'We were ready before Clear.', confidence: .9 }, length: 1, isFinal: true }] });
+    old?.onerror?.({ error: 'network' }); old?.onend?.();
+  });
   await expect(live.locator('.caption')).toHaveCount(0);
   await result(page, 'We were ready to go.', true);
   await expect(live.locator('.caption')).toHaveCount(1);
-  await expect(live).toContainText('ready to go.');
-  await expect(live).not.toContainText('We were');
+  await expect(live).toContainText('We were ready to go.');
+  await expect(live.locator('.caption')).toHaveAttribute('data-session', String(session + 1));
   expect(await page.evaluate(() => {
     const host = window as Window & { testRecognition?: unknown; originalRecognition?: unknown; wasAborted?: boolean };
-    return host.testRecognition === host.originalRecognition && !host.wasAborted;
+    return host.testRecognition !== host.originalRecognition && host.wasAborted;
   })).toBe(true);
-  await clear.click(); await result(page, 'We were ready to go.', true);
+  await clear.click();
   await expect(live.locator('.caption')).toHaveCount(0);
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
   await expect(live.locator('.caption')).toHaveCount(0);
@@ -135,26 +140,39 @@ for (const android of [false, true]) test(`command clear clears both panes and c
   const live = page.getByRole('region', { name: 'Live transcript', exact: true });
   await result(page, 'Old words. Command clear.', false);
   await expect(live).toContainText('Old words.');
-  const completed = 'Old words. Command clear. Fresh words.';
+  const completed = 'Old words. Command clear. Old payload tail.';
   await result(page, completed, true);
   if (android) await page.evaluate(() => {
     const host = window as Window & { testRecognition?: { onend: () => void } };
     host.testRecognition?.onend();
   });
-  await expect(live.locator('.caption p')).toHaveText(['Fresh words.']);
+  await expect(live.locator('.caption')).toHaveCount(0);
   await expect(page.getByRole('region', { name: 'Assigned transcript' }).locator('.caption')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeEnabled();
-  expect(await page.evaluate(() => (window as Window & { wasAborted?: boolean }).wasAborted)).not.toBe(true);
-  if (!android) {
-    await result(page, completed, true);
-    await expect(live.locator('.caption p')).toHaveText(['Fresh words.']);
-    await result(page, `${completed} Command clear. Keep this. Command stop.`, true);
-    await expect(live.locator('.caption p')).toHaveText(['Keep this.']);
-    await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
-  } else {
-    await page.getByRole('button', { name: 'Stop', exact: true }).click();
-    await expect(live.locator('.caption p')).toHaveText(['Fresh words.']);
-  }
+  await result(page, 'Fresh words.', false);
+  await expect(live.locator('.caption p')).toHaveText(['Fresh words. Unconfirmed']);
+  await result(page, 'Fresh words. Command stop.', true);
+  if (android) await page.evaluate(() => {
+    (window as Window & { testRecognition?: { onend?: () => void } }).testRecognition?.onend?.();
+  });
+  await expect(live.locator('.caption p')).toHaveText(['Fresh words.']);
+  await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
+});
+
+test('a provider pause separates growing lines without freezing a late correction', async ({ page }) => {
+  await mockRecognition(page); await page.goto('/'); await page.clock.install();
+  await page.getByRole('button', { name: 'Listen', exact: true }).click();
+  const lines = page.getByRole('region', { name: 'Live transcript' }).locator('.caption p');
+  await result(page, 'A quiet morning.', false);
+  await page.evaluate(() => (window as Window & { testRecognition?: { onspeechend?: () => void } }).testRecognition?.onspeechend?.());
+  await page.clock.fastForward(500);
+  await result(page, 'A quiet morning. A new thought', false);
+  await expect(lines).toHaveText(['A quiet morning. Unconfirmed', ' A new thought Unconfirmed']);
+  await result(page, 'A quiet morning. A new thought develops.', false);
+  await expect(lines).toHaveText(['A quiet morning. Unconfirmed', ' A new thought develops. Unconfirmed']);
+  await result(page, 'A bright morning. A new thought develops.', true);
+  await expect(lines).toHaveText(['A bright morning. A new thought develops.']);
+  await page.getByRole('button', { name: 'Stop', exact: true }).click();
 });
 
 test('permission denial is actionable and a new gesture can recover', async ({ page }) => {

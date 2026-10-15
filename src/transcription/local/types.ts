@@ -19,9 +19,10 @@ export interface Pipeline {
   reset(): void;
   close(): void;
 }
-export interface LocalResponse { id: number; error?: string; segments?: TranscriptSegment[]; commandStop?: boolean; speakerStatus?: string; diagnostics?: DiagnosticCounts }
+export interface LocalResponse { id: number; sessionId?: number; error?: string; segments?: TranscriptSegment[]; commandStop?: boolean; speakerStatus?: string; diagnostics?: DiagnosticCounts }
 export interface PreparationSnapshot { phase: 'idle' | 'preparing' | 'ready' | 'error'; message: string }
 export interface LocalListeningEngine extends TranscriptionEngine {
+  resetSession?(sessionId: number): Promise<void>;
   getPreparationSnapshot(): PreparationSnapshot;
   prepare(cachedOnly?: boolean): Promise<void>;
   cancelPreparation(): void;

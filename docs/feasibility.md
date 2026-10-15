@@ -1,5 +1,38 @@
 # Feasibility evidence
 
+## 2026-10-15 - Session reset and correctable pause lines
+
+- **Decision:** replace both display-masking Clear implementations with immediate
+  session invalidation and serialized native restart (ADR 0043). Clear discards
+  the whole old command payload; Stop cancels resumption. A provider speech-end
+  event debounced for 500ms proposes a display break, without freezing interim
+  wording or pretending that result arrival indicates acoustic silence.
+- **Setup:** Windows development machine, Playwright Chromium/mobile-WebKit,
+  simulated Web Speech events. Generated local audio exercises the actual native
+  models and worker, with the existing synthetic input fixture. No personal audio.
+- **Coverage:** standard and Android revisions; stale text/errors/end callbacks;
+  native retirement timeout; Stop versus reset; confirmed Clear and subsequent
+  Stop; prefix corrections; line/session metadata; delayed names after reset;
+  stale profile reads; worker request/session pairs; disposal during inference;
+  retained model weights; scrollback and bottom-following.
+- **Local results:** typecheck, lint, all 259 unit tests, asset checksum verification
+  and production build pass. The stable-build browser run passed 51 cases in 2.7m,
+  including all 46 app cases and actual-model reset/re-attribution in Chromium.
+  One existing native-audio case is skipped on Windows WebKit because its test
+  build lacks Web Audio; Linux CI must run that case before publication. A final
+  logging-only change moves reference-ready tracing behind the stale-session guard.
+- **Limits:** no new physical-device verification. Exact 500ms silence splitting
+  is not established: the provider can delay or omit speech-end. Corrections can
+  merge provisional display lines. Restart introduces a capture gap; automatic
+  microphone reacquisition on Pixel 8/iPhone still requires testing. No measured
+  physical restart latency, memory/battery impact or improved identity accuracy.
+- **Phone acceptance:** close old app copies, reopen, Listen and speak several
+  sentences separated by brief pauses. Confirm each line grows once and corrections
+  retain all words. Tap Clear, wait until Restarting ends, then speak new text.
+  Old words/names must not return. Repeat with "command clear" and a pause, then
+  "command stop". Also test Stop during restart and scrolling up/back to bottom.
+  Existing registration and matching thresholds remain unchanged.
+
 ## 2026-10-14 - Spoken Clear
 
 - **Change:** confirmed browser "command clear" removes text through the command

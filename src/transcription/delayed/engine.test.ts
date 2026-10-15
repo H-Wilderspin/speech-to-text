@@ -7,14 +7,19 @@ import { speakerModel } from '../../identification/model';
 import { notifyProfileChange } from '../../storage/profile-changes';
 
 function source() {
-  let snapshot: TranscriptionSnapshot = { phase: 'idle', message: 'Ready.', segments: [] };
+  let snapshot: TranscriptionSnapshot = { phase: 'idle', message: 'Ready.', sessionId: 0, segments: [] };
   const listeners = new Set<() => void>();
-  const emit = (value: Partial<TranscriptionSnapshot>) => { snapshot = { ...snapshot, ...value }; listeners.forEach((listener) => listener()); };
+  const emit = (value: Partial<TranscriptionSnapshot>) => {
+    const sessionId = value.sessionId ?? snapshot.sessionId ?? 0;
+    snapshot = { ...snapshot, ...value, ...(value.segments ? { segments: value.segments.map((segment) => ({ sessionId, ...segment })) } : {}) };
+    listeners.forEach((listener) => listener());
+  };
   const engine: LocalListeningEngine = {
     unavailableReason: null, getSnapshot: () => snapshot, subscribe: (fn) => { listeners.add(fn); return () => { listeners.delete(fn); }; },
     getPreparationSnapshot: () => ({ phase: 'ready', message: 'Ready.' }), prepare: vi.fn(async () => {}), cancelPreparation: vi.fn(),
-    start: vi.fn(() => emit({ phase: 'listening' })), stop: vi.fn(() => emit({ phase: 'idle', message: 'Stopped.' })),
-    interrupt: vi.fn(() => emit({ phase: 'idle', message: 'Interrupted.' })), clear: vi.fn(() => emit({ segments: [] })),
+    start: vi.fn((_language: string, sessionId = (snapshot.sessionId ?? 0) + 1) => emit({ phase: 'listening', sessionId })), stop: vi.fn(() => emit({ phase: 'idle', message: 'Stopped.' })),
+    interrupt: vi.fn(() => emit({ phase: 'idle', message: 'Interrupted.' })), clear: vi.fn(() => emit({ sessionId: (snapshot.sessionId ?? 0) + 1, segments: [] })),
+    resetSession: vi.fn(async (sessionId: number) => emit({ sessionId, phase: 'idle', segments: [] })),
     dispose: vi.fn(() => { listeners.clear(); snapshot = { phase: 'idle', message: 'Ready.', segments: [] }; }),
   };
   return { engine, emit };
@@ -27,10 +32,10 @@ function fixture() {
   engine.subscribe(() => {}); engine.start('en-GB'); return { browser, local, engine };
 }
 it('shows browser words immediately, then estimates; local recognition never overwrites text', () => {
-  const f = fixture(); f.browser.emit({ segments: words }); expect(f.engine.getSnapshot().segments).toEqual(words);
+  const f = fixture(); f.browser.emit({ segments: words }); expect(f.engine.getSnapshot().segments).toMatchObject(words);
   f.local.emit({ segments: evidence }); expect(f.engine.getSnapshot().segments[0]).toMatchObject({ text: phrase, speakerId: 'a' });
   f.local.emit({ segments: [{ ...evidence[0]!, text: 'Incorrect local words that must never replace the browser text.' }] });
-  expect(f.engine.getSnapshot().segments).toEqual(words);
+  expect(f.engine.getSnapshot().segments).toMatchObject(words);
 });
 it('accepts follow-up browser words while names are pending and labels successive statements in one session', () => {
   const f = fixture();
@@ -89,44 +94,28 @@ it('isolates evidence across manual sessions and Clear', () => {
   expect(f.engine.getSnapshot().segments[0]!.speakerId).toBe('a'); expect(f.engine.getSnapshot().segments[1]!.speakerId).toBeUndefined();
   f.engine.stop(); f.engine.clear(); f.local.emit({ segments: evidence }); expect(f.engine.getSnapshot().segments).toEqual([]);
 });
-it('clears both panes while capture continues and late evidence cannot restore cleared text', () => {
-  const f = fixture(); f.browser.emit({ segments: words });
-  f.local.emit({ segments: evidence });
+it('Clear changes the session and rejects stale words, names, errors and reset completions', async () => {
+  const f = fixture(); f.browser.emit({ segments: words }); f.local.emit({ segments: evidence });
+  const old = f.engine.getSnapshot().sessionId!;
   expect(f.engine.getSnapshot().segments[0]?.speakerId).toBe('a');
-  f.engine.clear();
-  expect(f.engine.getSnapshot()).toMatchObject({ phase: 'listening', segments: [] });
-  expect(f.local.engine.stop).not.toHaveBeenCalled(); expect(f.browser.engine.stop).not.toHaveBeenCalled();
-  expect(f.local.engine.interrupt).not.toHaveBeenCalled();
-  f.local.emit({ segments: evidence });
+  f.engine.clear(); await Promise.resolve(); await Promise.resolve();
+  expect(f.engine.getSnapshot()).toMatchObject({ phase: 'listening', sessionId: old + 1, segments: [] });
+  f.local.emit({ sessionId: old, phase: 'error', message: 'Old failure', segments: evidence });
+  f.browser.emit({ segments: words.map((segment) => ({ ...segment, sessionId: old })) });
   expect(f.engine.getSnapshot().segments).toEqual([]);
+  expect(f.engine.getSnapshot().notice).toBeUndefined();
   const next = { id: 'next', text: 'Another six clearly spoken words arrive here.', isFinal: true };
-  f.browser.emit({ segments: [...words, next] });
-  f.local.emit({ segments: [...evidence, { ...next, id: 'local-next', speakerId: 'a', speakerName: 'Alex', speakerEstimated: true }] });
-  expect(f.engine.getSnapshot().segments).toHaveLength(1);
-  expect(f.engine.getSnapshot().segments[0]).toMatchObject({ text: next.text, speakerId: 'a' });
-  f.engine.stop();
-  expect(f.engine.getSnapshot().segments).toHaveLength(1);
-  f.engine.start('en-GB');
-  expect(f.engine.getSnapshot().segments).toHaveLength(1);
-  f.engine.clear(); expect(f.engine.getSnapshot().segments).toEqual([]);
+  f.browser.emit({ segments: [next] });
+  f.local.emit({ sessionId: old + 1, phase: 'listening', segments: [{ ...next, speakerId: 'a', speakerName: 'Test', speakerEstimated: true }] });
+  expect(f.engine.getSnapshot().segments[0]).toMatchObject({ text: next.text, sessionId: old + 1, speakerId: 'a' });
+  expect(f.local.engine.resetSession).toHaveBeenCalledWith(old + 1);
 });
-
-it('voice Clear resets history and a previous button boundary without stopping names or replaying late evidence', () => {
-  const f = fixture(); f.browser.emit({ segments: words }); f.local.emit({ segments: evidence }); f.engine.stop();
-  f.engine.start('en-GB'); f.browser.emit({ segments: words });
-  f.engine.clear();
-  const next = { id: 'browser', text: 'New words following the spoken clear command.', isFinal: true };
-  f.browser.emit({ clearRevision: 1, segments: [next] });
-  expect(f.engine.getSnapshot().segments).toEqual([next]);
-  f.local.emit({ segments: evidence });
-  expect(f.engine.getSnapshot().segments).toEqual([next]);
-  f.local.emit({ segments: [{ ...evidence[0]!, text: next.text }] });
-  expect(f.engine.getSnapshot().segments[0]).toMatchObject({ text: next.text, speakerId: 'a' });
-  // Only the earlier explicit Stop: the voice Clear never stops either stream.
-  expect(f.local.engine.stop).toHaveBeenCalledTimes(1); expect(f.browser.engine.stop).toHaveBeenCalledTimes(1);
-  expect(f.local.engine.interrupt).not.toHaveBeenCalled();
-  f.browser.emit({ clearRevision: 2, segments: [] }); f.local.emit({ segments: evidence });
-  expect(f.engine.getSnapshot()).toMatchObject({ phase: 'listening', segments: [] });
+it('Stop while names reset prevents late capture activation', async () => {
+  const f = fixture(); let done!: () => void;
+  vi.mocked(f.local.engine.resetSession!).mockImplementation(() => new Promise<void>((resolve) => { done = resolve; }));
+  f.engine.clear(); f.engine.stop(); done(); await Promise.resolve(); await Promise.resolve();
+  expect(f.local.engine.start).toHaveBeenCalledTimes(1);
+  expect(f.engine.getSnapshot().phase).toBe('idle');
 });
 
 it('retains browser captions with no prepared model and aborts local capture on browser failure', () => {
@@ -138,7 +127,7 @@ it('retains browser captions with no prepared model and aborts local capture on 
 it('can be disposed and reactivated without stale subscriptions or captions', () => {
   const f = fixture(); f.browser.emit({ segments: words }); f.engine.dispose();
   f.engine.subscribe(() => {}); f.engine.start('en-GB'); expect(f.engine.getSnapshot().segments).toEqual([]);
-  f.browser.emit({ segments: words }); expect(f.engine.getSnapshot().segments).toEqual(words); f.engine.interrupt();
+  f.browser.emit({ segments: words }); expect(f.engine.getSnapshot().segments).toMatchObject(words); f.engine.interrupt();
   expect(f.local.engine.interrupt).toHaveBeenCalled(); expect(f.browser.engine.interrupt).toHaveBeenCalled();
 });
 
@@ -163,7 +152,7 @@ it('keeps anonymous listening model-free and notices registration changes', asyn
   await vi.waitFor(() => expect(f.store.close).toHaveBeenCalled());
   f.engine.start('en-GB'); f.browser.emit({ segments: words });
   expect(f.local.engine.prepare).not.toHaveBeenCalled(); expect(f.local.engine.start).not.toHaveBeenCalled();
-  expect(f.engine.getSnapshot().segments).toEqual(words);
+  expect(f.engine.getSnapshot().segments).toMatchObject(words);
   vi.mocked(f.store.list).mockResolvedValue(registered); notifyProfileChange(f.database);
   await vi.waitFor(() => expect(f.local.engine.start).toHaveBeenCalledOnce());
   expect(f.browser.engine.start).toHaveBeenCalledOnce(); f.engine.dispose();
@@ -179,7 +168,7 @@ it('joins late preparation without resetting browser text, but Stop prevents lat
     ready = true; f.local.emit({ phase: 'idle' });
     await Promise.resolve();
     expect(f.local.engine.start).toHaveBeenCalledTimes(stop ? 0 : 1);
-    expect(f.engine.getSnapshot().segments).toEqual(words); f.engine.dispose();
+    expect(f.engine.getSnapshot().segments).toMatchObject(words); f.engine.dispose();
   }
 });
 it('does not prepare stale profiles after disposal and removes names after the last profile is deleted', async () => {
@@ -187,7 +176,7 @@ it('does not prepare stale profiles after disposal and removes names after the l
   await vi.waitFor(() => expect(f.local.engine.prepare).toHaveBeenCalled());
   f.engine.start('en-GB'); f.browser.emit({ segments: words }); f.local.emit({ segments: evidence });
   vi.mocked(f.store.list).mockResolvedValue([]); notifyProfileChange(f.database);
-  await vi.waitFor(() => expect(f.engine.getSnapshot().segments).toEqual(words));
+  await vi.waitFor(() => expect(f.engine.getSnapshot().segments).toMatchObject(words));
   expect(f.browser.engine.stop).not.toHaveBeenCalled(); f.engine.dispose();
   const pending = automaticFixture();
   pending.engine.dispose(); await Promise.resolve();
@@ -199,7 +188,7 @@ it('releases name capture if speaker storage fails while browser captions contin
   f.engine.start('en-GB'); f.browser.emit({ segments: words }); f.local.emit({ segments: evidence });
   vi.mocked(f.store.list).mockRejectedValue(new Error('Storage failed.')); notifyProfileChange(f.database);
   await vi.waitFor(() => expect(f.engine.getSnapshot().notice).toContain('Speaker storage unavailable'));
-  expect(f.engine.getSnapshot().segments).toEqual(words);
+  expect(f.engine.getSnapshot().segments).toMatchObject(words);
   expect(f.local.engine.interrupt).toHaveBeenCalled();
   expect(f.browser.engine.stop).not.toHaveBeenCalled(); f.engine.dispose();
 });

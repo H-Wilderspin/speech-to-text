@@ -14,6 +14,9 @@ export class LocalEngine implements LocalListeningEngine {
   private listeners = new Set<() => void>();
   private preparationOperation?: AbortController;
   private operation?: AbortController;
+  private captureOperation?: AbortController;
+  private processing?: Promise<LocalResponse>;
+  private resetting?: Promise<void>;
   private capture?: AudioCapture;
   private history: TranscriptSegment[] = [];
   private sessionId = 0;
@@ -33,14 +36,14 @@ export class LocalEngine implements LocalListeningEngine {
   private notify() { this.listeners.forEach((listener) => listener()); }
   private publish(phase: TranscriptionSnapshot['phase'], message: string, segments = this.snapshot.segments) {
     if (phase !== this.snapshot.phase) this.trace(phase, { session: this.sessionId });
-    this.snapshot = { phase, message, segments, ...(this.speakerStatus ? { speakerStatus: this.speakerStatus } : {}) }; this.notify();
+    this.snapshot = { phase, message, sessionId: this.sessionId, segments, ...(this.speakerStatus ? { speakerStatus: this.speakerStatus } : {}) }; this.notify();
   }
   private setPreparation(phase: PreparationSnapshot['phase'], message: string) {
     this.trace(`preparation-${phase}`); this.preparation = { phase, message }; this.notify();
   }
 
   async prepare(cachedOnly = false) {
-    if (this.preparationOperation || this.operation || this.preparation.phase === 'ready') return;
+    if (this.preparationOperation || this.operation || this.resetting || this.preparation.phase === 'ready') return;
     const operation = new AbortController(); this.preparationOperation = operation;
     const timer = setTimeout(() => operation.abort(new Error('Local model preparation timed out. Retry on a faster connection; completed files will be reused.')), 600000);
     this.setPreparation('preparing', cachedOnly ? 'Loading the saved local speech model…' : 'Preparing local speech. Only missing files are downloaded…');
@@ -62,7 +65,14 @@ export class LocalEngine implements LocalListeningEngine {
     operation?.abort(new DOMException('Preparation cancelled.', 'AbortError')); this.processor.dispose();
     this.setPreparation('idle', 'Preparation cancelled. Cached public model files remain available for retry.');
   }
-  private async loadReferences(signal: AbortSignal) {
+  private request(data: Parameters<LocalProcessor['request']>[0], signal: AbortSignal) {
+    const pending = this.processor.request(data, signal); this.processing = pending;
+    const settled = () => { if (this.processing === pending) this.processing = undefined; };
+    void pending.then(settled, settled);
+    return pending;
+  }
+  private async loadReferences(operation: AbortController, sessionId: number) {
+    const signal = operation.signal;
     const store = this.createStore(); const references: ReferenceVoice[] = [];
     try {
       const summaries = await store.list(); signal.throwIfAborted();
@@ -78,15 +88,17 @@ export class LocalEngine implements LocalListeningEngine {
         } finally { profile.embedding.fill(0); }
       }
       if (!references.length) throw new Error('Record a voice profile in Settings to show names.');
-      this.trace('references-ready', { session: this.sessionId, profiles: references.length });
-      await this.processor.request({ type: 'start', references, voiceCommands: this.voiceCommands }, signal);
+      if (this.operation !== operation || this.sessionId !== sessionId) throw new DOMException('Stale session.', 'AbortError');
+      this.trace('references-ready', { session: sessionId, profiles: references.length });
+      await this.request({ type: 'start', sessionId, references, voiceCommands: this.voiceCommands }, signal);
     } finally { references.forEach((reference) => reference.embedding.fill(0)); store.close(); }
   }
-  start(language: string) {
-    if (this.operation) return;
+  start(language: string, sessionId = this.sessionId + 1) {
+    if (this.operation || this.resetting) return;
     if (this.unavailableReason) { this.publish('error', this.unavailableReason); return; }
     if (!language.startsWith('en')) { this.publish('error', 'Names currently support English. Live captions still work.'); return; }
-    const operation = new AbortController(); this.operation = operation; this.sessionId++; this.voiceStopped = false; this.speakerStatus = undefined;
+    const operation = new AbortController(); this.operation = operation; this.sessionId = sessionId; this.voiceStopped = false; this.speakerStatus = undefined;
+    const captureOperation = new AbortController(); this.captureOperation = captureOperation;
     this.trace('start', { session: this.sessionId });
     this.unwatchProfiles = watchProfileChanges(`speech-to-text-speakers:${new URL(this.appUrl).pathname}`, () => {
       this.interrupt(); this.publish('idle', 'Saved speakers changed. Stop and Listen again to update names.');
@@ -94,28 +106,32 @@ export class LocalEngine implements LocalListeningEngine {
     this.history = [...this.snapshot.segments];
     this.publish('requesting-permission', 'Starting local listening…');
     // Loading profiles runs alongside original-gesture microphone activation.
-    const referencesReady = this.loadReferences(operation.signal);
+    const referencesReady = this.loadReferences(operation, sessionId);
     void referencesReady.catch(() => {});
-    this.capture = this.captureAudio(operation.signal, async (frame) => {
-      await referencesReady; operation.signal.throwIfAborted();
-      const response = await this.processor.request({ type: 'frame', frame }, operation.signal);
-      if (!operation.signal.aborted) this.accept(response);
+    this.capture = this.captureAudio(captureOperation.signal, async (frame) => {
+      await referencesReady; captureOperation.signal.throwIfAborted();
+      if (this.operation !== operation || this.sessionId !== sessionId) return;
+      const response = await this.request({ type: 'frame', sessionId, frame }, operation.signal);
+      if (this.operation === operation && !operation.signal.aborted && this.sessionId === sessionId) this.accept(response, sessionId);
     }, () => {
-      if (!operation.signal.aborted) this.publish('listening', 'Listening locally. Names are estimates. Say “command stop” or tap Stop.');
+      if (this.operation === operation && !captureOperation.signal.aborted && this.sessionId === sessionId) this.publish('listening', 'Listening locally. Names are estimates. Say “command stop” or tap Stop.');
     });
     const capture = this.capture;
     void (async () => {
       try {
         // Fail immediately if profile storage is unavailable, even during permission.
         await Promise.all([referencesReady, capture.done]); operation.signal.throwIfAborted();
-        this.accept(await this.processor.request({ type: 'finish' }, operation.signal)); operation.signal.throwIfAborted();
+        if (this.operation !== operation || this.sessionId !== sessionId) return;
+        const response = await this.request({ type: 'finish', sessionId }, operation.signal); operation.signal.throwIfAborted();
+        if (this.operation !== operation || this.sessionId !== sessionId) return;
+        this.accept(response, sessionId);
         this.operation = undefined; this.capture = undefined;
         this.unwatchProfiles();
         this.publish('idle', this.voiceStopped ? 'Stopped by voice command.' : 'Stopped.');
       } catch (error) {
         if (this.operation === operation) {
           this.trace(speakerFailureStage(error), { session: this.sessionId });
-          this.operation = undefined; this.capture = undefined; operation.abort(); this.processor.dispose();
+          this.operation = undefined; this.capture = undefined; captureOperation.abort(); operation.abort(); this.processor.dispose();
           this.unwatchProfiles();
           this.setPreparation('idle', 'Local listening must be prepared again; saved model files will be reused.');
           this.publish('error', error instanceof Error ? error.message : 'Names unavailable. Live captions still work.', this.snapshot.segments.filter((segment) => segment.isFinal));
@@ -123,10 +139,11 @@ export class LocalEngine implements LocalListeningEngine {
       }
     })();
   }
-  private accept(response: LocalResponse) {
+  private accept(response: LocalResponse, sessionId: number) {
+    if (sessionId !== this.sessionId || response.sessionId !== sessionId) return;
     if (response.speakerStatus !== undefined) this.speakerStatus = response.speakerStatus;
     if (response.segments) {
-      const segments = [...this.history, ...response.segments.map((segment) => ({ ...segment, id: `${this.sessionId}:${segment.id}` }))];
+      const segments = [...this.history, ...response.segments.map((segment) => ({ ...segment, sessionId, revision: response.id, id: `${sessionId}:${segment.id}` }))];
       let excess = segments.reduce((sum, segment) => sum + segment.text.length, 0) - 100000;
       while (excess > 0 && segments.length) {
         const first = segments[0]!;
@@ -146,12 +163,36 @@ export class LocalEngine implements LocalListeningEngine {
     if (!this.operation) return;
     const operation = this.operation; this.operation = undefined;
     this.unwatchProfiles();
-    operation.abort(new DOMException('Listening interrupted.', 'AbortError')); this.processor.dispose(); this.capture = undefined;
+    this.captureOperation?.abort(); operation.abort(new DOMException('Listening interrupted.', 'AbortError')); this.processor.dispose(); this.capture = undefined;
     this.setPreparation('idle', 'Reload the saved model in Settings to resume local listening.');
     this.publish('idle', 'Local listening paused because you left the app.', this.snapshot.segments.filter((segment) => segment.isFinal));
   }
   clear() { if (!this.operation) { this.history = []; this.speakerStatus = undefined; this.publish('idle', 'Text cleared.', []); } }
+  resetSession(sessionId: number): Promise<void> {
+    this.sessionId = sessionId;
+    this.operation = undefined; this.captureOperation?.abort(); this.capture = undefined;
+    this.unwatchProfiles(); this.history = []; this.speakerStatus = undefined;
+    const pending = this.resetting ?? this.processing;
+    // Release capture now. Let only the in-flight worker call finish, discard its
+    // result, then reset native state in order without unloading model weights.
+    const reset = (async () => {
+      try {
+        await pending;
+        if (this.sessionId !== sessionId || this.preparation.phase !== 'ready') return;
+        await this.request({ type: 'reset', sessionId }, new AbortController().signal);
+      } catch {
+        if (this.sessionId === sessionId) { this.processor.dispose(); this.setPreparation('idle', 'Reload saved models to resume names.'); }
+      } finally {
+        if (this.sessionId === sessionId) { this.resetting = undefined; this.publish('idle', 'Ready for names.', []); }
+      }
+    })();
+    this.resetting = reset;
+    this.publish('restarting', 'Resetting names…', []);
+    return reset;
+  }
   dispose() {
+    this.sessionId++;
+    this.resetting = undefined;
     this.interrupt(); this.cancelPreparation(); this.history = []; this.speakerStatus = undefined; this.snapshot = { phase: 'idle', message: 'Ready when you are.', segments: [] };
   }
 }

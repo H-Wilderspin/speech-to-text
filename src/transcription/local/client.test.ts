@@ -4,7 +4,7 @@ import { LocalWorker } from './client';
 function fixture() {
   vi.useFakeTimers(); vi.stubGlobal('location', { search: '?debugSpeakers=1' });
   const log = vi.spyOn(console, 'info').mockImplementation(() => {});
-  const worker = { onmessage: null as null | ((event: { data: { id: number } }) => void), onerror: null,
+  const worker = { onmessage: null as null | ((event: { data: { id: number; sessionId?: number } }) => void), onerror: null,
     postMessage: vi.fn(), terminate: vi.fn() };
   vi.stubGlobal('Worker', class { constructor() { return worker; } });
   const client = new LocalWorker();
@@ -12,6 +12,16 @@ function fixture() {
   return { client, worker, log, frame, signal: new AbortController().signal };
 }
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.useRealTimers(); });
+
+it('requires the request ID and session ID before settling a worker response', async () => {
+  const f = fixture(); const settled = vi.fn();
+  const pending = f.client.request({ type: 'frame', sessionId: 3, frame: f.frame }, f.signal).then(settled);
+  f.worker.onmessage?.({ data: { id: 1, sessionId: 2 } });
+  f.worker.onmessage?.({ data: { id: 2, sessionId: 3 } });
+  await Promise.resolve(); expect(settled).not.toHaveBeenCalled();
+  f.worker.onmessage?.({ data: { id: 1, sessionId: 3 } });
+  await pending; expect(settled).toHaveBeenCalledOnce(); f.client.dispose();
+});
 
 it('allows the next frame after each response, without waiting for a completed sentence', async () => {
   const f = fixture();

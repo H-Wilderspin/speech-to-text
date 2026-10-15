@@ -21,9 +21,10 @@ const closeSession = () => {
   references.forEach((reference) => reference.embedding.fill(0)); references = [];
 };
 
-self.onmessage = async (event: MessageEvent<{ id: number; type: string; assets?: Record<string, Uint8Array<ArrayBuffer>>; references?: ReferenceVoice[]; frame?: AudioFrame; voiceCommands?: boolean; debugSpeakers?: boolean }>) => {
+self.onmessage = async (event: MessageEvent<{ id: number; sessionId?: number; type: string; assets?: Record<string, Uint8Array<ArrayBuffer>>; references?: ReferenceVoice[]; frame?: AudioFrame; voiceCommands?: boolean; debugSpeakers?: boolean }>) => {
   const data = event.data;
-  if (busy) { data.frame?.samples.fill(0); data.references?.forEach((reference) => reference.embedding.fill(0)); self.postMessage({ id: data.id, error: 'Local speech processing is busy.' }); return; }
+  const reply = (payload: object = {}) => self.postMessage({ id: data.id, sessionId: data.sessionId, ...payload });
+  if (busy) { data.frame?.samples.fill(0); data.references?.forEach((reference) => reference.embedding.fill(0)); reply({ error: 'Local speech processing is busy.' }); return; }
   busy = true;
   try {
     if (data.type === 'prepare' && data.assets) {
@@ -43,7 +44,11 @@ self.onmessage = async (event: MessageEvent<{ id: number; type: string; assets?:
       // Native models own their initialized weights. Reset only needs the small
       // VAD file; release JS copies of the large ASR and embedding files.
       for (const name of Object.keys(assets)) if (name !== 'silero_vad.onnx') delete assets[name];
-      self.postMessage({ id: data.id });
+      reply();
+    } else if (data.type === 'reset') {
+      pipeline?.reset(); transcript = undefined; stopped = null; lastOutput = '';
+      references.forEach((reference) => reference.embedding.fill(0)); references = [];
+      reply();
     } else if (data.type === 'start') {
       voiceCommands = data.voiceCommands !== false;
       references.forEach((reference) => reference.embedding.fill(0));
@@ -51,7 +56,7 @@ self.onmessage = async (event: MessageEvent<{ id: number; type: string; assets?:
       if (!references.length || references.some((reference) => !reference.id || !reference.name || reference.embedding.length !== 192 || !reference.embedding.every(Number.isFinite))) throw new Error('No compatible saved voiceprints are available.');
       if (!pipeline) throw new Error('Prepare local listening before starting.');
       transcript = new SuggestedTranscript(references); stopped = null; lastOutput = '';
-      self.postMessage({ id: data.id });
+      reply();
     } else if (pipeline && transcript && (data.type === 'frame' || data.type === 'finish')) {
       const started = performance.now();
       const result = data.type === 'finish' ? pipeline.finish() : pipeline.accept(data.frame!);
@@ -70,11 +75,11 @@ self.onmessage = async (event: MessageEvent<{ id: number; type: string; assets?:
         references.forEach((reference) => reference.embedding.fill(0)); references = []; transcript = undefined;
         pipeline.reset();
       }
-      self.postMessage({ id: data.id, commandStop: stopped !== null, ...(diagnostics ? { diagnostics } : {}), ...(serialized !== lastOutput ? { segments: output, speakerStatus } : {}) });
+      reply({ commandStop: stopped !== null, ...(diagnostics ? { diagnostics } : {}), ...(serialized !== lastOutput ? { segments: output.map((segment) => ({ ...segment, sessionId: data.sessionId })), speakerStatus } : {}) });
       lastOutput = serialized;
     } else throw new Error('Prepare local listening before starting.');
   } catch (error) {
     closeSession();
-    self.postMessage({ id: data.id, error: error instanceof Error ? error.message : 'Local listening failed. Switch to browser captions in Settings.' });
+    reply({ error: error instanceof Error ? error.message : 'Local listening failed. Switch to browser captions in Settings.' });
   } finally { data.frame?.samples.fill(0); busy = false; }
 };

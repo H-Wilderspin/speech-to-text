@@ -111,7 +111,7 @@ export function delayedNames(browser: readonly TranscriptSegment[], local: reado
       const text = segment.text.slice(start, end);
       const previous = pieces.at(-1);
       if (previous && previous.speakerId === label?.speakerId && previous.speakerName === label?.speakerName) previous.text += text;
-      else pieces.push({ id: `${segment.id}:names:${start}`, sourceSegmentId: segment.id, text, isFinal: segment.isFinal,
+      else pieces.push({ ...segment, id: `${segment.id}:names:${start}`, sourceSegmentId: segment.id, text, isFinal: segment.isFinal,
         ...(label ? { speakerId: label.speakerId, speakerName: label.speakerName, speakerEstimated: true, speakerEvidenceFinal: true } : {}) });
     }
     return pieces;

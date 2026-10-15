@@ -12,7 +12,7 @@ export function liveSegments(segments: readonly TranscriptSegment[]): Transcript
     const id = segment.sourceSegmentId ?? segment.id;
     const previous = result.at(-1);
     if (previous?.id === id && previous.isFinal === segment.isFinal) previous.text += segment.text;
-    else result.push({ id, text: segment.text, isFinal: segment.isFinal });
+    else result.push({ id, text: segment.text, isFinal: segment.isFinal, sessionId: segment.sessionId, revision: segment.revision });
   }
   return result;
 }

@@ -1,5 +1,32 @@
 # Troubleshooting
 
+## 2026-10-15 - Clear retains recognition context (physical result unresolved)
+
+- **Context/symptom:** user reports both recent active-Clear approaches fail.
+  The previous implementation deliberately kept capture and cumulative recognition
+  alive, hiding a word-count prefix. Browser corrections could still change that
+  hidden prefix; a display cut did not create a new recognition session.
+- **Evidence:** controlled tests verify the old display behavior, not the user's
+  physical failure mechanism. No phone trace isolates that mechanism. Do not
+  describe the earlier passing simulated checks as physical acceptance.
+- **Replacement:** remove prefix masking. Invalidate a numeric session immediately,
+  detach callbacks and timers, clear both panes, abort native capture and await
+  end before restarting. Worker input/output includes session IDs; old replies and
+  errors are ignored. Capture cancels immediately while one already running local
+  request finishes, followed by a native-state reset that retains model weights.
+- **Regression evidence:** unit tests verify native-end handoff, stale callbacks,
+  Stop cancellation, timeout, old voice evidence and worker session matching.
+  Main-app browser tests use simulated recognition; the generated-audio test also
+  exercises new-session attribution with actual models. Final run results are in
+  the corresponding feasibility entry. Physical verification remains pending.
+- **Prevention:** never identify old output using the current mutable session;
+  capture the session at request/recognizer creation and check before applying it.
+  Never infer acoustic silence from a lack of recognition callbacks. See ADR 0043.
+- **Test execution:** a local run overlapped a production rebuild and its model
+  recovery check received HTTP 404 for `local/v2/encoder.part2.bin` in the trace.
+  Keep `dist` immutable throughout preview-based tests; finish the build before
+  starting Playwright. Do not weaken download/retry assertions for this failure.
+
 ## 2026-10-13 - Pushed UI changes absent from Pages (audio-clock cause unresolved)
 
 - **Symptom:** user still sees dark mode after light-theme, toolbar and pane-order

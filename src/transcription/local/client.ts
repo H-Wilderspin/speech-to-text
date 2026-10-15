@@ -3,7 +3,7 @@ import type { LocalResponse, ReferenceVoice } from './types';
 import { createSpeakerTrace, speakerDiagnosticsEnabled, speakerFailureStage } from '../diagnostics';
 
 export interface LocalProcessor {
-  request(data: { type: string; assets?: Record<string, Uint8Array<ArrayBuffer>>; references?: ReferenceVoice[]; frame?: AudioFrame; voiceCommands?: boolean }, signal: AbortSignal): Promise<LocalResponse>;
+  request(data: { type: string; sessionId?: number; assets?: Record<string, Uint8Array<ArrayBuffer>>; references?: ReferenceVoice[]; frame?: AudioFrame; voiceCommands?: boolean }, signal: AbortSignal): Promise<LocalResponse>;
   dispose(): void;
 }
 export class LocalWorker implements LocalProcessor {
@@ -18,7 +18,7 @@ export class LocalWorker implements LocalProcessor {
     const worker = this.worker; const id = ++this.sequence;
     const started = performance.now();
     const sampled = data.type !== 'frame' || (data.frame?.startSample ?? 0) % 16000 === 0;
-    if (sampled) this.trace(`${data.type}-request`, { request: id, startSample: data.frame?.startSample ?? null });
+    if (sampled) this.trace(`${data.type}-request`, { request: id, session: data.sessionId ?? null, startSample: data.frame?.startSample ?? null });
     return new Promise((resolve, reject) => {
       const waiting = speakerDiagnosticsEnabled() ? setTimeout(() => this.trace(`${data.type}-waiting`, {
         request: id, startSample: data.frame?.startSample ?? null, elapsedMs: Math.round(performance.now() - started),
@@ -34,7 +34,7 @@ export class LocalWorker implements LocalProcessor {
       signal.addEventListener('abort', abort, { once: true });
       worker.onerror = () => fail(new Error('This device could not run local listening. Switch to browser captions in Settings.'));
       worker.onmessage = (event: MessageEvent<LocalResponse>) => {
-        if (event.data.id !== id) return;
+        if (event.data.id !== id || event.data.sessionId !== data.sessionId) return;
         if (event.data.error) { fail(new Error(event.data.error)); return; }
         const elapsedMs = Math.round(performance.now() - started);
         if (sampled || elapsedMs >= 100) this.trace(`${data.type}-response`, { request: id, elapsedMs }, sampled ? 0 : 1000);

@@ -1,6 +1,7 @@
 import { collapseCumulativeResults, reconcileResults, type RecognizedSegment } from './reconcile';
 import { findVoiceCommand } from './stop-command';
-import { ClearBoundary } from './clear-boundary';
+import { PauseLines } from './pause-lines';
+import { createSpeakerTrace } from './diagnostics';
 import { reconcileAndroidResults, usesAndroidRecognition } from './android-results';
 import type { BrowserRecognizer, RecognizerFactory, TranscriptionEngine, TranscriptionSnapshot, TranscriptSegment } from './types';
 
@@ -32,8 +33,13 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
   private restartDelay = 200;
   private commandStartSessionId = 0;
   private cycleErrored = false;
-  private cleared = new ClearBoundary();
-  private clearRevision = 0;
+  private sessionNumber = 0;
+  private revision = 0;
+  private nativeEnded = false;
+  private resetting: BrowserRecognizer | null = null;
+  private pauseTimer: ReturnType<typeof setTimeout> | undefined;
+  private lines = new PauseLines();
+  private trace = createSpeakerTrace('browser');
 
   constructor(private factory: RecognizerFactory | null, public readonly unavailableReason: string | null = null,
     private resultMode: 'standard' | 'android-cumulative' = 'standard') {}
@@ -59,8 +65,8 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
         }
       }
     }
-    this.snapshot = { phase, message, clearRevision: this.clearRevision,
-      segments: this.cleared.apply([...this.history, ...collapseCumulativeResults(this.current)]) };
+    this.snapshot = { phase, message, sessionId: this.sessionNumber,
+      segments: this.lines.apply([...this.history, ...collapseCumulativeResults(this.current)]) };
     this.listeners.forEach((listener) => listener());
   }
 
@@ -76,7 +82,9 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
     if (recognizer) {
       recognizer.onstart = recognizer.onend = recognizer.onerror = recognizer.onresult = null;
       recognizer.onspeechstart = null;
+      recognizer.onspeechend = recognizer.onsoundstart = null;
     }
+    clearTimeout(this.pauseTimer);
     return recognizer;
   }
 
@@ -97,12 +105,13 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
   }
 
   start(language: string) {
-    if (this.listeningRequested || this.recognizer) return;
+    if (this.listeningRequested || this.recognizer || this.resetting) return;
     if (!this.factory || this.unavailableReason) {
       this.publish('error', this.unavailableReason ?? 'Speech recognition is not available in this browser.');
       return;
     }
     this.listeningRequested = true;
+    this.sessionNumber++;
     this.language = language;
     this.restartDelay = 200;
     this.commandStartSessionId = this.sessionId + 1;
@@ -129,9 +138,12 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
     this.sessionId++;
     this.utterance = 0;
     this.cycleErrored = false;
+    this.nativeEnded = false;
+    const sessionNumber = this.sessionNumber;
     try {
       const recognizer = this.factory!();
       this.recognizer = recognizer;
+      const current = () => this.recognizer === recognizer && sessionNumber === this.sessionNumber;
       recognizer.lang = this.language;
       // Keep native capture alive across pauses. Restart only if the provider
       // ends anyway; repeated single-utterance starts leave gaps in the audio.
@@ -139,25 +151,42 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
       recognizer.interimResults = true;
       recognizer.maxAlternatives = 1;
       recognizer.onspeechstart = () => {
-        if (this.recognizer === recognizer) this.utterance++;
+        if (current()) { clearTimeout(this.pauseTimer); this.utterance++; }
+      };
+      recognizer.onsoundstart = () => { if (current()) clearTimeout(this.pauseTimer); };
+      recognizer.onspeechend = () => {
+        if (!current()) return;
+        clearTimeout(this.pauseTimer);
+        this.pauseTimer = setTimeout(() => {
+          if (!current()) return;
+          // The provider identifies the speech boundary; debounce it for 500ms.
+          // Keep late corrections in their source slot rather than slicing words.
+          this.lines.mark(collapseCumulativeResults(this.current).at(-1));
+          this.current = this.current.map((segment, index) => index === this.current.length - 1
+            ? { ...segment, pauseAfter: true } : segment);
+          this.publish(this.snapshot.phase, this.snapshot.message);
+        }, 500);
       };
       recognizer.onstart = () => {
-        if (this.recognizer !== recognizer) { this.abort(recognizer); return; }
+        if (!current()) { this.abort(recognizer); return; }
         if (this.snapshot.phase === 'stopping') return;
         this.cancelTimer();
         this.publish('listening', 'Listening. Say “command stop” or tap Stop to finish.');
       };
       recognizer.onresult = ({ results }) => {
-        if (this.recognizer !== recognizer) return;
+        if (!current()) { this.trace('stale-result', { session: sessionNumber, currentSession: this.sessionNumber }); return; }
+        const paused = new Set(this.current.filter((segment) => segment.pauseAfter).map((segment) => segment.id));
         this.current = this.resultMode === 'android-cumulative'
           ? reconcileAndroidResults(results, this.sessionId)
           : reconcileResults(this.current, results, this.sessionId, true, this.utterance);
+        this.current = this.current.map((segment) => ({ ...segment, sessionId: sessionNumber,
+          revision: ++this.revision, ...(paused.has(segment.id) ? { pauseAfter: true } : {}) }));
         if (this.current.length) this.restartDelay = 200;
         if (this.handleCommands()) return;
         this.publish(this.snapshot.phase, this.snapshot.message);
       };
       recognizer.onerror = ({ error }) => {
-        if (this.recognizer !== recognizer) return;
+        if (!current()) return;
         this.cycleErrored = true;
         if (this.listeningRequested && error === 'no-speech') {
           // Normally followed by onend. Bound the wait for broken providers.
@@ -171,7 +200,8 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
         }
       };
       recognizer.onend = () => {
-        if (this.recognizer !== recognizer) return;
+        if (!current()) return;
+        this.nativeEnded = true;
         if (this.resultMode === 'android-cumulative' && !this.cycleErrored) {
           // Android ends the native session after its completed result callback.
           // Errors/interruptions must not turn a partial guess into confirmed text.
@@ -189,27 +219,22 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
   }
 
   private handleCommands(): boolean {
-    // Keep processing in spoken order: Clear may be followed by more speech or
-    // another command in the same result. Its boundary also prevents replay.
-    while (true) {
-      const visible = this.cleared.apply([...this.history, ...collapseCumulativeResults(this.current.filter((segment) => segment.isFinal))]);
-      const earlierSessions = visible.filter((segment) => Number(segment.id.split(':')[0]) < this.commandStartSessionId);
-      const command = findVoiceCommand(visible.slice(earlierSessions.length));
-      if (!command) return false;
-      if (command.action === 'clear') {
-        this.cleared.advance([...earlierSessions, ...command.through]);
-        this.clearRevision++;
-      } else {
-        this.history = [...earlierSessions, ...command.before];
-        this.current = []; this.cleared.reset();
-        this.finish('idle', 'Stopped by voice command.');
-        return true;
-      }
+    const visible = [...this.history, ...collapseCumulativeResults(this.current.filter((segment) => segment.isFinal))];
+    const earlierSessions = visible.filter((segment) => Number(segment.id.split(':')[0]) < this.commandStartSessionId);
+    const command = findVoiceCommand(visible.slice(earlierSessions.length));
+    if (!command) return false;
+    if (command.action === 'clear') this.clear();
+    else {
+      this.history = [...earlierSessions, ...command.before];
+      this.current = [];
+      this.finish('idle', 'Stopped by voice command.');
     }
+    return true;
   }
 
   stop() {
     this.listeningRequested = false;
+    if (this.resetting) { this.publish('stopping', 'Stopping…'); return; }
     if (!this.recognizer) { this.cancelTimer(); this.publish('idle', 'Stopped.'); return; }
     if (this.snapshot.phase === 'stopping') return;
     if (this.snapshot.phase === 'requesting-permission') {
@@ -223,24 +248,49 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
   }
 
   interrupt() {
+    if (this.resetting) { this.listeningRequested = false; this.publish('stopping', 'Stopping…'); return; }
     if (this.recognizer || this.listeningRequested) this.finish('idle', 'Listening paused because you left the app. Tap Listen to continue.');
   }
 
   clear() {
-    if (this.recognizer || this.listeningRequested) {
-      this.cleared.mark([...this.history, ...collapseCumulativeResults(this.current)]);
-      this.publish(this.snapshot.phase, this.snapshot.message);
-      return;
-    }
-    this.cleared.reset();
+    if (this.resetting) return; // Coalesce repeated Clear while retiring capture.
+    const resume = this.listeningRequested && this.snapshot.phase !== 'stopping';
+    const ended = this.nativeEnded;
+    const old = this.detach();
+    this.sessionNumber++;
     this.history = [];
     this.current = [];
-    this.publish('idle', 'Text cleared. Ready when you are.');
+    this.lines.clear();
+    this.trace('clear', { session: this.sessionNumber, restart: resume });
+    this.listeningRequested = resume;
+    this.commandStartSessionId = this.sessionId + 1;
+    if (!old || ended) {
+      this.publish(resume ? 'restarting' : 'idle', resume ? 'Restarting…' : 'Text cleared. Ready when you are.');
+      if (this.listeningRequested) this.begin();
+      return;
+    }
+    this.resetting = old;
+    const sessionNumber = this.sessionNumber;
+    old.onend = () => {
+      if (this.resetting !== old || this.sessionNumber !== sessionNumber) return;
+      old.onend = null; this.resetting = null; this.cancelTimer();
+      if (this.listeningRequested) this.begin();
+      else this.publish('idle', 'Stopped.');
+    };
+    this.timer = setTimeout(() => {
+      if (this.resetting !== old || this.sessionNumber !== sessionNumber) return;
+      old.onend = null; this.resetting = null; this.listeningRequested = false;
+      this.publish('error', 'Microphone restart was not confirmed. Tap Listen to retry.');
+    }, STOP_TIMEOUT_MS);
+    this.publish(resume ? 'restarting' : 'stopping', resume ? 'Restarting…' : 'Stopping…');
+    this.abort(old);
   }
 
   dispose() {
-    this.clearRevision = 0;
-    this.cleared.reset();
+    this.lines.clear();
+    if (this.resetting) this.resetting.onend = null;
+    this.resetting = null;
+    this.sessionNumber++;
     this.listeningRequested = false;
     this.abort(this.detach());
     this.history = [];

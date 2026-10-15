@@ -20,7 +20,7 @@ function fixture(voiceCommands = true) {
     save: vi.fn(), remove: vi.fn(), clear: vi.fn() };
   let nextResponse: LocalResponse = { id: 1 };
   const requests: Parameters<LocalProcessor['request']>[0][] = [];
-  const processor: LocalProcessor = { request: vi.fn(async (data) => { requests.push(data); return data.type === 'frame' ? nextResponse : { id: 1 }; }), dispose: vi.fn() };
+  const processor: LocalProcessor = { request: vi.fn(async (data) => { requests.push(data); return { sessionId: data.sessionId, ...(data.type === 'frame' ? nextResponse : { id: 1 }) }; }), dispose: vi.fn() };
   const loader = vi.fn(async () => ({}));
   let consume!: (frame: AudioFrame) => Promise<void>; let ready!: () => void; let resolve!: () => void; let reject!: (reason: unknown) => void;
   let signal!: AbortSignal;
@@ -88,6 +88,30 @@ it('does not open a microphone for an unsupported language or unprepared model',
   expect(f.engine.getSnapshot().message).toContain('English'); f.engine.dispose();
 });
 
+it('does not revive a disposed engine when a reset finishes late', async () => {
+  const f = fixture(false); await f.engine.prepare(); f.engine.start('en-GB', 5); await flush(); f.ready();
+  let complete!: (response: LocalResponse) => void;
+  vi.mocked(f.processor.request).mockImplementationOnce(() => new Promise((resolve) => { complete = resolve; }));
+  const frame = f.send({ id: 2 }); await flush();
+  const reset = f.engine.resetSession(6); f.engine.dispose();
+  complete({ id: 2, sessionId: 5 }); await frame; await reset;
+  expect(f.engine.getSnapshot()).toMatchObject({ phase: 'idle', segments: [] });
+  expect(f.requests.some((request) => request.type === 'reset')).toBe(false);
+  expect(f.capture).toHaveBeenCalledOnce(); expect(f.processor.dispose).toHaveBeenCalled();
+});
+
+it('does not start retired references if Clear happens during profile loading', async () => {
+  const f = fixture(false); await f.engine.prepare();
+  let complete!: (profiles: SpeakerProfile[]) => void;
+  vi.mocked(f.store.list).mockImplementationOnce(() => new Promise((resolve) => { complete = resolve; }));
+  f.engine.start('en-GB', 5); await f.engine.resetSession(6);
+  complete([f.profile]); await flush();
+  expect(f.requests.some((request) => request.type === 'start' && request.sessionId === 5)).toBe(false);
+  expect(f.engine.getSnapshot()).toMatchObject({ sessionId: 6, phase: 'idle', segments: [] });
+  expect(f.engine.getPreparationSnapshot().phase).toBe('ready');
+  f.engine.dispose();
+});
+
 it('invalidates active references when the profile store changes, with app-path isolation', async () => {
   const f = fixture(); await f.engine.prepare(); f.engine.start('en-GB'); await flush(); f.ready();
   notifyProfileChange('speech-to-text-speakers:/different/'); expect(f.signal().aborted).toBe(false);
@@ -111,5 +135,29 @@ it('delivers matching diagnostics independently of words, retains them after Sto
   f.engine.stop(); await flush();
   expect(f.engine.getSnapshot().speakerStatus).toContain('2 ambiguous');
   f.engine.clear(); expect(f.engine.getSnapshot().speakerStatus).toBeUndefined();
+  f.engine.dispose();
+});
+
+it('cancels capture immediately, discards in-flight old evidence and resets without unloading models', async () => {
+  const f = fixture(false); await f.engine.prepare(); f.engine.start('en-GB', 10); await flush(); f.ready();
+  let finishFrame!: (response: LocalResponse) => void;
+  const original = f.processor.request;
+  vi.mocked(f.processor.request).mockImplementationOnce(() => new Promise((resolve) => { finishFrame = resolve; }));
+  const frame = f.send({ id: 2 }); await flush();
+  const resetting = f.engine.resetSession(11);
+  expect(f.signal().aborted).toBe(true);
+  expect(f.engine.getSnapshot()).toMatchObject({ sessionId: 11, phase: 'restarting', segments: [] });
+  f.ready(); expect(f.engine.getSnapshot().phase).toBe('restarting');
+  finishFrame({ id: 2, sessionId: 10, segments: [{ id: 'old', text: 'Stale names', isFinal: true, speakerId: 'test' }] });
+  await frame; await resetting;
+  expect(f.engine.getSnapshot().segments).toEqual([]);
+  expect(f.processor.dispose).not.toHaveBeenCalled();
+  expect(f.loader).toHaveBeenCalledOnce();
+  expect(original).toHaveBeenCalledWith({ type: 'reset', sessionId: 11 }, expect.any(AbortSignal));
+  f.engine.start('en-GB', 11); await flush(); f.ready();
+  await f.send({ id: 4, sessionId: 10, segments: [{ id: 'old', text: 'Still stale', isFinal: true }] });
+  expect(f.engine.getSnapshot().segments).toEqual([]);
+  await f.send({ id: 5, sessionId: 11, segments: [{ id: 'new', text: 'Fresh words', isFinal: true }] });
+  expect(f.engine.getSnapshot().segments).toMatchObject([{ text: 'Fresh words', sessionId: 11, revision: 5 }]);
   f.engine.dispose();
 });

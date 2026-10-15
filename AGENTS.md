@@ -22,12 +22,15 @@ Deliver a **small, accessible, static-hosted TypeScript PWA** for live speech tr
 
 ## Architecture rules
 
-**Clear during listening (2026-10-14):** Clear is enabled whenever captions exist.
-It resets both main-app panes without restarting browser/local capture. Retain
-bounded recognition context and hide cleared words after delayed alignment, so
-late results cannot restore them. See ADR 0041 for the display-boundary semantics.
-Confirmed browser "command clear" performs the same display reset without stopping
-capture, preserving words after the command and ignoring cumulative replay (ADR 0042).
+**Session reset (2026-10-15, explicit user instruction):** Clear and confirmed
+"command clear" invalidate the current session immediately, empty both panes,
+abort capture and start a new session only after native recognition ends. Drop
+all old-session results, including the tail of a payload containing the command.
+Stop cancels restart. Speaker work resets in order while retaining loaded models.
+Tag main-app lines and speaker requests/results with session IDs. A debounced
+provider speech-end hint can split an unchanged prefix after 500ms; preserve late
+corrections and never claim exact audio/word timing. See ADR 0043, which supersedes
+the display masking in ADRs 0041/0042.
 
 **Continuous Live restored (2026-10-14):** Live is one chronological scrolling
 transcript. Interim sentences compose in place; completed sentences stay in the

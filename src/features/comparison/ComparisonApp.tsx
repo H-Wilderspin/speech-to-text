@@ -31,7 +31,7 @@ export function ComparisonApp({ browser, remote, database }: { browser: Transcri
   const [preferences, setPreferences] = useState(readPreferences);
   const [settings, setSettings] = useState(false);
   const settingsButton = useRef<HTMLButtonElement>(null);
-  const active = ['requesting-permission', 'listening', 'stopping'].includes(live.phase);
+  const active = ['requesting-permission', 'listening', 'restarting', 'stopping'].includes(live.phase);
   const change = (changes: Partial<typeof preferences>) => setPreferences((current) => {
     const next = { ...current, ...changes }; savePreferences(next); return next;
   });

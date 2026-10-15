@@ -5,9 +5,8 @@ import type { ProfileStore } from '../../storage/profiles';
 import { watchProfileChanges } from '../../storage/profile-changes';
 import { speakerModel } from '../../identification/model';
 import { createSpeakerTrace } from '../diagnostics';
-import { ClearBoundary } from '../clear-boundary';
 
-const active = (snapshot: TranscriptionSnapshot) => ['requesting-permission', 'listening', 'stopping'].includes(snapshot.phase);
+const active = (snapshot: TranscriptionSnapshot) => ['requesting-permission', 'listening', 'restarting', 'stopping'].includes(snapshot.phase);
 
 /** Browser words are authoritative. The independent local path may only add
  * delayed, explicitly experimental estimates; its failures cannot stop captions. */
@@ -27,12 +26,12 @@ export class DelayedNamesEngine implements LocalListeningEngine {
   private language = 'en-GB';
   private trace = createSpeakerTrace('alignment');
   private lastDiagnostic = '';
-  private cleared = new ClearBoundary();
-  private clearRevision: number;
+  private sessionId: number;
+  private resettingNames = false;
   constructor(private readonly browser: TranscriptionEngine, private readonly local: LocalListeningEngine,
     private readonly profiles?: { database: string; createStore(): ProfileStore }) {
     this.snapshot = browser.getSnapshot();
-    this.clearRevision = this.snapshot.clearRevision ?? 0;
+    this.sessionId = this.snapshot.sessionId ?? 0;
     this.hasSpeakers = !profiles;
   }
   get unavailableReason() { return this.browser.unavailableReason; }
@@ -70,10 +69,11 @@ export class DelayedNamesEngine implements LocalListeningEngine {
     } finally { store.close(); }
   }
   private startNamesIfReady() {
-    if (!this.running || this.namesAttempted || !this.hasSpeakers || !this.language.startsWith('en')
+    if (!this.running || this.resettingNames || this.namesAttempted || !this.hasSpeakers || !this.language.startsWith('en')
+      || !['listening', 'requesting-permission'].includes(this.browser.getSnapshot().phase)
       || this.local.getPreparationSnapshot().phase !== 'ready' || this.local.unavailableReason) return;
     this.namesAttempted = true; this.namesStarted = true; this.notice = undefined;
-    this.local.start(this.language);
+    this.local.start(this.language, this.sessionId);
   }
   subscribe = (listener: () => void) => {
     this.connect(); this.listeners.add(listener); return () => { this.listeners.delete(listener); };
@@ -83,18 +83,30 @@ export class DelayedNamesEngine implements LocalListeningEngine {
   private update() {
     if (this.starting) return;
     const browser = this.browser.getSnapshot();
-    if ((browser.clearRevision ?? 0) !== this.clearRevision) {
-      this.clearRevision = browser.clearRevision ?? 0;
-      this.history = []; this.cleared.reset();
+    if ((browser.sessionId ?? 0) !== this.sessionId) {
+      const sessionId = browser.sessionId ?? 0; this.sessionId = sessionId;
+      this.history = []; this.namesStarted = false; this.namesAttempted = false; this.notice = undefined;
+      this.running = active(browser) && browser.phase !== 'stopping';
+      this.resettingNames = true;
+      const reset = this.local.resetSession ? this.local.resetSession(sessionId)
+        : (this.local.interrupt(), this.local.clear(), Promise.resolve());
+      void reset.then(() => {
+        if (this.sessionId !== sessionId) return;
+        this.resettingNames = false; this.startNamesIfReady(); this.update();
+        if (this.running && this.hasSpeakers && this.local.getPreparationSnapshot().phase === 'idle') void this.prepare(true);
+      });
     }
     // A completed background preparation may join the current browser session.
     // Stop/error must win before any late microphone activation.
-    if (this.profiles && !this.namesAttempted && this.local.getPreparationSnapshot().phase === 'ready'
-      && active(browser) && browser.phase !== 'stopping') queueMicrotask(() => {
+    const scheduledSession = this.sessionId;
+    if (!this.namesAttempted && !this.resettingNames && this.local.getPreparationSnapshot().phase === 'ready'
+      && ['listening', 'requesting-permission'].includes(browser.phase)) queueMicrotask(() => {
         const current = this.browser.getSnapshot();
-        if (active(current) && current.phase !== 'stopping') this.startNamesIfReady();
+        if (this.sessionId === scheduledSession && active(current) && current.phase !== 'stopping') this.startNamesIfReady();
       });
-    let local = this.local.getSnapshot();
+    const localSnapshot = this.local.getSnapshot();
+    let local: TranscriptionSnapshot = localSnapshot.sessionId === this.sessionId ? localSnapshot
+      : { phase: 'idle', message: 'Awaiting current session.', sessionId: this.sessionId, segments: [] };
     if (this.running && !active(browser) && active(local)) {
       // Clear this guard before synchronous stop notifications reenter update.
       this.running = false;
@@ -106,8 +118,11 @@ export class DelayedNamesEngine implements LocalListeningEngine {
       this.notice = `Speaker estimates unavailable: ${local.message}${active(browser) ? ' Browser captions continue.' : ''}`;
     }
     const finishing = !active(browser) && active(local);
-    const currentSegments = this.cleared.apply(delayedNames(browser.segments, this.namesStarted ? local.segments : []));
+    const currentWords = browser.segments.filter((segment) => segment.sessionId === undefined ? this.sessionId === 0 : segment.sessionId === this.sessionId);
+    const evidence = local.sessionId === this.sessionId ? local.segments.filter((segment) => segment.sessionId === this.sessionId) : [];
+    const currentSegments = delayedNames(currentWords, this.namesStarted ? evidence : []);
     const diagnostic = {
+      session: this.sessionId,
       browserSegments: browser.segments.length,
       browserCharacters: browser.segments.reduce((sum, segment) => sum + segment.text.length, 0),
       localSegments: local.segments.length,
@@ -140,7 +155,7 @@ export class DelayedNamesEngine implements LocalListeningEngine {
             : local.speakerStatus ?? (local.segments.some((segment) => segment.text.trim()) ? 'Speech received; no saved voice matched yet.'
               : 'No local speech recognized yet.')
       : this.hasSpeakers && preparation.phase === 'ready' ? 'Names ready.' : undefined);
-    this.snapshot = { phase: finishing ? 'stopping' : browser.phase,
+    this.snapshot = { phase: finishing ? 'stopping' : browser.phase, sessionId: this.sessionId,
       message: browser.phase === 'error' ? browser.message : finishing ? 'Finishing speaker estimates…' : notice ?? browser.message,
       ...(notice && browser.phase !== 'error' ? { notice } : {}), ...(speakerStatus ? { speakerStatus } : {}), segments };
     this.listeners.forEach((listener) => listener());
@@ -149,29 +164,21 @@ export class DelayedNamesEngine implements LocalListeningEngine {
     if (active(this.snapshot)) return;
     this.connect(); this.starting = true;
     this.history = [...this.snapshot.segments]; this.browser.clear(); this.local.clear();
-    this.cleared.reset();
     this.notice = undefined; this.running = true; this.language = language; this.namesStarted = false; this.namesAttempted = false;
     // Both activation calls stay in the user's original gesture. Browser audio
     // and results remain independent; Android/Safari coexistence needs retesting.
+    this.browser.start(language); this.sessionId = this.browser.getSnapshot().sessionId ?? 0;
     this.startNamesIfReady();
     if (this.profiles && this.hasSpeakers && !this.namesStarted) void this.prepare();
-    this.browser.start(language); this.starting = false; this.update();
+    this.starting = false; this.update();
   }
   stop() { this.running = false; this.local.stop(); this.browser.stop(); this.update(); }
   interrupt() { this.running = false; this.local.interrupt(); this.browser.interrupt(); this.update(); }
   clear() {
-    if (active(this.snapshot)) {
-      this.history = [];
-      this.cleared.mark(this.browser.getSnapshot().segments);
-      this.update();
-      return;
-    }
-    this.cleared.reset();
-    this.starting = true; this.history = []; this.namesStarted = false; this.notice = undefined;
-    this.local.clear(); this.browser.clear(); this.starting = false; this.update();
+    this.history = []; this.browser.clear(); this.update();
   }
   dispose() {
-    this.cleared.reset();
+    this.sessionId++; this.resettingNames = false;
     this.profileGeneration++; this.hasSpeakers = !this.profiles; this.profileError = undefined;
     this.unwatch.splice(0).forEach((unsubscribe) => unsubscribe());
     this.running = false; this.namesStarted = false; this.history = []; this.notice = undefined;

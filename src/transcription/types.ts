@@ -1,7 +1,11 @@
-export type SessionPhase = 'idle' | 'requesting-permission' | 'listening' | 'stopping' | 'error';
+export type SessionPhase = 'idle' | 'requesting-permission' | 'listening' | 'restarting' | 'stopping' | 'error';
 
 export interface TranscriptSegment {
   id: string;
+  sessionId?: number;
+  revision?: number;
+  /** A display boundary hint, never a claim that provisional words are final. */
+  pauseAfter?: boolean;
   /** Original browser segment when delayed attribution splits its text. */
   sourceSegmentId?: string;
   text: string;
@@ -22,8 +26,7 @@ export interface TranscriptionSnapshot {
   notice?: string;
   /** Short local processing diagnostic, shown only in Settings; no audio/text. */
   speakerStatus?: string;
-  /** Changes once per consumed browser voice Clear, so composed views reset too. */
-  clearRevision?: number;
+  sessionId?: number;
   segments: readonly TranscriptSegment[];
 }
 
@@ -31,7 +34,7 @@ export interface TranscriptionEngine {
   readonly unavailableReason: string | null;
   getSnapshot(): TranscriptionSnapshot;
   subscribe(listener: () => void): () => void;
-  start(language: string): void;
+  start(language: string, sessionId?: number): void;
   stop(): void;
   interrupt(): void;
   clear(): void;
@@ -57,6 +60,8 @@ export interface BrowserRecognizer {
   maxAlternatives: number;
   onstart: (() => void) | null;
   onspeechstart?: (() => void) | null;
+  onspeechend?: (() => void) | null;
+  onsoundstart?: (() => void) | null;
   onend: (() => void) | null;
   onerror: ((event: { error: string }) => void) | null;
   onresult: ((event: { results: RecognitionResults }) => void) | null;

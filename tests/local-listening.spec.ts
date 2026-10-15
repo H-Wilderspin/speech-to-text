@@ -196,7 +196,7 @@ test('Android provisional words receive delayed names and activity filters only 
       onstart?: () => void; onend?: () => void; onresult?: (event: unknown) => void;
       start() { Object.assign(window, { delayedBrowserRecognition: this }); this.onstart?.(); }
       stop() { this.onend?.(); }
-      abort() { Object.assign(window, { delayedBrowserStopped: true }); }
+      abort() { Object.assign(window, { delayedBrowserStopped: true }); queueMicrotask(() => this.onend?.()); }
     }
     Object.assign(window, { SpeechRecognition: Recognition });
     Object.defineProperty(navigator, 'userAgent', { value: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) Chrome/130.0.0.0 Mobile Safari/537.36' });
@@ -293,9 +293,23 @@ test('Android provisional words receive delayed names and activity filters only 
   await page.getByRole('button', { name: 'Back to captions' }).click();
   await expect(known).toBeVisible();
   await page.screenshot({ path: `test-results/two-streams-${test.info().project.name}.png` });
+  // Clear must restart both capture paths, retain initialized models and prevent
+  // old evidence from naming the new browser session.
+  const beforeClear = Number(await transcript.locator('.caption').first().getAttribute('data-session'));
+  const stagesBeforeClear = new Set(stages); stages.clear();
+  await page.getByRole('button', { name: 'Clear', exact: true }).click();
+  await expect(transcript.locator('.caption')).toHaveCount(0);
+  await expect(assigned.locator('.caption')).toHaveCount(0);
+  await expect.poll(stats).toEqual({ calls: 2, stops: 1 });
+  await browserResult();
+  await expect(transcript.locator('.caption').first()).toHaveAttribute('data-session', String(beforeClear + 1));
+  await expect(known).toBeVisible({ timeout: 45000 });
+  await expect(known).toHaveAttribute('data-session', String(beforeClear + 1));
+  expect(stages.has('worker.prepare-request')).toBe(false);
+  for (const stage of stagesBeforeClear) stages.add(stage);
   await browserResult(true);
   await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled({ timeout: 45000 });
-  expect(await stats()).toEqual({ calls: 1, stops: 1 });
+  expect(await stats()).toEqual({ calls: 2, stops: 2 });
   expect(await page.evaluate(() => (window as Window & { delayedBrowserStopped?: boolean }).delayedBrowserStopped)).toBe(true);
   await expect(page.locator('#captions > [role=status]')).toHaveText('Stopped by voice command.');
   const text = await transcript.locator('p').allTextContents(); expect(text.join(' ').match(/morning/gi)).toHaveLength(1);
@@ -306,7 +320,7 @@ test('Android provisional words receive delayed names and activity filters only 
   await expect(page.locator('#captions > [role=status]')).toContainText('Listening.');
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
-  expect(await stats()).toEqual({ calls: 2, stops: 2 });
+  expect(await stats()).toEqual({ calls: 3, stops: 3 });
   for (const stage of ['capture.ready', 'capture.received', 'capture.processed', 'capture.drained',
     'worker.frame-request', 'worker.frame-response', 'worker.pipeline', 'alignment.updated', 'display.upper-pane']) expect(stages.has(stage), stage).toBe(true);
   expect(voiceDiagnosticsComplete).toBe(true);

@@ -5,7 +5,7 @@ import { speakerColour, unknownColour, type SpeakerColourChoices } from '../spea
 
 export function Caption({ segment, showName = true, colours = {}, live = false }: { segment: TranscriptSegment; showName?: boolean; colours?: SpeakerColourChoices; live?: boolean }) {
   const known = Boolean(segment.speakerId?.trim() && segment.speakerName?.trim());
-  return <div className="caption" style={{ color: known && !live ? speakerColour(segment.speakerId!, colours) : unknownColour }}>
+  return <div className="caption" data-session={segment.sessionId} data-revision={segment.revision} style={{ color: known && !live ? speakerColour(segment.speakerId!, colours) : unknownColour }}>
     {showName && <span className="caption-speaker">{known ? `${segment.speakerName}${segment.speakerEstimated ? ' (estimate)' : ''}` : 'Unknown speaker'}</span>}
     <p className={segment.isFinal ? 'confirmed' : 'interim'}>
       {segment.text}{!segment.isFinal && <span className="sr-only"> Unconfirmed</span>}

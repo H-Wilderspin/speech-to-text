@@ -38,6 +38,13 @@ local recognizer's sentence counter, not a person. These counters reset with a n
 worker/session and can be correlated by stage timestamps. No audio clock IDs are
 logged. Counts generally accumulate within a session; compare consecutive lines.
 
+Main-app browser, alignment and worker requests also carry a numeric `session`.
+`browser.clear` reports the newly allocated session; `browser.stale-result` reports
+an ignored callback from the retired one. Clear empties both panes and restarts
+capture. Only new-session evidence can label new-session browser text. Caption
+elements expose `data-session` and `data-revision` for inspection. Capture sample
+counters still restart from zero; they are not globally increasing timestamps.
+
 | Stage | What to check |
 | --- | --- |
 | `local.preparation-*`, `local.references-ready`, `capture.ready` | Models, saved reference count and capture actually started. |

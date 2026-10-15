@@ -1,7 +1,7 @@
 # ADR 0042: Spoken Clear alongside spoken Stop
 
 Date: 2026-10-14
-Status: Accepted; extends ADR 0041
+Status: Superseded by [ADR 0043](0043-session-reset-and-pause-lines.md); originally extended ADR 0041
 
 ## Decision
 

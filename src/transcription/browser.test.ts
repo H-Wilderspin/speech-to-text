@@ -9,6 +9,8 @@ class FakeRecognizer implements BrowserRecognizer {
   maxAlternatives = 0;
   onstart: BrowserRecognizer['onstart'] = null;
   onspeechstart: BrowserRecognizer['onspeechstart'] = null;
+  onspeechend: BrowserRecognizer['onspeechend'] = null;
+  onsoundstart: BrowserRecognizer['onsoundstart'] = null;
   onend: BrowserRecognizer['onend'] = null;
   onerror: BrowserRecognizer['onerror'] = null;
   onresult: BrowserRecognizer['onresult'] = null;
@@ -71,12 +73,12 @@ describe('browser recognition lifecycle', () => {
       const texts = ['We', 'We are', 'We are hear', 'We are here.', 'We are here.'];
       for (let count = 1; count <= texts.length; count++) {
         native.onspeechstart?.(); androidResult(texts.slice(0, count));
-        expect(engine.getSnapshot().segments).toEqual([{ id: '1:0', text: texts[count - 1], isFinal: false }]);
+        expect(engine.getSnapshot().segments).toMatchObject([{ id: '1:0', text: texts[count - 1], isFinal: false }]);
       }
       vi.advanceTimersByTime(15_000);
       expect(instances).toHaveLength(1); expect(native.continuous).toBe(true);
       native.onend?.();
-      expect(engine.getSnapshot().segments).toEqual([{ id: '1:0', text: 'We are here.', isFinal: true }]);
+      expect(engine.getSnapshot().segments).toMatchObject([{ id: '1:0', text: 'We are here.', isFinal: true }]);
       vi.advanceTimersByTime(0); latest().onstart?.();
       androidResult(['We are', 'We are here.']); latest().onend?.();
       expect(engine.getSnapshot().segments.map((segment) => segment.text)).toEqual(['We are here.', 'We are here.']);
@@ -100,7 +102,7 @@ describe('browser recognition lifecycle', () => {
       androidResult(['Some', 'Some words']); engine.stop();
       androidResult(['Some', 'Some words', 'Some words finished.']); latest().onend?.();
       vi.runAllTimers(); expect(instances).toHaveLength(1);
-      expect(engine.getSnapshot().segments).toEqual([{ id: '1:0', text: 'Some words finished.', isFinal: true }]);
+      expect(engine.getSnapshot().segments).toMatchObject([{ id: '1:0', text: 'Some words finished.', isFinal: true }]);
     });
     it.each(['network', 'aborted', 'no-speech'])('does not confirm a partial after %s', (error) => {
       androidResult(['command stop']); latest().onerror?.({ error }); latest().onend?.();
@@ -264,78 +266,74 @@ describe('browser recognition lifecycle', () => {
     expect(engine.getSnapshot().message).toContain('left the app');
     engine.clear(); expect(engine.getSnapshot().segments).toEqual([]);
   });
-  it.each(['standard', 'android-cumulative'] as const)('clears while %s capture continues through revisions, native end and voice Stop', (mode) => {
-    engine.dispose();
-    engine = new BrowserTranscriptionEngine(() => {
+  it.each(['standard', 'android-cumulative'] as const)('Clear retires %s capture and rejects all stale callbacks', (mode) => {
+    engine.dispose(); engine = new BrowserTranscriptionEngine(() => {
       const instance = new FakeRecognizer(); instances.push(instance); return instance;
     }, null, mode);
-    engine.start('en-GB'); const native = latest(); native.onstart?.();
-    native.result('We are', false); engine.clear();
-    expect(engine.getSnapshot()).toMatchObject({ phase: 'listening', segments: [] });
-    expect(native.stop).not.toHaveBeenCalled(); expect(native.abort).not.toHaveBeenCalled();
-    native.result('We were ready to go.', true);
-    expect(engine.getSnapshot().segments.map((s) => s.text)).toEqual(['ready to go.']);
-    engine.clear(); native.result('We were ready to go.', true);
-    expect(engine.getSnapshot().segments).toEqual([]);
-    native.onend?.(); vi.runOnlyPendingTimers(); latest().onstart?.();
-    latest().result('The next sentence.', true);
-    expect(engine.getSnapshot().segments.map((s) => s.text)).toEqual(['The next sentence.']);
-    latest().onend?.(); vi.runOnlyPendingTimers(); latest().onstart?.();
-    latest().result('command stop', true);
-    if (mode === 'android-cumulative') latest().onend?.();
-    expect(engine.getSnapshot().phase).toBe('idle');
-    expect(engine.getSnapshot().segments.map((s) => s.text)).toEqual(['The next sentence.']);
+    engine.start('en-GB'); const old = latest(); old.onstart?.(); old.result('Old words', false);
+    const session = engine.getSnapshot().sessionId!;
+    const late = { result: old.onresult, start: old.onstart, end: old.onend, error: old.onerror };
+    engine.clear(); engine.clear();
+    expect(engine.getSnapshot()).toMatchObject({ phase: 'restarting', sessionId: session + 1, segments: [] });
+    expect(instances).toHaveLength(1); expect(old.abort).toHaveBeenCalledOnce();
+    late.result?.({ results: [{ 0: { transcript: 'Stale payload', confidence: .9 }, length: 1, isFinal: true }] });
+    late.start?.(); late.end?.(); late.error?.({ error: 'network' });
+    expect(engine.getSnapshot()).toMatchObject({ phase: 'restarting', segments: [] });
+    old.onend?.(); expect(instances).toHaveLength(2); latest().onstart?.(); latest().result('Fresh words.', true);
+    expect(engine.getSnapshot().segments).toMatchObject([{ text: 'Fresh words.', sessionId: session + 1 }]);
+    late.end?.(); late.error?.({ error: 'not-allowed' });
+    expect(engine.getSnapshot().phase).toBe('listening');
+    latest().onend?.(); vi.advanceTimersByTime(0); latest().onstart?.();
+    expect(engine.getSnapshot().sessionId).toBe(session + 1);
+    latest().result('Another line.', true);
+    expect(engine.getSnapshot().segments.map((s) => s.text)).toEqual(['Fresh words.', 'Another line.']);
   });
-  it('keeps cumulative appended slots cleared without losing new words', () => {
-    engine.start('en-GB'); latest().onstart?.(); latest().result('We are'); engine.clear();
-    latest().onresult?.({ results: ['We are', 'We are ready.'].map((text) => ({ 0: { transcript: text, confidence: .9 }, isFinal: true, length: 1 })) });
-    expect(engine.getSnapshot().segments.map((s) => s.text)).toEqual(['ready.']);
-    engine.stop(); latest().onend?.();
-    expect(engine.getSnapshot().segments.map((s) => s.text)).toEqual(['ready.']);
+  it('Stop wins over a pending Clear restart', () => {
+    engine.start('en-GB'); const old = latest(); old.onstart?.(); old.result('Before.'); engine.clear(); engine.stop();
+    old.onend?.(); vi.runAllTimers();
+    expect(engine.getSnapshot()).toMatchObject({ phase: 'idle', segments: [] });
+    expect(instances).toHaveLength(1);
   });
-  it('clears by voice once, retains following words, and processes later commands in order', () => {
-    engine.start('en-GB'); const native = latest(); native.onstart?.();
-    native.result('Old text. Command clear', false);
-    expect(engine.getSnapshot().segments[0]?.text).toContain('Old text');
-    expect(engine.getSnapshot().clearRevision).toBe(0);
-    const text = 'Old text. Command clear. A fresh sentence.';
-    native.result(text);
-    expect(engine.getSnapshot()).toMatchObject({ phase: 'listening', clearRevision: 1 });
-    expect(engine.getSnapshot().segments.map((s) => s.text)).toEqual(['A fresh sentence.']);
-    native.result(text);
-    expect(engine.getSnapshot().clearRevision).toBe(1);
-    expect(engine.getSnapshot().segments.map((s) => s.text)).toEqual(['A fresh sentence.']);
-    expect(native.stop).not.toHaveBeenCalled(); expect(native.abort).not.toHaveBeenCalled();
-    native.result(`${text} Command clear. Keep this. Command stop. Discard this.`);
-    expect(engine.getSnapshot()).toMatchObject({ phase: 'idle', clearRevision: 2 });
-    expect(engine.getSnapshot().segments.map((s) => s.text)).toEqual(['Keep this.']);
+  it('bounds an unacknowledged abort without overlapping capture', () => {
+    engine.start('en-GB'); latest().onstart?.(); engine.clear(); vi.advanceTimersByTime(2000);
+    expect(engine.getSnapshot().phase).toBe('error'); expect(instances).toHaveLength(1);
+    expect(engine.getSnapshot().message).toContain('restart');
   });
-  it('handles a voice Clear split across native cycles and clears earlier manual sessions', () => {
-    engine.start('en-GB'); latest().onstart?.(); latest().result('Earlier session.'); engine.stop(); latest().onend?.();
-    engine.start('en-GB'); latest().onstart?.(); latest().result('command'); latest().onend?.();
-    vi.runOnlyPendingTimers(); latest().onstart?.(); latest().result('clear. New text.');
-    expect(engine.getSnapshot()).toMatchObject({ phase: 'listening', clearRevision: 1 });
-    expect(engine.getSnapshot().segments.map((s) => s.text)).toEqual(['New text.']);
+  it('voice Clear drops the whole old payload including words spoken after the command', () => {
+    engine.start('en-GB'); const old = latest(); old.onstart?.();
+    old.result('Old text. Command clear. More old-session text.', false);
+    expect(engine.getSnapshot().phase).toBe('listening');
+    old.result('Old text. Command clear. More old-session text.');
+    expect(engine.getSnapshot()).toMatchObject({ phase: 'restarting', segments: [] });
+    old.onend?.(); latest().onstart?.(); latest().result('New session.');
+    expect(engine.getSnapshot().segments.map((s) => s.text)).toEqual(['New session.']);
   });
-  it('does not complete a voice Clear across separate manual sessions', () => {
-    engine.start('en-GB'); latest().onstart?.(); latest().result('command'); engine.stop(); latest().onend?.();
-    engine.start('en-GB'); latest().onstart?.(); latest().result('clear');
-    expect(engine.getSnapshot().clearRevision).toBe(0);
-    expect(engine.getSnapshot().segments.map((s) => s.text)).toEqual(['command', 'clear']);
-  });
-  it('waits for Android native completion before voice Clear and resumes listening', () => {
+  it('Android voice Clear restarts from its completed native end without waiting for a second end', () => {
     engine.dispose(); engine = new BrowserTranscriptionEngine(() => {
       const instance = new FakeRecognizer(); instances.push(instance); return instance;
     }, null, 'android-cumulative');
+    engine.start('en-GB'); const old = latest(); old.onstart?.(); const session = engine.getSnapshot().sessionId!;
+    old.result('Command clear. Discard the tail.'); expect(engine.getSnapshot().sessionId).toBe(session);
+    old.onend?.(); expect(instances).toHaveLength(2); latest().onstart?.();
+    expect(engine.getSnapshot()).toMatchObject({ phase: 'listening', sessionId: session + 1, segments: [] });
+  });
+  it('uses a 500ms provider pause hint without freezing corrections or restarting capture', () => {
     engine.start('en-GB'); const native = latest(); native.onstart?.();
-    native.result('Old words. Command clear. Fresh words.');
-    expect(engine.getSnapshot().clearRevision).toBe(0);
-    native.onend?.();
-    expect(engine.getSnapshot()).toMatchObject({ phase: 'listening', clearRevision: 1 });
-    expect(engine.getSnapshot().segments.map((s) => s.text)).toEqual(['Fresh words.']);
-    expect(native.stop).not.toHaveBeenCalled(); expect(native.abort).not.toHaveBeenCalled();
-    vi.runOnlyPendingTimers(); latest().onstart?.(); latest().result('More speech.'); latest().onend?.();
-    expect(engine.getSnapshot().segments.map((s) => s.text)).toEqual(['Fresh words.', 'More speech.']);
+    native.result('First phrase.', false); native.onspeechend?.();
+    vi.advanceTimersByTime(499); expect(engine.getSnapshot().segments[0]?.pauseAfter).toBeUndefined();
+    vi.advanceTimersByTime(1); expect(engine.getSnapshot().segments[0]?.pauseAfter).toBe(true);
+    native.onspeechstart?.(); native.result('First phrase. Next phrase.', false);
+    expect(engine.getSnapshot().segments.map((s) => s.text.trim())).toEqual(['First phrase.', 'Next phrase.']);
+    native.result('Corrected first phrase. Next phrase.', true);
+    expect(engine.getSnapshot().segments.map((s) => s.text).join('')).toBe('Corrected first phrase. Next phrase.');
+    expect(instances).toHaveLength(1); expect(native.abort).not.toHaveBeenCalled();
+  });
+  it('cancels a short pause hint on new sound and invalidates its timer on Clear', () => {
+    engine.start('en-GB'); const native = latest(); native.onstart?.(); native.result('Words', false);
+    native.onspeechend?.(); vi.advanceTimersByTime(300); native.onsoundstart?.(); vi.advanceTimersByTime(500);
+    expect(engine.getSnapshot().segments[0]?.pauseAfter).toBeUndefined();
+    native.onspeechend?.(); engine.clear(); vi.advanceTimersByTime(500);
+    expect(engine.getSnapshot().segments).toEqual([]);
   });
   it('disposes capture and listeners on unmount', () => {
     const listener = vi.fn(); engine.subscribe(listener);

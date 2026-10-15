@@ -1,7 +1,7 @@
 # ADR 0041: Clear captions without restarting capture
 
 Date: 2026-10-14
-Status: Accepted
+Status: Superseded by [ADR 0043](0043-session-reset-and-pause-lines.md)
 
 ## Context
 
