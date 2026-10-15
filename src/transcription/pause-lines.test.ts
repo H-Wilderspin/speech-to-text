@@ -19,3 +19,15 @@ it('keeps a revised prefix complete instead of guessing where to split its words
   expect(lines.apply([corrected])).toEqual([corrected]);
   lines.clear(); expect(lines.apply([corrected])).toEqual([corrected]);
 });
+
+it('keeps late closing punctuation on the earlier line without creating duplicate cuts', () => {
+  const lines = new PauseLines();
+  const segment = { id: 'a', text: 'First', isFinal: false };
+  lines.mark(segment); lines.mark({ ...segment, text: 'First.' });
+  const text = 'First. Next phrase.';
+  const result = lines.apply([{ ...segment, text }]);
+  expect(result.map((s) => s.text)).toEqual(['First.', ' Next phrase.']);
+  expect(result.map((s) => s.text).join('')).toBe(text);
+  const partial = new PauseLines(); partial.mark({ ...segment, text: 'No' });
+  expect(partial.apply([{ ...segment, text: 'Nobody spoke.' }])).toHaveLength(1);
+});

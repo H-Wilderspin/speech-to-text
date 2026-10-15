@@ -19,8 +19,12 @@ export class PauseLines {
     return segments.flatMap((segment) => {
       const boundary = this.boundaries.get(segment.id);
       if (!boundary || !segment.text.startsWith(boundary.text)) return [segment];
-      const cuts = boundary.ends.filter((end) => end < segment.text.length
-        && /^[\s\p{P}]/u.test(segment.text.slice(end)));
+      const cuts = [...new Set(boundary.ends.flatMap((end) => {
+        // A provider can add closing punctuation after the pause. Keep it with
+        // the preceding words; only whitespace can introduce the next line.
+        while (/[.,!?;:\u2026]/u.test(segment.text[end] ?? '')) end++;
+        return end < segment.text.length && /\s/u.test(segment.text[end]!) ? [end] : [];
+      }))];
       let start = 0;
       return [...cuts, segment.text.length].map((end, index) => {
         const part = { ...segment, id: index ? `${segment.id}:line:${index}` : segment.id,

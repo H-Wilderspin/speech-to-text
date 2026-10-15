@@ -163,7 +163,7 @@ test('a provider pause separates growing lines without freezing a late correctio
   await mockRecognition(page); await page.goto('/'); await page.clock.install();
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   const lines = page.getByRole('region', { name: 'Live transcript' }).locator('.caption p');
-  await result(page, 'A quiet morning.', false);
+  await result(page, 'A quiet morning', false);
   await page.evaluate(() => (window as Window & { testRecognition?: { onspeechend?: () => void } }).testRecognition?.onspeechend?.());
   await page.clock.fastForward(500);
   await result(page, 'A quiet morning. A new thought', false);

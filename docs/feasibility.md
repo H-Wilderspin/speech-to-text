@@ -21,6 +21,11 @@
   One existing native-audio case is skipped on Windows WebKit because its test
   build lacks Web Audio; Linux CI must run that case before publication. A final
   logging-only change moves reference-ready tracing behind the stale-session guard.
+- **Review follow-up:** a targeted regression covers punctuation arriving after
+  a pause. Closing punctuation stays on the preceding line, and duplicate cuts
+  are coalesced. The browser pause check now introduces its full stop late too.
+  All 260 unit tests and required checks pass; 12 focused Chromium/WebKit Clear,
+  pause/correction and scroll cases pass on the final build.
 - **Limits:** no new physical-device verification. Exact 500ms silence splitting
   is not established: the provider can delay or omit speech-end. Corrections can
   merge provisional display lines. Restart introduces a capture gap; automatic
