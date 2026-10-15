@@ -8,6 +8,7 @@ import { createSpeakerServices } from '../../app/speaker-services';
 import type { TranscriptionEngine } from '../../transcription/types';
 import type { RemoteNames } from '../../transcription/remote/engine';
 import type { Connection } from '../../transcription/remote/client';
+import { useListeningWakeLock } from '../../app/use-listening-wake-lock';
 
 const processing = 'Live captions use your browser’s speech provider. Delayed names send audio and voiceprints through Cloudflare to your PC. The service does not save recordings or transcripts.';
 function initialConnection(): Connection {
@@ -26,6 +27,7 @@ function initialConnection(): Connection {
 
 export function ComparisonApp({ browser, remote, database }: { browser: TranscriptionEngine; remote: RemoteNames; database: string }) {
   const live = useSyncExternalStore(browser.subscribe, browser.getSnapshot);
+  const wakeStatus = useListeningWakeLock(browser);
   const delayed = useSyncExternalStore(remote.subscribe, remote.getSnapshot);
   const [connection, setConnection] = useState(initialConnection);
   const [preferences, setPreferences] = useState(readPreferences);
@@ -79,7 +81,7 @@ export function ComparisonApp({ browser, remote, database }: { browser: Transcri
     </footer>
     <p id="processing-note" className="sr-only">{processing}</p>
     {settings && <SettingsDialog active={active || delayed.pending} textSize={preferences.textSize} onTextSize={(textSize) => change({ textSize })}
-      language={preferences.language} onLanguage={(language) => change({ language })} installFailed={false} onStop={stop}
+      language={preferences.language} onLanguage={(language) => change({ language })} installFailed={false} onStop={stop} wakeStatus={wakeStatus}
       onClose={() => { setSettings(false); settingsButton.current?.focus(); }} createSpeakers={createSpeakerServices}
       colours={preferences.colours} onColours={(colours) => change({ colours })} hiddenSpeakers={preferences.hiddenSpeakers}
       onHiddenSpeakers={(hiddenSpeakers) => change({ hiddenSpeakers })} processingDescription={processing}

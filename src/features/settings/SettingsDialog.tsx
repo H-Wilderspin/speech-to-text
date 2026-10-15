@@ -4,8 +4,9 @@ import type { LocalListeningEngine } from '../../transcription/local/types';
 import { SpeakerSettings, type SpeakerServices } from '../speakers/SpeakerSettings';
 import type { SpeakerColourChoices } from '../speakers/colours';
 import { Icon } from '../../shared/Icon';
+import type { WakeStatus } from '../../app/listening-wake-lock';
 
-export function SettingsDialog({ active, textSize, onTextSize, language, onLanguage, installFailed, onClose, localEngine, createSpeakers, colours, onColours, onStop, hiddenSpeakers, onHiddenSpeakers, extraSettings, processingDescription }: {
+export function SettingsDialog({ active, textSize, onTextSize, language, onLanguage, installFailed, onClose, localEngine, createSpeakers, colours, onColours, onStop, hiddenSpeakers, onHiddenSpeakers, extraSettings, processingDescription, wakeStatus }: {
   active: boolean; textSize: number; onTextSize: (size: number) => void;
   language: string; onLanguage: (language: string) => void; installFailed: boolean;
   onClose: () => void; onStop: () => void;
@@ -13,6 +14,7 @@ export function SettingsDialog({ active, textSize, onTextSize, language, onLangu
   colours: SpeakerColourChoices; onColours: (colours: SpeakerColourChoices) => void;
   hiddenSpeakers: string[]; onHiddenSpeakers: (ids: string[]) => void;
   extraSettings?: ReactNode; processingDescription?: string;
+  wakeStatus?: WakeStatus;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const pointerStartedOutside = useRef(false);
@@ -40,6 +42,8 @@ export function SettingsDialog({ active, textSize, onTextSize, language, onLangu
     {extraSettings}
     {localEngine && <NameSuggestions engine={localEngine} />}
     {installFailed && <p role="status">Offline installation unavailable.</p>}
+    {wakeStatus === 'held' && <p role="status">Keeping screen awake.</p>}
+    {wakeStatus === 'unavailable' && <p role="status">Screen may sleep. Check your device’s Auto-Lock settings.</p>}
     <details><summary>About</summary>
       <p>{processingDescription ?? 'Speech uses your browser’s provider. Voiceprints stay on this device.'}</p>
       <p><a href={`${import.meta.env.BASE_URL}speaker/THIRD-PARTY-NOTICES.txt`} target="_blank" rel="noreferrer">Voice model licences</a>

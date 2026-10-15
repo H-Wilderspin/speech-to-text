@@ -22,6 +22,48 @@ async function result(page: Page, text: string, isFinal: boolean) {
   }, { text, isFinal });
 }
 
+for (const availability of ['supported', 'denied', 'missing'] as const) test(`screen wake lock: ${availability}`, async ({ page }) => {
+  await mockRecognition(page);
+  await page.addInitScript((availability) => {
+    const counters = { requested: 0, released: 0 };
+    Object.assign(window, { wakeCounters: counters });
+    Object.defineProperty(navigator, 'wakeLock', { configurable: true, value: availability === 'missing' ? undefined : {
+      request: async (type: string) => {
+        if (type !== 'screen') throw new Error('Wrong wake lock type');
+        counters.requested += 1;
+        if (availability === 'denied') throw new DOMException('Denied', 'NotAllowedError');
+        return Object.assign(new EventTarget(), { released: false, release: async () => { counters.released += 1; } });
+      },
+    } });
+  }, availability);
+  const counters = () => page.evaluate(() => (window as Window & { wakeCounters?: { requested: number; released: number } }).wakeCounters);
+  await page.goto('/');
+  expect(await counters()).toEqual({ requested: 0, released: 0 });
+  await page.getByRole('button', { name: 'Listen', exact: true }).click();
+  await result(page, 'Reading without touching the screen.', true);
+  await expect(page.getByRole('region', { name: 'Live transcript' })).toContainText('Reading without touching the screen.');
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(page.getByText(availability === 'supported' ? 'Keeping screen awake.' : 'Screen may sleep. Check your device’s Auto-Lock settings.')).toBeVisible();
+  await page.getByRole('button', { name: 'Back to captions' }).click();
+  await page.getByRole('button', { name: 'Clear', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeEnabled();
+  await result(page, 'Still listening after Clear.', true);
+  await expect(page.getByRole('region', { name: 'Live transcript' })).toContainText('Still listening after Clear.');
+  expect(await counters()).toEqual({ requested: availability === 'missing' ? 0 : 1, released: 0 });
+  await page.getByRole('button', { name: 'Stop', exact: true }).click();
+  await expect.poll(counters).toEqual({ requested: availability === 'missing' ? 0 : 1, released: availability === 'supported' ? 1 : 0 });
+  if (availability === 'supported') {
+    await page.getByRole('button', { name: 'Listen', exact: true }).click();
+    await result(page, 'command stop', true);
+    await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
+    await expect.poll(counters).toEqual({ requested: 2, released: 2 });
+    await page.getByRole('button', { name: 'Listen', exact: true }).click();
+    await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
+    await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
+    await expect.poll(counters).toEqual({ requested: 3, released: 3 });
+  }
+});
+
 test('light live captions keep unknown speech below and remember text preferences', async ({ page }) => {
   await mockRecognition(page); await page.setViewportSize({ width: 390, height: 844 }); await page.goto('/');
   await page.getByRole('button', { name: 'Who said what', exact: true }).click();

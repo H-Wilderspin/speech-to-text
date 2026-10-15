@@ -1,5 +1,14 @@
 # Speech-to-Text PWA
 
+**Screen awake:** Listen automatically requests a screen wake lock while the app is
+visible. Stop, errors and leaving the app release it; Clear's restart keeps it.
+Settings shows whether the lock is held or unavailable. The browser/OS can refuse
+it, including for power saving. Safari supports this from 16.4; Home Screen web
+apps need iPadOS/iOS 18.4 or later for Apple's wake-lock fix. On older versions,
+use a Safari tab. This does not override manual locking or keep recording in the
+background. Physical tablet verification is still pending. See
+[ADR 0045](docs/decisions/0045-listening-screen-wake-lock.md).
+
 **Current plan (2026-10-13):** use the [browser-based app](https://h-wilderspin.github.io/speech-to-text/).
 The user has withdrawn the PC-hosting rollout because of available hardware.
 No Python server, tunnel or hosting subscription is required for this app.

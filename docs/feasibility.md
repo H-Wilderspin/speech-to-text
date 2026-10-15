@@ -1,5 +1,26 @@
 # Feasibility evidence
 
+## 2026-10-15 - Screen awake during listening
+
+- **Hypothesis:** a native screen wake lock prevents the reported automatic tablet
+  sleep while the page remains visible. Exact tablet/OS/browser mode is unknown;
+  physical behavior and battery impact have not been measured.
+- **Implementation:** shared main/comparison observer; no transcript, microphone,
+  model, storage or provider change. Feature-detected, best effort, released on
+  Stop/error/interruption/disposal. Settings shows held/unavailable. See ADR 0045.
+- **Local checks:** typecheck, lint, 276 unit tests and production build pass.
+  Ten new unit cases cover pending requests, lifecycle cleanup and failure modes.
+  All 54 Windows Chromium/mobile-WebKit app cases pass, including six new browser
+  cases with mocked supported/denied/missing wake-lock access. Publication results
+  follow after verification. These checks use simulated recognition and wake locks.
+- **Physical acceptance pending:** reopen the deployed app on the target tablet,
+  tap Listen and leave the visible page untouched beyond its normal Auto-Lock
+  interval; captions/screen should stay active. Check Settings says Keeping screen
+  awake. Repeat Clear, then Stop; normal sleep should resume after Stop. Leaving
+  the app still stops capture. Record model, OS and Safari/Home Screen mode. If
+  unavailable, check power saving/Auto-Lock; older Home Screen apps should use
+  Safari or update to iPadOS 18.4+. No physical wake-lock claim is made yet.
+
 ## 2026-10-15 - Display-only caption formatting
 
 - **Change:** sentence/line-start capitals, English pronouns and contractions,

@@ -8,6 +8,7 @@ import type { LocalListeningEngine } from '../transcription/local/types';
 import { readPreferences, savePreferences } from '../features/settings/preferences';
 import { assignedSegments } from '../features/listening/streams';
 import { createSpeakerTrace } from '../transcription/diagnostics';
+import { useListeningWakeLock } from './use-listening-wake-lock';
 
 const trace = createSpeakerTrace('display');
 
@@ -16,6 +17,7 @@ export function App({ engine: browserEngine, createSpeakers, localEngine }: {
 }) {
   const engine = localEngine ?? browserEngine;
   const snapshot = useSyncExternalStore(engine.subscribe, engine.getSnapshot);
+  const wakeStatus = useListeningWakeLock(engine);
   const [preferences, setPreferences] = useState(readPreferences);
   const { textSize, language, colours, hiddenSpeakers } = preferences;
   const changePreferences = (changes: Partial<typeof preferences>) => {
@@ -75,7 +77,7 @@ export function App({ engine: browserEngine, createSpeakers, localEngine }: {
     {settingsOpen && <SettingsDialog active={active} textSize={textSize} onTextSize={(textSize) => changePreferences({ textSize })}
       localEngine={localEngine} createSpeakers={createSpeakers} colours={colours} onColours={(colours) => changePreferences({ colours })}
       hiddenSpeakers={hiddenSpeakers} onHiddenSpeakers={(hiddenSpeakers) => changePreferences({ hiddenSpeakers })}
-      language={language} onLanguage={(language) => changePreferences({ language })} installFailed={installFailed}
+      language={language} onLanguage={(language) => changePreferences({ language })} installFailed={installFailed} wakeStatus={wakeStatus}
       onStop={() => engine.stop()} onClose={() => { setSettingsOpen(false); settingsButton.current?.focus(); }} />}
   </div>;
 }
