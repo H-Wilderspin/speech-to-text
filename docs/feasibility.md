@@ -1,5 +1,23 @@
 # Feasibility evidence
 
+## 2026-10-15 - Visible listening indicator
+
+- **Change:** shared main/comparison status above bottom buttons. Green Listening
+  has a 2.4s expanding halo; reduced motion removes animation. Starting and explicit
+  session restart (Clear) are amber; Stopping is neutral, then content clears.
+  Reserve the row to avoid moving captions/controls. The engine's existing logical
+  listening phase includes automatic provider retries; this is not an audio meter
+  or a guarantee of provider connectivity. Recognition/wake-lock logic is unchanged.
+- **Local checks:** typecheck, lint, 276 unit tests and production build pass.
+  Chromium/WebKit smoke checks cover startup, listening, Clear restart, Stop,
+  permission denial, reduced motion and 320/390px layout. The toolbar bounds stay
+  identical when starting; a 390px WebKit screenshot was visually reviewed.
+  Existing status-message test locators now distinguish the indicator from the
+  detailed error/interruption status. All 54 local app browser cases pass (52.3s).
+  Publication results follow after verification.
+- **Limits:** simulated recognition on Windows desktop browsers; no physical iPad
+  or screen-reader acceptance claimed. No new microphone, inference or storage.
+
 ## 2026-10-15 - Screen awake during listening
 
 - **Hypothesis:** a native screen wake lock prevents the reported automatic tablet

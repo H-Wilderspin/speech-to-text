@@ -1,5 +1,11 @@
 # Speech-to-Text PWA
 
+**Listening indicator:** a green dot and “Listening…” sit above the bottom buttons.
+The dot gently pulses unless reduced motion is enabled. Startup/restart use amber
+with “Starting…”/“Reconnecting…”. Stopping uses a steady neutral dot, then the
+indicator clears. Its row keeps the same height so captions stay in place. This
+shows the listening session state, not measured sound level or transcription quality.
+
 **Screen awake:** Listen automatically requests a screen wake lock while the app is
 visible. Stop, errors and leaving the app release it; Clear's restart keeps it.
 Settings shows whether the lock is held or unavailable. The browser/OS can refuse

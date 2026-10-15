@@ -247,10 +247,10 @@ test('permission denial is actionable and a new gesture can recover', async ({ p
     const host = window as Window & { testRecognition?: { onerror: (event: unknown) => void } };
     host.testRecognition?.onerror({ error: 'not-allowed' });
   });
-  await expect(page.getByRole('status')).toContainText('site settings');
+  await expect(page.locator('#captions > [role=status]')).toContainText('site settings');
   await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
-  await expect(page.getByRole('status')).toContainText('Listening.');
+  await expect(page.locator('.listening-indicator')).toHaveText('Listening…');
 });
 
 test('three bottom controls leave the viewport to captions and settings preserve an active session', async ({ page }) => {
@@ -382,7 +382,7 @@ test('growing hypotheses render once, listening restarts, and a spoken command s
   })).toBe(true);
   await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeEnabled();
   await result(page, 'All finished. Command stop.', true);
-  await expect(page.getByRole('status')).toContainText('Stopped by voice command');
+  await expect(page.locator('#captions > [role=status]')).toContainText('Stopped by voice command');
   await expect(page.locator('.confirmed')).toHaveText(['We are here.', 'All finished.']);
   await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
   expect(await page.evaluate(() => (window as Window & { wasAborted?: boolean }).wasAborted)).toBe(true);
@@ -486,7 +486,7 @@ test('page interruption aborts the microphone without clearing confirmed speech'
   await mockRecognition(page); await page.goto('/');
   await page.getByRole('button', { name: 'Listen', exact: true }).click(); await result(page, 'Keep this.', true);
   await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
-  await expect(page.getByRole('status')).toContainText('left the app');
+  await expect(page.locator('#captions > [role=status]')).toContainText('left the app');
   await expect(page.locator('.confirmed')).toHaveText('Keep this.');
   expect(await page.evaluate(() => (window as Window & { wasAborted?: boolean }).wasAborted)).toBe(true);
 });

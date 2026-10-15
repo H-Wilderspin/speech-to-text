@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { watchInterruptions } from '../../audio/interruption';
 import { watchProfileChanges } from '../../storage/profile-changes';
 import { Transcript } from '../listening/Transcript';
+import { ListeningIndicator } from '../listening/ListeningIndicator';
 import { SettingsDialog } from '../settings/SettingsDialog';
 import { readPreferences, savePreferences } from '../settings/preferences';
 import { createSpeakerServices } from '../../app/speaker-services';
@@ -72,6 +73,7 @@ export function ComparisonApp({ browser, remote, database }: { browser: Transcri
       </div>
     </main>
     <footer className="toolbar" aria-label="Caption controls">
+      <ListeningIndicator phase={live.phase} />
       <button className={active ? 'listen is-active' : 'listen'} disabled={Boolean(browser.unavailableReason) || live.phase === 'stopping'}
         aria-describedby="processing-note" onClick={() => {
           if (active) stop(); else { remote.start(connection, preferences.language); browser.start(preferences.language); }

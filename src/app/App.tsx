@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { watchInterruptions } from '../audio/interruption';
 import { Transcript } from '../features/listening/Transcript';
+import { ListeningIndicator } from '../features/listening/ListeningIndicator';
 import { SettingsDialog } from '../features/settings/SettingsDialog';
 import { type SpeakerServices } from '../features/speakers/SpeakerSettings';
 import type { TranscriptionEngine } from '../transcription/types';
@@ -56,7 +57,7 @@ export function App({ engine: browserEngine, createSpeakers, localEngine }: {
     <a className="skip-link" href="#captions">Skip to captions</a>
     <h1 className="sr-only">Speech to Text</h1>
     <main id="captions">
-      <p className={snapshot.phase === 'error' ? 'notice error' : snapshot.notice || snapshot.phase === 'restarting' ? 'notice' : 'sr-only'} role="status" aria-live="polite" aria-atomic="true">{snapshot.phase === 'restarting' ? 'Restarting…' : snapshot.message}</p>
+      <p className={snapshot.phase === 'error' ? 'notice error' : snapshot.notice ? 'notice' : 'sr-only'} role="status" aria-live="polite" aria-atomic="true">{active && !snapshot.notice ? '' : snapshot.message}</p>
       {engine.unavailableReason && <p className="notice" role="alert">{engine.unavailableReason}</p>}
       {offline && <p className="notice">You’re offline. Your browser’s speech service may need a connection.</p>}
       <div className={preferences.assignedCollapsed ? 'caption-panes assigned-collapsed' : 'caption-panes'}>
@@ -66,6 +67,7 @@ export function App({ engine: browserEngine, createSpeakers, localEngine }: {
       </div>
     </main>
     <footer className="toolbar" aria-label="Caption controls">
+      <ListeningIndicator phase={snapshot.phase} />
       <button className={active ? 'listen is-active' : 'listen'} disabled={Boolean(engine.unavailableReason) || snapshot.phase === 'stopping'}
         aria-describedby="processing-note" onClick={() => active ? engine.stop() : engine.start(language)}>
         {snapshot.phase === 'stopping' ? 'Stopping…' : active ? 'Stop' : 'Listen'}
