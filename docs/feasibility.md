@@ -12,6 +12,13 @@
   All 48 Windows Chromium/mobile-WebKit app cases pass (44.9s), including rendered
   formatting through interim corrections, spoken Clear/Stop and Spanish selection.
   Recognition is simulated; no microphone is used in those app checks.
+- **Publication:** app commit `954be98` passed 266 unit tests, all 80 Linux browser
+  cases (6.8m) and three capture-start probes (10.5s). Pages deployed in
+  [run 38742455717](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38742455717).
+  Published `main-BJxkMnhe.js` passed Chromium/WebKit checks with standard and
+  simulated Android results: casing, punctuation spacing, revised hypotheses,
+  spoken Clear/Stop and non-English pronoun behavior. No uncaught page errors.
+  These checks used simulated recognition and no physical microphone.
 - **Limits:** rule-based readability only. Missing punctuation and proper names are
   not inferred; ambiguous abbreviations can still be imperfect. Physical phone
   validation and measured formatting performance on the Pixel 8 remain untested.
