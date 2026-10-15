@@ -10,9 +10,17 @@
   Stop/error/interruption/disposal. Settings shows held/unavailable. See ADR 0045.
 - **Local checks:** typecheck, lint, 276 unit tests and production build pass.
   Ten new unit cases cover pending requests, lifecycle cleanup and failure modes.
-  All 54 Windows Chromium/mobile-WebKit app cases pass, including six new browser
-  cases with mocked supported/denied/missing wake-lock access. Publication results
-  follow after verification. These checks use simulated recognition and wake locks.
+  All 54 Windows Chromium/mobile-WebKit app cases pass (49.7s), including six new
+  browser cases with mocked supported/denied/missing wake-lock access. These checks
+  use simulated recognition and wake locks.
+- **Publication:** app commit `0977a54` passed 276 unit tests, 86 Linux browser
+  cases (6.2m) and three capture-start probes (10.5s). Pages deployed successfully
+  in [run 38747667441](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38747667441).
+  Published `main-DdxCi613.js` passed Chromium/WebKit supported/denied wake-lock
+  checks: captions, Settings, Clear and spoken Stop; no uncaught page errors.
+  The first smoke fixture incorrectly replaced a finalized result index for the
+  next utterance; retaining cumulative result history fixed that test without
+  changing production code. Published checks also use mocked recognition/locks.
 - **Physical acceptance pending:** reopen the deployed app on the target tablet,
   tap Listen and leave the visible page untouched beyond its normal Auto-Lock
   interval; captions/screen should stay active. Check Settings says Keeping screen
