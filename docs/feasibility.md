@@ -14,6 +14,9 @@
   identical when starting; a 390px WebKit screenshot was visually reviewed.
   Existing status-message test locators now distinguish the indicator from the
   detailed error/interruption status. All 54 local app browser cases pass (52.3s).
+  The first CI run stopped at an unchanged delayed-attribution assertion looking
+  for Listening in the former hidden status. Updating that assertion to the visible
+  indicator passed the affected real-model Chromium test locally (42.1s).
   Publication results follow after verification.
 - **Limits:** simulated recognition on Windows desktop browsers; no physical iPad
   or screen-reader acceptance claimed. No new microphone, inference or storage.

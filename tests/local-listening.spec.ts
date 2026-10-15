@@ -317,7 +317,7 @@ test('Android provisional words receive delayed names and activity filters only 
   expect(text.join(' ')).not.toMatch(/COMMAND STOP/i);
   // A second session reuses initialized models; Stop also releases the track.
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
-  await expect(page.locator('#captions > [role=status]')).toContainText('Listening.');
+  await expect(page.locator('.listening-indicator')).toHaveText('Listening…');
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
   expect(await stats()).toEqual({ calls: 3, stops: 3 });
