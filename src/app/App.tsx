@@ -58,8 +58,8 @@ export function App({ engine: browserEngine, createSpeakers, localEngine }: {
       {engine.unavailableReason && <p className="notice" role="alert">{engine.unavailableReason}</p>}
       {offline && <p className="notice">You’re offline. Your browser’s speech service may need a connection.</p>}
       <div className={preferences.assignedCollapsed ? 'caption-panes assigned-collapsed' : 'caption-panes'}>
-        <Transcript segments={snapshot.segments} textSize={textSize} />
-        <Transcript segments={snapshot.segments} textSize={textSize} assigned colours={colours} hiddenSpeakers={hiddenSpeakers}
+        <Transcript segments={snapshot.segments} textSize={textSize} language={language} />
+        <Transcript segments={snapshot.segments} textSize={textSize} language={language} assigned colours={colours} hiddenSpeakers={hiddenSpeakers}
           collapsed={preferences.assignedCollapsed} onToggle={() => changePreferences({ assignedCollapsed: !preferences.assignedCollapsed })} />
       </div>
     </main>

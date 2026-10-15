@@ -1,5 +1,6 @@
 import { assignedSegments, liveSegments } from './streams';
-import { useId, useLayoutEffect, useRef } from 'react';
+import { useId, useLayoutEffect, useMemo, useRef } from 'react';
+import { formatCaptionSegments } from './caption-format';
 import type { TranscriptSegment } from '../../transcription/types';
 import { speakerColour, unknownColour, type SpeakerColourChoices } from '../speakers/colours';
 
@@ -13,7 +14,7 @@ export function Caption({ segment, showName = true, colours = {}, live = false }
   </div>;
 }
 
-export function Transcript({ segments, textSize, assigned = false, colours = {}, hiddenSpeakers = [], collapsed = false, onToggle }: { segments: readonly TranscriptSegment[]; textSize: number; assigned?: boolean; colours?: SpeakerColourChoices; hiddenSpeakers?: readonly string[]; collapsed?: boolean; onToggle?: () => void }) {
+export function Transcript({ segments, textSize, language = 'en-GB', assigned = false, colours = {}, hiddenSpeakers = [], collapsed = false, onToggle }: { segments: readonly TranscriptSegment[]; textSize: number; language?: string; assigned?: boolean; colours?: SpeakerColourChoices; hiddenSpeakers?: readonly string[]; collapsed?: boolean; onToggle?: () => void }) {
   const viewport = useRef<HTMLDivElement>(null);
   const following = useRef(true);
   const transcriptId = useId();
@@ -24,7 +25,8 @@ export function Transcript({ segments, textSize, assigned = false, colours = {},
     if (element && !collapsed && following.current) element.scrollTop = element.scrollHeight;
   }, [segments, textSize, hiddenSpeakers, collapsed]);
 
-  const visible = assigned ? assignedSegments(segments, hiddenSpeakers) : liveSegments(segments);
+  const formatted = useMemo(() => formatCaptionSegments(segments, language), [segments, language]);
+  const visible = assigned ? assignedSegments(formatted, hiddenSpeakers) : liveSegments(formatted);
   return <section className="transcript-area" aria-label={assigned ? 'Who said what' : 'Live captions'}>
     <h2 className={onToggle ? 'pane-title collapsible-title' : 'pane-title'}>{onToggle ? <button className="pane-toggle"
       aria-expanded={!collapsed} aria-controls={transcriptId} onClick={onToggle}>

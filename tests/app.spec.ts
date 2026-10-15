@@ -70,7 +70,7 @@ test('anonymous listening, interim revision, stop, resume, clear, and no persist
   await expect(page.getByRole('button', { name: 'Listen', exact: true })).toHaveAttribute('aria-describedby', 'processing-note');
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   await result(page, 'a blue', false); await result(page, 'a new day', true);
-  await expect(page.getByRole('region', { name: 'Live transcript' })).toContainText('a new day');
+  await expect(page.getByRole('region', { name: 'Live transcript' })).toContainText('A new day');
   await expect(page.getByText('a blue', { exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
@@ -172,6 +172,29 @@ test('a provider pause separates growing lines without freezing a late correctio
   await expect(lines).toHaveText(['A quiet morning. Unconfirmed', ' A new thought develops. Unconfirmed']);
   await result(page, 'A bright morning. A new thought develops.', true);
   await expect(lines).toHaveText(['A bright morning. A new thought develops.']);
+  await page.getByRole('button', { name: 'Stop', exact: true }).click();
+});
+
+test('caption formatting follows revisions and language without changing voice commands', async ({ page }) => {
+  await mockRecognition(page); await page.goto('/');
+  await page.getByRole('button', { name: 'Listen', exact: true }).click();
+  const lines = page.getByRole('region', { name: 'Live transcript' }).locator('.caption p');
+  await result(page, 'hello grandad. i can', false);
+  await expect(lines).toHaveText(['Hello grandad. I can Unconfirmed']);
+  await result(page, 'hello grandma. would you like tea ? i’m ready and NASA agrees.', true);
+  await expect(lines).toHaveText(['Hello grandma. Would you like tea? I’m ready and NASA agrees.']);
+  await result(page, 'hello grandma. would you like tea ? i’m ready and NASA agrees. command clear', true);
+  await expect(lines).toHaveCount(0);
+  await result(page, 'a new line. i can help. command stop', true);
+  await expect(lines).toHaveText(['A new line. I can help.']);
+  await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByLabel('Speech language').selectOption('es-ES');
+  await page.getByRole('button', { name: 'Back to captions' }).click();
+  await page.getByRole('button', { name: 'Clear', exact: true }).click();
+  await page.getByRole('button', { name: 'Listen', exact: true }).click();
+  await result(page, 'hola i adiós. qué tal?', true);
+  await expect(lines).toHaveText(['Hola i adiós. Qué tal?']);
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
 });
 

@@ -1,5 +1,25 @@
 # Feasibility evidence
 
+## 2026-10-15 - Display-only caption formatting
+
+- **Change:** sentence/line-start capitals, English pronouns and contractions,
+  conservative spacing cleanup. Source text and speaker alignment remain unchanged;
+  both panes format the complete source line before filtering speaker fragments.
+  No extra model or service. See ADR 0044.
+- **Local checks:** typecheck, lint, all 266 unit tests, pinned assets and production
+  build pass. Six new formatter tests cover revisions, slice/metadata preservation,
+  Unicode case expansion, abbreviations, addresses, decimals and language rules.
+  All 48 Windows Chromium/mobile-WebKit app cases pass (44.9s), including rendered
+  formatting through interim corrections, spoken Clear/Stop and Spanish selection.
+  Recognition is simulated; no microphone is used in those app checks.
+- **Limits:** rule-based readability only. Missing punctuation and proper names are
+  not inferred; ambiguous abbreviations can still be imperfect. Physical phone
+  validation and measured formatting performance on the Pixel 8 remain untested.
+- **Phone check:** reopen the updated app, speak several sentences and check the
+  first word and “I”/contractions. Live text should still revise in place. Clear and
+  “command stop” should behave as before; assigned fragments should retain the same
+  casing as their corresponding words in Live.
+
 ## 2026-10-15 - Session reset and correctable pause lines
 
 - **Decision:** replace both display-masking Clear implementations with immediate

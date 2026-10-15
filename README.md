@@ -36,6 +36,14 @@ The Settings title is centred, with 24px side padding around the panel content.
 Voice to record and Display name share a row when both fields are available.
 Values scale with browser text settings. See ADR 0038.
 
+**Caption formatting:** both panes capitalise the start of each original caption
+line and clear sentence starts, tidy whitespace, and capitalise English “I” and
+its common contractions. Existing capitals, acronyms and mixed-case names are
+preserved. Named fragments share their source line's formatting. Recognition,
+commands and speaker alignment use the original text; no grammar model, download
+or external service is involved. Missing punctuation and proper-name casing are
+not inferred. See [ADR 0044](docs/decisions/0044-display-caption-formatting.md).
+
 The separate [PC comparison](https://h-wilderspin.github.io/speech-to-text/compare.html)
 and [service setup](service/README.md) are retained as inactive research, not the
 current deployment plan. No personal-PC installation or working public tunnel was

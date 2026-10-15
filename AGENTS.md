@@ -22,6 +22,13 @@ Deliver a **small, accessible, static-hosted TypeScript PWA** for live speech tr
 
 ## Architecture rules
 
+**Caption formatting (2026-10-15):** apply casing/spacing rules only in presentation.
+Format original caption lines before filtering speaker slices, retaining original
+recognition text and offsets for commands/alignment. New lines may begin with a
+capital for readability; that does not establish a grammatical sentence boundary.
+English pronoun rules follow the selected language. Preserve existing case and
+speaker names; do not infer punctuation or rewrite words. See ADR 0044.
+
 **Session reset (2026-10-15, explicit user instruction):** Clear and confirmed
 "command clear" invalidate the current session immediately, empty both panes,
 abort capture and start a new session only after native recognition ends. Drop
