@@ -11,7 +11,14 @@
 - **Checks:** 104 retained unit tests, typecheck, lint and production build pass.
   Final full Windows Chromium/WebKit run passed 54 browser cases (43.8s),
   including scoped upgrade cleanup, preserved text/language, sibling-project
-  isolation and restricted storage. Final publication verification follows.
+  isolation and restricted storage. Commit `551fceb` passed 104 unit tests and all
+  54 Linux browser cases (44.7s), then deployed in
+  [run 38766238246](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38766238246).
+  Published `index-Byb_8alp.js` passed Chromium/WebKit checks with standard and
+  simulated Android results: one transcript, Settings, formatting, session Clear,
+  Stop, no model requests/secondary capture and comparison URL 404. A desktop
+  WebKit smoke-fixture assumption about mediaDevices was corrected; production
+  code was unchanged. The final four published checks had no uncaught page errors.
 - **Limits:** recognition is simulated in browser checks. No new physical tablet
   test or claimed improvement to provider accuracy. Wake-lock/iPad acceptance is
   still subject to the existing physical check. New build activates after old tabs
