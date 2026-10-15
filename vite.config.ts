@@ -14,10 +14,9 @@ function offlineShell(): Plugin {
         'icons/icon-512.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png',
         'fonts/Poppins-Regular.ttf', 'fonts/Poppins-SemiBold.ttf', 'fonts/OFL.txt'];
       // Vite emits index.html in a later hook, so enumerate it explicitly.
-      const files = [...new Set(['index.html', 'compare.html', ...Object.keys(bundle), ...publicFiles])];
+      const files = [...new Set(['index.html', ...Object.keys(bundle), ...publicFiles])];
       const worker = readFileSync(new URL('./src/app/service-worker.js', import.meta.url), 'utf8');
       const hash = createHash('sha256').update(worker).update(readFileSync(new URL('./index.html', import.meta.url)));
-      hash.update(readFileSync(new URL('./compare.html', import.meta.url)));
       for (const item of Object.values(bundle)) hash.update(item.type === 'chunk' ? item.code : item.source);
       for (const file of publicFiles) hash.update(readFileSync(new URL(`./public/${file}`, import.meta.url)));
       this.emitFile({ type: 'asset', fileName: 'sw.js', source: worker
@@ -30,6 +29,5 @@ function offlineShell(): Plugin {
 export default defineConfig({
   base: './',
   plugins: [react(), offlineShell()],
-  build: { rollupOptions: { input: { main: 'index.html', compare: 'compare.html' } } },
-  test: { include: ['src/**/*.test.ts', 'research/**/*.test.{ts,js}'], environment: 'node' },
+  test: { include: ['src/**/*.test.ts'], environment: 'node' },
 });

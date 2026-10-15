@@ -6,26 +6,13 @@ export interface TranscriptSegment {
   revision?: number;
   /** A display boundary hint, never a claim that provisional words are final. */
   pauseAfter?: boolean;
-  /** Original browser segment when delayed attribution splits its text. */
-  sourceSegmentId?: string;
   text: string;
   isFinal: boolean;
-  startMs?: number;
-  endMs?: number;
-  speakerId?: string;
-  // Set together only by an attribution engine with sufficient voice evidence.
-  speakerName?: string;
-  speakerEstimated?: boolean;
-  /** Final local voice/phrase evidence; browser wording may still be provisional. */
-  speakerEvidenceFinal?: boolean;
 }
 
 export interface TranscriptionSnapshot {
   phase: SessionPhase;
   message: string;
-  notice?: string;
-  /** Short local processing diagnostic, shown only in Settings; no audio/text. */
-  speakerStatus?: string;
   sessionId?: number;
   segments: readonly TranscriptSegment[];
 }
@@ -34,7 +21,7 @@ export interface TranscriptionEngine {
   readonly unavailableReason: string | null;
   getSnapshot(): TranscriptionSnapshot;
   subscribe(listener: () => void): () => void;
-  start(language: string, sessionId?: number): void;
+  start(language: string): void;
   stop(): void;
   interrupt(): void;
   clear(): void;

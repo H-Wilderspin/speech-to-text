@@ -1,5 +1,7 @@
 # ADR 0036: Prepare a personal Windows computer for the comparison
 
+Speaker/two-pane scope superseded by [ADR 0046](0046-live-transcription-only-mvp.md); non-speaker decisions and historical evidence remain.
+
 Date: 2026-10-13
 Status: Accepted
 

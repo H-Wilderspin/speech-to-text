@@ -1,5 +1,7 @@
 # ADR 0007: Evaluate a shared-sample streaming ASR path
 
+Speaker/two-pane scope superseded by [ADR 0046](0046-live-transcription-only-mvp.md); non-speaker decisions and historical evidence remain.
+
 Date: 2026-10-10
 Status: Accepted experiment; not a production ASR selection
 

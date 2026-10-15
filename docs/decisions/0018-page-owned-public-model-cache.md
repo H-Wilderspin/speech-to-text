@@ -1,5 +1,7 @@
 # ADR 0018: Keep persistent public model caching in the page
 
+Speaker/two-pane scope superseded by [ADR 0046](0046-live-transcription-only-mvp.md); non-speaker decisions and historical evidence remain.
+
 Date: 2026-10-11
 Status: Accepted; refines ADR 0016's cache implementation
 

@@ -1,6 +1,5 @@
 import { expect, it } from 'vitest';
 import { formatCaptionSegments } from './caption-format';
-import { assignedSegments, liveSegments } from './streams';
 import type { TranscriptSegment } from '../../transcription/types';
 
 const format = (text: string, language = 'en-GB') => formatCaptionSegments([{ id: 'one', text, isFinal: false }], language)[0]!.text;
@@ -19,26 +18,12 @@ it('avoids guessing sentence boundaries inside abbreviations, addresses and numb
   expect(format('123 apples and NASA data')).toBe('123 apples and NASA data');
 });
 
-it('formats before speaker filtering without changing raw text, offsets or metadata', () => {
-  const raw: TranscriptSegment[] = [
-    { id: 'a:0', sourceSegmentId: 'a', sessionId: 4, revision: 7, text: 'please  pass ', isFinal: false },
-    { id: 'a:12', sourceSegmentId: 'a', sessionId: 4, revision: 7, text: 'the NASA manual. i’ll read it.', isFinal: false,
-      speakerId: 'one', speakerName: 'Alex', speakerEvidenceFinal: true },
-  ];
+it('preserves raw text and session metadata while formatting each line', () => {
+  const raw: TranscriptSegment[] = [{ id: 'a', sessionId: 4, revision: 7, text: 'please  pass the NASA manual.', isFinal: false }];
   const original = structuredClone(raw);
-  const formatted = formatCaptionSegments(raw);
+  expect(formatCaptionSegments(raw)).toEqual([{ ...raw[0], text: 'Please pass the NASA manual.' }]);
   expect(raw).toEqual(original);
-  expect(liveSegments(formatted)[0]!.text).toBe('Please pass the NASA manual. I’ll read it.');
-  expect(assignedSegments(formatted)[0]).toEqual({ ...raw[1], text: 'the NASA manual. I’ll read it.' });
-  expect(assignedSegments(formatted, ['one'])).toEqual([]);
-});
-
-it('keeps Unicode case expansion in its source slice and does not capitalize a following fragment', () => {
-  const pieces = formatCaptionSegments([
-    { id: 'a:0', sourceSegmentId: 'a', text: 'ßeta ', isFinal: true },
-    { id: 'a:5', sourceSegmentId: 'a', text: 'bleibt gleich.', isFinal: true },
-  ], 'de-DE');
-  expect(pieces.map((part) => part.text)).toEqual(['SSeta ', 'bleibt gleich.']);
+  expect(format('\u00dfeta bleibt gleich.', 'de-DE')).toBe('SSeta bleibt gleich.');
 });
 
 it('recomputes revisions and formats new lines without appending or inferring punctuation', () => {

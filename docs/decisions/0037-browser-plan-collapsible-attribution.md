@@ -1,5 +1,7 @@
 # ADR 0037: Return to the browser plan with collapsible attribution
 
+Speaker/two-pane scope superseded by [ADR 0046](0046-live-transcription-only-mvp.md); non-speaker decisions and historical evidence remain.
+
 Date: 2026-10-13
 Status: Accepted; supersedes ADRs 0035/0036 as the active rollout plan
 

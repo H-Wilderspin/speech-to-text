@@ -1,5 +1,7 @@
 # Optional local speech assets
 
+> Historical research: this feature was removed from the MVP by [ADR 0046](decisions/0046-live-transcription-only-mvp.md). Commands and source paths below refer to earlier Git history.
+
 Current product use: [ADR 0023](decisions/0023-browser-first-delayed-names.md)
 reuses these assets for delayed speaker evidence alongside authoritative browser
 captions. It adds no new model files. Offline model reuse is supported; offline

@@ -1,5 +1,7 @@
 # ADR 0013: Measure offline speaker turns without enabling live attribution
 
+Speaker/two-pane scope superseded by [ADR 0046](0046-live-transcription-only-mvp.md); non-speaker decisions and historical evidence remain.
+
 Date: 2026-10-10
 Status: Accepted for research only
 

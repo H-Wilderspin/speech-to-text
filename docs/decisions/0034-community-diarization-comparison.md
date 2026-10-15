@@ -1,5 +1,7 @@
 # ADR 0034: Compare Community-1 with unchanged identity matching
 
+Speaker/two-pane scope superseded by [ADR 0046](0046-live-transcription-only-mvp.md); non-speaker decisions and historical evidence remain.
+
 Date: 2026-10-13
 Status: Accepted for research only
 

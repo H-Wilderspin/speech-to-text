@@ -1,4 +1,0 @@
-# HTTP/policy tests deliberately need no gated models or inference credentials.
-fastapi==0.143.0
-httpx==0.28.1
-numpy==2.5.4

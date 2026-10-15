@@ -1,5 +1,24 @@
 # Feasibility evidence
 
+## 2026-10-15 - Live-transcription-only MVP
+
+- **Scope:** user removes Who said what completely. Removed 189 tracked feature
+  files: speaker/local/remote engines, UI, model assets, service/research tools,
+  fixtures and tests. Historical findings remain, explicitly marked. See ADR 0046.
+- **Measured reduction:** public assets 288,435,984 to 335,180 bytes; source files
+  95 to 27. Production output is about 0.59 MB, with no model/worker assets. This
+  measures deployed files, not Git history or ignored local research environments.
+- **Checks:** 104 retained unit tests, typecheck, lint and production build pass.
+  Final full Windows Chromium/WebKit run passed 54 browser cases (43.8s),
+  including scoped upgrade cleanup, preserved text/language, sibling-project
+  isolation and restricted storage. Final publication verification follows.
+- **Limits:** recognition is simulated in browser checks. No new physical tablet
+  test or claimed improvement to provider accuracy. Wake-lock/iPad acceptance is
+  still subject to the existing physical check. New build activates after old tabs
+  close; obsolete database deletion can wait for old connections to close.
+- **Review:** [remaining cleanup candidates](cleanup-review.md) are separate from
+  this removal; no new framework or recognition algorithm was introduced.
+
 ## 2026-10-15 - Visible listening indicator
 
 - **Change:** shared main/comparison status above bottom buttons. Green Listening

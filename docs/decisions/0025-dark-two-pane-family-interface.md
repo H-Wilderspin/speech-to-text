@@ -1,5 +1,7 @@
 # ADR 0025: Dark two-pane family captions
 
+Speaker/two-pane scope superseded by [ADR 0046](0046-live-transcription-only-mvp.md); non-speaker decisions and historical evidence remain.
+
 Date: 2026-10-12
 Status: Accepted; dark presentation superseded by [ADR 0039](0039-light-theme-steady-live-reading.md); supersedes the display/filtering proposal in ADR 0024
 

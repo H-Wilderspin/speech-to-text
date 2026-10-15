@@ -1,5 +1,7 @@
 # ADR 0017: Direct reference matching on a shared audio clock
 
+Speaker/two-pane scope superseded by [ADR 0046](0046-live-transcription-only-mvp.md); non-speaker decisions and historical evidence remain.
+
 Date: 2026-10-10
 Status: Accepted research direction; production integration pending
 

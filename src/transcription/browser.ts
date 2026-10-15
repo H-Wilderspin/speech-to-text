@@ -1,7 +1,6 @@
 import { collapseCumulativeResults, reconcileResults, type RecognizedSegment } from './reconcile';
 import { findVoiceCommand } from './stop-command';
 import { PauseLines } from './pause-lines';
-import { createSpeakerTrace } from './diagnostics';
 import { reconcileAndroidResults, usesAndroidRecognition } from './android-results';
 import type { BrowserRecognizer, RecognizerFactory, TranscriptionEngine, TranscriptionSnapshot, TranscriptSegment } from './types';
 
@@ -39,7 +38,6 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
   private resetting: BrowserRecognizer | null = null;
   private pauseTimer: ReturnType<typeof setTimeout> | undefined;
   private lines = new PauseLines();
-  private trace = createSpeakerTrace('browser');
 
   constructor(private factory: RecognizerFactory | null, public readonly unavailableReason: string | null = null,
     private resultMode: 'standard' | 'android-cumulative' = 'standard') {}
@@ -174,7 +172,7 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
         this.publish('listening', 'Listening. Say “command stop” or tap Stop to finish.');
       };
       recognizer.onresult = ({ results }) => {
-        if (!current()) { this.trace('stale-result', { session: sessionNumber, currentSession: this.sessionNumber }); return; }
+        if (!current()) return;
         const paused = new Set(this.current.filter((segment) => segment.pauseAfter).map((segment) => segment.id));
         this.current = this.resultMode === 'android-cumulative'
           ? reconcileAndroidResults(results, this.sessionId)
@@ -261,7 +259,6 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
     this.history = [];
     this.current = [];
     this.lines.clear();
-    this.trace('clear', { session: this.sessionNumber, restart: resume });
     this.listeningRequested = resume;
     this.commandStartSessionId = this.sessionId + 1;
     if (!old || ended) {

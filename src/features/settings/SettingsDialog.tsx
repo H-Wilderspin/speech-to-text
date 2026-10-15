@@ -1,19 +1,11 @@
-import { useEffect, useRef, type PointerEvent, type ReactNode } from 'react';
-import { NameSuggestions } from './NameSuggestions';
-import type { LocalListeningEngine } from '../../transcription/local/types';
-import { SpeakerSettings, type SpeakerServices } from '../speakers/SpeakerSettings';
-import type { SpeakerColourChoices } from '../speakers/colours';
+import { useEffect, useRef, type PointerEvent } from 'react';
 import { Icon } from '../../shared/Icon';
 import type { WakeStatus } from '../../app/listening-wake-lock';
 
-export function SettingsDialog({ active, textSize, onTextSize, language, onLanguage, installFailed, onClose, localEngine, createSpeakers, colours, onColours, onStop, hiddenSpeakers, onHiddenSpeakers, extraSettings, processingDescription, wakeStatus }: {
+export function SettingsDialog({ active, textSize, onTextSize, language, onLanguage, installFailed, onClose, wakeStatus }: {
   active: boolean; textSize: number; onTextSize: (size: number) => void;
   language: string; onLanguage: (language: string) => void; installFailed: boolean;
-  onClose: () => void; onStop: () => void;
-  localEngine?: LocalListeningEngine; createSpeakers: () => SpeakerServices;
-  colours: SpeakerColourChoices; onColours: (colours: SpeakerColourChoices) => void;
-  hiddenSpeakers: string[]; onHiddenSpeakers: (ids: string[]) => void;
-  extraSettings?: ReactNode; processingDescription?: string;
+  onClose: () => void;
   wakeStatus?: WakeStatus;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
@@ -33,23 +25,13 @@ export function SettingsDialog({ active, textSize, onTextSize, language, onLangu
       pointerStartedOutside.current = false;
     }} onPointerCancel={() => { pointerStartedOutside.current = false; }}>
     <header className="settings-header">
-      <form method="dialog"><button className="icon-button" aria-label="Back to captions" autoFocus><Icon name="back" /></button></form>
+      <form method="dialog"><button className="icon-button" aria-label="Back to captions" autoFocus><Icon /></button></form>
       <h2 id="settings-title">Settings</h2>
     </header>
     <div className="settings-content">
-    <SpeakerSettings createServices={createSpeakers} canRecord={!active} onStop={onStop} colours={colours} onColours={onColours}
-      hiddenSpeakers={hiddenSpeakers} onHiddenSpeakers={onHiddenSpeakers} />
-    {extraSettings}
-    {localEngine && <NameSuggestions engine={localEngine} />}
     {installFailed && <p role="status">Offline installation unavailable.</p>}
     {wakeStatus === 'held' && <p role="status">Keeping screen awake.</p>}
     {wakeStatus === 'unavailable' && <p role="status">Screen may sleep. Check your device’s Auto-Lock settings.</p>}
-    <details><summary>About</summary>
-      <p>{processingDescription ?? 'Speech uses your browser’s provider. Voiceprints stay on this device.'}</p>
-      <p><a href={`${import.meta.env.BASE_URL}speaker/THIRD-PARTY-NOTICES.txt`} target="_blank" rel="noreferrer">Voice model licences</a>
-        {' · '}<a href={`${import.meta.env.BASE_URL}local/THIRD-PARTY-NOTICES.txt`} target="_blank" rel="noreferrer">Speech model licences</a>
-        {' · '}<a href={`${import.meta.env.BASE_URL}fonts/OFL.txt`} target="_blank" rel="noreferrer">Font licence</a></p>
-    </details>
     <section className="caption-preferences" aria-label="Caption preferences">
       <div className="display-control" role="group" aria-labelledby="text-size-label">
         <span id="text-size-label" className="field-label">Text size</span>
@@ -66,6 +48,10 @@ export function SettingsDialog({ active, textSize, onTextSize, language, onLangu
         </select>
       </label>
     </section>
+    <details><summary>About</summary>
+      <p>Speech uses your browser’s provider. Captions are not saved.</p>
+      <p><a href={`${import.meta.env.BASE_URL}fonts/OFL.txt`} target="_blank" rel="noreferrer">Font licence</a></p>
+    </details>
     </div>
   </dialog>;
 }

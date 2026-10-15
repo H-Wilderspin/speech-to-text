@@ -1,5 +1,7 @@
 # Local comparative benchmark — 2026-10-13
 
+> Historical research: this feature was removed from the MVP by [ADR 0046](decisions/0046-live-transcription-only-mvp.md). Commands and source paths below refer to earlier Git history.
+
 **Follow-up completed:** [Community-1, per-turn identity and word alignment](community-benchmark.md)
 reach 120/123 correctly named words and 9/11 complete utterances with zero false
 names on 41 unknown words in this generated set. The original comparison below

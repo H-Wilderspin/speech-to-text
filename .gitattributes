@@ -1,13 +1,3 @@
 * text=auto eol=lf
 *.png binary
-*.onnx binary
-*.wasm binary
-# This generated module is verified byte-for-byte alongside the native runtime.
-public/speaker/v1/speaker-runtime.mjs binary
-# Preserve upstream notice formatting without whitespace lint noise.
-public/speaker/THIRD-PARTY-NOTICES.txt -whitespace
-# Preserve every checksum-pinned public local asset exactly across Windows/Linux.
-public/local/v1/* binary
-public/local/v2/* binary
-public/local/THIRD-PARTY-NOTICES.txt -whitespace
-*.wav binary
+*.ttf binary

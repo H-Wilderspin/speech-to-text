@@ -1,5 +1,7 @@
 # ADR 0010: Speech regions and bounded speaker windows on the ASR clock
 
+Speaker/two-pane scope superseded by [ADR 0046](0046-live-transcription-only-mvp.md); non-speaker decisions and historical evidence remain.
+
 Date: 2026-10-10
 Status: Accepted experiment; no production diarization or identity selection
 

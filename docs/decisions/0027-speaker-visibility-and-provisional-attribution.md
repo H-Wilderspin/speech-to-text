@@ -1,5 +1,7 @@
 # ADR 0027: Speaker visibility and independently completed attribution
 
+Speaker/two-pane scope superseded by [ADR 0046](0046-live-transcription-only-mvp.md); non-speaker decisions and historical evidence remain.
+
 Date: 2026-10-12
 Status: Accepted; refines ADRs 0023, 0025 and 0026
 

@@ -1,5 +1,7 @@
 # Diagnosing Who said what
 
+> Historical research: this feature was removed from the MVP by [ADR 0046](decisions/0046-live-transcription-only-mvp.md). Commands and source paths below refer to earlier Git history.
+
 Open <https://h-wilderspin.github.io/speech-to-text/?debugSpeakers=1>, then open the
 page's developer console and filter **who-said-what**. Enable Info messages and
 Preserve log. On Pixel 8, inspect that Chrome tab from desktop Chrome's connected

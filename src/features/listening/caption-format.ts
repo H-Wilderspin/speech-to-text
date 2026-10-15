@@ -2,8 +2,7 @@ import type { TranscriptSegment } from '../../transcription/types';
 
 const abbreviations = new Set(['mr', 'mrs', 'ms', 'dr', 'prof', 'sr', 'jr', 'st', 'vs', 'etc']);
 
-/** One replacement per original UTF-16 position, so casing/spacing changes can
- * be distributed back to speaker slices without changing recognition offsets. */
+/** Format display text without mutating recognition input used by commands. */
 function displayCharacters(text: string, language: string): string[] {
   const output = text.split('');
   const english = language.startsWith('en');
@@ -40,25 +39,7 @@ function displayCharacters(text: string, language: string): string[] {
   return output;
 }
 
-/** Presentation only. Format complete source lines before visibility filtering;
- * a named fragment in the middle of a sentence is not a fresh sentence start. */
+/** Each browser caption is now a complete display line; there are no speaker slices. */
 export function formatCaptionSegments(segments: readonly TranscriptSegment[], language = 'en-GB'): TranscriptSegment[] {
-  const result: TranscriptSegment[] = [];
-  for (let start = 0; start < segments.length;) {
-    const first = segments[start]!;
-    const source = first.sourceSegmentId ?? first.id;
-    let end = start + 1;
-    while (end < segments.length && (segments[end]!.sourceSegmentId ?? segments[end]!.id) === source
-      && segments[end]!.sessionId === first.sessionId) end++;
-    const group = segments.slice(start, end);
-    const characters = displayCharacters(group.map((segment) => segment.text).join(''), language);
-    let offset = 0;
-    for (const segment of group) {
-      const text = characters.slice(offset, offset + segment.text.length).join('');
-      offset += segment.text.length;
-      result.push({ ...segment, text });
-    }
-    start = end;
-  }
-  return result;
+  return segments.map((segment) => ({ ...segment, text: displayCharacters(segment.text, language).join('') }));
 }

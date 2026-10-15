@@ -1,5 +1,7 @@
 # Static speaker assets
 
+> Historical research: this feature was removed from the MVP by [ADR 0046](decisions/0046-live-transcription-only-mvp.md). Commands and source paths below refer to earlier Git history.
+
 The optional enrolment path uses three public files in `public/speaker/v1/`. Commit these files with the app, including the ONNX and WASM binaries. They contain public software/model weights, never recordings or voiceprints. All files are below GitHub's per-file 100 MB limit. Do not replace them with Git LFS pointer files in the Pages artifact.
 
 `npm run verify:speaker-assets` checks the SHA256 values in `speaker-assets.json` and notice presence; `npm run build` runs that check automatically. Runtime/model downloads are lazy and same-origin. The service worker does not precache this directory.

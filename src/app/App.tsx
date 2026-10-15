@@ -3,24 +3,15 @@ import { watchInterruptions } from '../audio/interruption';
 import { Transcript } from '../features/listening/Transcript';
 import { ListeningIndicator } from '../features/listening/ListeningIndicator';
 import { SettingsDialog } from '../features/settings/SettingsDialog';
-import { type SpeakerServices } from '../features/speakers/SpeakerSettings';
 import type { TranscriptionEngine } from '../transcription/types';
-import type { LocalListeningEngine } from '../transcription/local/types';
 import { readPreferences, savePreferences } from '../features/settings/preferences';
-import { assignedSegments } from '../features/listening/streams';
-import { createSpeakerTrace } from '../transcription/diagnostics';
 import { useListeningWakeLock } from './use-listening-wake-lock';
 
-const trace = createSpeakerTrace('display');
-
-export function App({ engine: browserEngine, createSpeakers, localEngine }: {
-  engine: TranscriptionEngine; createSpeakers: () => SpeakerServices; localEngine?: LocalListeningEngine;
-}) {
-  const engine = localEngine ?? browserEngine;
+export function App({ engine }: { engine: TranscriptionEngine }) {
   const snapshot = useSyncExternalStore(engine.subscribe, engine.getSnapshot);
   const wakeStatus = useListeningWakeLock(engine);
   const [preferences, setPreferences] = useState(readPreferences);
-  const { textSize, language, colours, hiddenSpeakers } = preferences;
+  const { textSize, language } = preferences;
   const changePreferences = (changes: Partial<typeof preferences>) => {
     setPreferences((current) => { const next = { ...current, ...changes }; savePreferences(next); return next; });
   };
@@ -29,13 +20,6 @@ export function App({ engine: browserEngine, createSpeakers, localEngine }: {
   const [offline, setOffline] = useState(!navigator.onLine);
   const [installFailed, setInstallFailed] = useState(false);
   const active = ['requesting-permission', 'listening', 'restarting', 'stopping'].includes(snapshot.phase);
-  const visible = assignedSegments(snapshot.segments, hiddenSpeakers);
-  const visibleCharacters = visible.reduce((sum, segment) => sum + segment.text.length, 0);
-  const assignedCount = snapshot.segments.filter((segment) => segment.speakerId).length;
-  useEffect(() => {
-    trace('upper-pane', { visibleSegments: visible.length, visibleCharacters, assignedSegments: assignedCount,
-      hiddenProfiles: hiddenSpeakers.length });
-  }, [visible.length, visibleCharacters, assignedCount, hiddenSpeakers.length]);
 
   useEffect(() => {
     const unwatch = watchInterruptions(() => engine.interrupt());
@@ -57,14 +41,10 @@ export function App({ engine: browserEngine, createSpeakers, localEngine }: {
     <a className="skip-link" href="#captions">Skip to captions</a>
     <h1 className="sr-only">Speech to Text</h1>
     <main id="captions">
-      <p className={snapshot.phase === 'error' ? 'notice error' : snapshot.notice ? 'notice' : 'sr-only'} role="status" aria-live="polite" aria-atomic="true">{active && !snapshot.notice ? '' : snapshot.message}</p>
+      <p className={snapshot.phase === 'error' ? 'notice error' : 'sr-only'} role="status" aria-live="polite" aria-atomic="true">{active ? '' : snapshot.message}</p>
       {engine.unavailableReason && <p className="notice" role="alert">{engine.unavailableReason}</p>}
       {offline && <p className="notice">You’re offline. Your browser’s speech service may need a connection.</p>}
-      <div className={preferences.assignedCollapsed ? 'caption-panes assigned-collapsed' : 'caption-panes'}>
-        <Transcript segments={snapshot.segments} textSize={textSize} language={language} />
-        <Transcript segments={snapshot.segments} textSize={textSize} language={language} assigned colours={colours} hiddenSpeakers={hiddenSpeakers}
-          collapsed={preferences.assignedCollapsed} onToggle={() => changePreferences({ assignedCollapsed: !preferences.assignedCollapsed })} />
-      </div>
+      <Transcript segments={snapshot.segments} textSize={textSize} language={language} />
     </main>
     <footer className="toolbar" aria-label="Caption controls">
       <ListeningIndicator phase={snapshot.phase} />
@@ -75,11 +55,9 @@ export function App({ engine: browserEngine, createSpeakers, localEngine }: {
       <button disabled={snapshot.segments.length === 0} onClick={() => engine.clear()}>Clear</button>
       <button ref={settingsButton} onClick={() => setSettingsOpen(true)}>Settings</button>
     </footer>
-    <p className="sr-only" id="processing-note">Listen uses your browser’s speech service, which may send audio to its provider. Delayed name estimates use saved voiceprints on this device. Captions are kept only until you clear or reload. Details are in Settings.</p>
+    <p className="sr-only" id="processing-note">Listen uses your browser’s speech service, which may send audio to its provider. Captions are kept only until you clear or reload. Details are in Settings.</p>
     {settingsOpen && <SettingsDialog active={active} textSize={textSize} onTextSize={(textSize) => changePreferences({ textSize })}
-      localEngine={localEngine} createSpeakers={createSpeakers} colours={colours} onColours={(colours) => changePreferences({ colours })}
-      hiddenSpeakers={hiddenSpeakers} onHiddenSpeakers={(hiddenSpeakers) => changePreferences({ hiddenSpeakers })}
       language={language} onLanguage={(language) => changePreferences({ language })} installFailed={installFailed} wakeStatus={wakeStatus}
-      onStop={() => engine.stop()} onClose={() => { setSettingsOpen(false); settingsButton.current?.focus(); }} />}
+      onClose={() => { setSettingsOpen(false); settingsButton.current?.focus(); }} />}
   </div>;
 }

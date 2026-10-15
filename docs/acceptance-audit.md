@@ -1,5 +1,7 @@
 # Project-plan acceptance audit — 2026-10-12
 
+> Historical research: this feature was removed from the MVP by [ADR 0046](decisions/0046-live-transcription-only-mvp.md). Commands and source paths below refer to earlier Git history.
+
 **New trace after duplicate removal:** one reference, zero of three accepted voice
 windows and zero ambiguity; reported best 0.59 is below the 0.60 minimum. Capture
 and inference drained successfully. Independently, the current six-word alignment

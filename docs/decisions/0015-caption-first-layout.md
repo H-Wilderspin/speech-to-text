@@ -1,5 +1,7 @@
 # ADR 0015: Three controls above full-height captions
 
+Speaker/two-pane scope superseded by [ADR 0046](0046-live-transcription-only-mvp.md); non-speaker decisions and historical evidence remain.
+
 Date: 2026-10-10
 Status: Accepted; supersedes ADR 0001's visible disclosure placement and the original transcript controls
 

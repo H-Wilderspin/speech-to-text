@@ -1,5 +1,7 @@
 # ADR 0004: Measure a speaker-only runtime before enrolment integration
 
+Speaker/two-pane scope superseded by [ADR 0046](0046-live-transcription-only-mvp.md); non-speaker decisions and historical evidence remain.
+
 Date: 2026-10-10
 Status: Research-only distribution restriction superseded by [ADR 0006](0006-experimental-local-enrolment.md); historical experiment retained
 

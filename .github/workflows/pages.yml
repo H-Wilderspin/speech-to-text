@@ -30,18 +30,9 @@ jobs:
         run: npm ci
       - name: Typecheck, lint, unit tests and build
         run: npm run check
-      - name: Test comparison service boundaries without model downloads
-        run: |
-          python3 -m venv "$RUNNER_TEMP/comparison-tests"
-          "$RUNNER_TEMP/comparison-tests/bin/python" -m pip install -r service/requirements-test.txt
-          "$RUNNER_TEMP/comparison-tests/bin/python" -m unittest service.test_service
       - name: Install test browsers
         run: npx playwright install --with-deps chromium webkit
-      - name: Check comparison capture startup repeatedly
-        run: npm run test:e2e -- tests/comparison.spec.ts --project=chromium --grep "flushes real" --repeat-each=3 --workers=1
       - name: Test production app at root and project paths
-        # Real-time audio must not compete with another test's accelerated ML
-        # inference/model preparation on the shared runner. Keep every test.
         run: npm run test:e2e -- --workers=1 --max-failures=1
       - name: Upload static site
         if: github.event_name != 'pull_request'

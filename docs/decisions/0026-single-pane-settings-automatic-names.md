@@ -1,5 +1,7 @@
 # ADR 0026: Single-pane Settings and automatic names
 
+Speaker/two-pane scope superseded by [ADR 0046](0046-live-transcription-only-mvp.md); non-speaker decisions and historical evidence remain.
+
 Date: 2026-10-12
 Status: Accepted; supersedes the name toggle and nested Settings flow in ADRs 0023 and 0025
 

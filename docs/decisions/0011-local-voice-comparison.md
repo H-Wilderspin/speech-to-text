@@ -1,5 +1,7 @@
 # ADR 0011: Consent-based local voice comparison without identity claims
 
+Speaker/two-pane scope superseded by [ADR 0046](0046-live-transcription-only-mvp.md); non-speaker decisions and historical evidence remain.
+
 Date: 2026-10-10
 Status: Accepted experimental M2 evaluation feature
 

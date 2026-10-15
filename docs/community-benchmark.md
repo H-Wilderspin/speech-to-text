@@ -1,5 +1,7 @@
 # Community-1, turn identification and word alignment — 2026-10-13
 
+> Historical research: this feature was removed from the MVP by [ADR 0046](decisions/0046-live-transcription-only-mvp.md). Commands and source paths below refer to earlier Git history.
+
 **The strongest measured candidate is delayed speech-region Whisper, Community-1
 speech turns, identity matching separately for each turn, and forced word alignment.**
 It correctly recognizes and names 120/123 known-speaker words (97.6%), assigns no

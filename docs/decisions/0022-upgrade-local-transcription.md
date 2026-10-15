@@ -1,5 +1,7 @@
 # ADR 0022: Upgrade local transcription after poor clear-speech results
 
+Speaker/two-pane scope superseded by [ADR 0046](0046-live-transcription-only-mvp.md); non-speaker decisions and historical evidence remain.
+
 Date: 2026-10-11
 Status: Accepted; upgraded phone accuracy/throughput pending
 

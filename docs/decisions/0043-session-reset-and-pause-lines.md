@@ -1,5 +1,7 @@
 # ADR 0043: Reset recognition sessions on Clear and retain correctable inline lines
 
+Speaker/two-pane scope superseded by [ADR 0046](0046-live-transcription-only-mvp.md); non-speaker decisions and historical evidence remain.
+
 Date: 2026-10-15
 Status: Accepted; supersedes ADRs 0041 and 0042
 

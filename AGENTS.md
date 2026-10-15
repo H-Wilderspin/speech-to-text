@@ -4,10 +4,10 @@ This file gives persistent instructions to Codex (and other coding agents) worki
 
 ## Mission and priorities
 
-Deliver a **small, accessible, static-hosted TypeScript PWA** for live speech transcription, with optional voice enrolment and multi-speaker attribution. Prioritise:
+Deliver a **small, accessible, static-hosted TypeScript PWA** for live speech transcription, for browser live captions only. Prioritise:
 
 1. Correctness, accessibility and an immediately usable anonymous listening experience.
-2. User privacy: local-first processing, consent for enrolled voiceprints, minimal retention.
+2. User privacy: no saved audio/transcripts, accurate provider disclosure, minimal retention.
 3. Simplicity and clean module boundaries; avoid framework churn and infrastructure by default.
 4. Explicit evidence about browser / model limitations instead of unsupported claims.
 5. Maintainable code and concise, durable documentation that accumulates verified knowledge.
@@ -22,84 +22,32 @@ Deliver a **small, accessible, static-hosted TypeScript PWA** for live speech tr
 
 ## Architecture rules
 
-**Caption formatting (2026-10-15):** apply casing/spacing rules only in presentation.
-Format original caption lines before filtering speaker slices, retaining original
-recognition text and offsets for commands/alignment. New lines may begin with a
-capital for readability; that does not establish a grammatical sentence boundary.
-English pronoun rules follow the selected language. Preserve existing case and
-speaker names; do not infer punctuation or rewrite words. See ADR 0044.
+**MVP scope (2026-10-15, explicit user instruction):** Who said what is removed,
+including voice registration, identification, models/workers, comparison service,
+research executables and associated tests. Do not reintroduce this feature without
+an explicit new product decision. ADR 0046 supersedes the older speaker/two-pane
+requirements; historical documents are not the current implementation plan.
 
-**Session reset (2026-10-15, explicit user instruction):** Clear and confirmed
-"command clear" invalidate the current session immediately, empty both panes,
-abort capture and start a new session only after native recognition ends. Drop
-all old-session results, including the tail of a payload containing the command.
-Stop cancels restart. Speaker work resets in order while retaining loaded models.
-Tag main-app lines and speaker requests/results with session IDs. A debounced
-provider speech-end hint can split an unchanged prefix after 500ms; preserve late
-corrections and never claim exact audio/word timing. See ADR 0043, which supersedes
-the display masking in ADRs 0041/0042.
-
-**Continuous Live restored (2026-10-14):** Live is one chronological scrolling
-transcript. Interim sentences compose in place; completed sentences stay in the
-same flow. No separate current-sentence/history areas. This supersedes ADR 0039's
-split Live layout; light colours, pane order and bottom controls remain. See ADR 0040.
-
-**Pane order (2026-10-13):** Live comes first, then collapsible Who said what, then
-the bottom controls. This supersedes earlier references to assigned speech above
-Live. Preserve this visual and DOM order in both app entry points.
-
-**Bottom controls (2026-10-13):** Listen, Clear and Settings sit after the captions
-in a non-scrolling bottom bar, respecting the bottom safe area. Keep reading first
-in both the visual layout and DOM order; do not overlay or duplicate controls.
-
-**Light theme and stable reading (2026-10-13):** light backgrounds with dark text
-supersede the earlier dark theme. Map saved speaker colour families to dark,
-high-contrast equivalents. The newest browser utterance stays at the top of Live
-in a fixed-height scrollable reading area; earlier speech scrolls independently
-below. Never duplicate captions or alter recognition to implement this display.
-See ADR 0039.
-
-**Typography/settings update (2026-10-13):** locally hosted Poppins, three size
-roles (small labels/descriptions, medium controls/headings, adjustable large
-captions). Descriptions/captions use weight 400; labels uppercase with added
-tracking/line spacing. Settings remains full-height and scrollable, but is centred
-with max-width 1000px and dismisses on backdrop clicks. People first; text size
-and language last, in equal adjacent columns. This supersedes the earlier
-unlimited settings width. See ADR 0038.
-
-**Browser plan restored (2026-10-13):** the PC service is inactive research, not a
-required setup path. The main app's Who said what pane starts collapsed and keeps
-its display choice in preferences; toggling must preserve captions and listening.
-Local attribution still runs while hidden. See ADR 0037.
-
-**Family UX update (2026-10-12, explicit user instruction):** registration uses a
-name and Record action without consent text/checkboxes. Preserve legacy consent
-metadata when reading old profiles; do not fabricate it for new recordings. Keep
-configuration under Settings and explanations minimal. See ADR 0025. This overrides
-earlier enrolment UI consent requirements, not microphone permission or the existing
-ban on uploading voiceprints/audio to new services without authorisation.
-
-**Settings update (2026-10-12):** one full-screen scrolling pane with a return icon,
-inline registration and protected colour/delete speaker pills. Names automatically
-prepare for registered profiles and only appear in the upper assigned transcript;
-the live lower transcript never shows names. No enable checkbox. See ADR 0026.
-
-**Speaker activity (2026-10-12):** each pill also toggles visibility in Who said what.
-Keep hidden people's voiceprints in matching; filter only the upper display and
-persist the choice. Completed local evidence may label provisional browser words
-without changing their finalization state. See ADR 0027.
-
-- Use **TypeScript** with React and Vite unless an approved ADR changes the choice. Keep the output statically deployable.
-- Keep separate modules for `audio`, `transcription`, `diarization`, `identification`, `storage`, and UI features. UI must not directly depend on a specific inference vendor or model runtime.
-- Put interfaces and pure transformation / decision logic at boundaries; use adapters for browser APIs and external providers. Prefer composition and dependency injection over global singletons.
-- No backend, external authentication, paid API, tracking, analytics, or cloud persistence without an explicit product decision recorded in an ADR.
-- Never ship private API keys in frontend code, environment variables embedded into bundles, service workers, or source control. Public config is not secret config.
-- Keep microphone/session lifecycle explicit (`idle`, `requesting-permission`, `listening`, `stopping`, `error`) and release resources on stop/unmount/error.
-- Treat interim recognition output as replaceable, not append-only. Keep final transcript data stable.
-- Only assign speaker identity above an evidence-based threshold; otherwise use `Unknown`. Never equate arbitrary diarisation clusters with recognised identities.
-- Do not fabricate timing alignment from APIs that do not provide reliable timing. Handle audio/ASR timing compatibility as a prerequisite for speaker attribution.
-- Avoid saving raw audio and transcripts by default. Store consented embeddings only when required, locally where possible, with schema/model version and deletion support.
-- Treat microphone audio and voice embeddings as sensitive. Do not log them, include them in test snapshots, or send them to third parties without explicit user-visible disclosure and consent.
+- One BrowserTranscriptionEngine feeds one chronological Live transcript. Preserve
+  accurate interim replacement, Android cumulative-result handling and pause lines.
+- Clear/confirmed command clear invalidate the session, empty captions, abort native
+  capture and restart only after native end. Discard old-session payloads. Stop
+  cancels restart. Preserve session IDs and late-correction behavior (ADR 0043).
+- Display-only casing/spacing must not mutate recognition text used by commands.
+  Respect selected language; do not infer punctuation or rewrite words (ADR 0044).
+- Keep light colours, Poppins, three size roles, bottom controls, active indicator,
+  reduced-motion support, centred scrolling Settings and text/language preferences.
+- Keep the native wake lock best effort and release it on stop/error/interruption.
+  Returning to the page must never restart recording automatically (ADR 0045).
+- TypeScript/React/Vite, static deployment. No backend, paid API, tracking, models
+  or additional dependencies without a recorded product/architecture decision.
+- Never embed private credentials. Browser speech may use its provider; disclose
+  this accurately. Never persist transcripts/audio or log recognised text.
+- Keep microphone/session lifecycle explicit and clean up on stop/unmount/error.
+- Scope storage/cache cleanup to this application's exact namespace; never clear
+  another project on the same origin. Retain reading preferences on upgrades.
+- Use feature detection, accessible controls/status, reduced motion and scalable
+  typography. No pinch-zoom prevention or additional capture stream.
 
 ## Repository structure and code hygiene
 
@@ -117,11 +65,11 @@ without changing their finalization state. See ADR 0027.
 
 For each change:
 
-- Add/update focused tests for new business logic and regressions; especially partial/final reconciliation, unknown-speaker handling, confidence boundaries, data deletion, and lifecycle transitions.
+- Add/update focused tests for new business logic and regressions; especially partial/final reconciliation, session resets, data cleanup, and lifecycle transitions.
 - Run available **typecheck, lint, unit tests and production build**. If commands are not yet configured, set up practical scripts as part of initial scaffolding.
 - For microphone, PWA and ML changes, provide manual test steps and the exact devices/browsers tested. **Do not claim device verification if no physical device was tested.**
 - Verify failure modes: permission denial, unsupported API, app interruption, model loading failure, microphone release, no network (where applicable).
-- Meet accessibility expectations: scalable typography, contrast, touch targets, meaningful speaker labels, accessible status messages.
+- Meet accessibility expectations: scalable typography, contrast, touch targets and accessible status messages.
 - Before marking done, check acceptance criteria; report what passed, what was untested and any known limitations.
 - When publishing changes, follow CI through deployment and verify the served page.
   A successful push alone does not confirm publication; investigate failed checks.

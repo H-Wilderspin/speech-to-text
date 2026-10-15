@@ -32,7 +32,7 @@ try {
   catch {
     if (!$_.Exception.Response -or [int]$_.Exception.Response.StatusCode -ne 404) { throw }
     $repo = Invoke-GitHub POST 'user/repos' @{
-      name = $repoName; description = 'Accessible live captions with experimental local speaker enrolment';
+      name = $repoName; description = 'Accessible live captions for family conversations';
       private = $false; auto_init = $false; has_wiki = $false
     }
     Write-Output "Created $($repo.full_name)."

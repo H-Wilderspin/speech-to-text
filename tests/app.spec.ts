@@ -64,9 +64,8 @@ for (const availability of ['supported', 'denied', 'missing'] as const) test(`sc
   }
 });
 
-test('light live captions keep unknown speech below and remember text preferences', async ({ page }) => {
+test('light live captions remember text preferences', async ({ page }) => {
   await mockRecognition(page); await page.setViewportSize({ width: 390, height: 844 }); await page.goto('/');
-  await page.getByRole('button', { name: 'Who said what', exact: true }).click();
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await page.getByRole('button', { name: 'Larger text' }).click();
   await page.getByLabel('Speech language').selectOption('en-US');
@@ -78,32 +77,12 @@ test('light live captions keep unknown speech below and remember text preference
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   await result(page, 'All speech appears immediately here.', false);
   const live = page.getByRole('region', { name: 'Live transcript', exact: true });
-  const assigned = page.getByRole('region', { name: 'Assigned transcript', exact: true });
   await expect(live).toContainText('All speech appears immediately here.');
-  await expect(assigned.locator('.caption')).toHaveCount(0);
   await result(page, 'All speech appears immediately here.', true);
-  await expect(assigned.locator('.caption')).toHaveCount(0);
-  await expect(live.locator('.caption-speaker')).toHaveCount(0);
   await expect(live).toHaveCSS('font-size', '36px');
   await expect(live.locator('.caption')).toHaveCSS('color', 'rgb(48, 56, 64)');
   await expect(page.locator('html')).toHaveCSS('background-color', 'rgb(250, 249, 246)');
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
-});
-
-test('upgrading from local-only mode restores browser captions without downloading models', async ({ page }) => {
-  await mockRecognition(page);
-  await page.addInitScript(() => localStorage.setItem('speech-to-text-name-suggestions:/', 'enabled'));
-  const models: string[] = [];
-  page.on('request', (request) => { if (/(local|speaker)\/v[12]\//.test(request.url())) models.push(request.url()); });
-  await page.goto('/'); await page.getByRole('button', { name: 'Settings', exact: true }).click();
-  await expect(page.getByRole('checkbox')).toHaveCount(0);
-  await expect(page.getByRole('heading', { name: 'Add a speaker' })).toBeVisible();
-  await page.getByRole('button', { name: 'Back to captions' }).click();
-  await page.getByRole('button', { name: 'Listen', exact: true }).click();
-  await result(page, 'Keep these accurately transcribed words.', true);
-  await expect(page.getByRole('region', { name: 'Live transcript' })).toContainText('Keep these accurately transcribed words.');
-  await page.getByRole('button', { name: 'Stop', exact: true }).click();
-  expect(models).toEqual([]);
 });
 
 test('anonymous listening, interim revision, stop, resume, clear, and no persistence', async ({ page }) => {
@@ -171,13 +150,12 @@ for (const android of [false, true]) test(`Clear retires capture and rejects sta
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
 });
 
-for (const android of [false, true]) test(`command clear clears both panes and continues listening (${android ? 'Android' : 'standard'})`, async ({ page }) => {
+for (const android of [false, true]) test(`command clear clears captions and continues listening (${android ? 'Android' : 'standard'})`, async ({ page }) => {
   await mockRecognition(page);
   if (android) await page.addInitScript(() => Object.defineProperty(navigator, 'userAgent', {
     value: 'Mozilla/5.0 (Linux; Android 10; K) Chrome/156.0.0.0 Mobile Safari/537.36',
   }));
   await page.goto('/');
-  await page.getByRole('button', { name: 'Who said what', exact: true }).click();
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   const live = page.getByRole('region', { name: 'Live transcript', exact: true });
   await result(page, 'Old words. Command clear.', false);
@@ -189,7 +167,6 @@ for (const android of [false, true]) test(`command clear clears both panes and c
     host.testRecognition?.onend();
   });
   await expect(live.locator('.caption')).toHaveCount(0);
-  await expect(page.getByRole('region', { name: 'Assigned transcript' }).locator('.caption')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeEnabled();
   await result(page, 'Fresh words.', false);
   await expect(live.locator('.caption p')).toHaveText(['Fresh words. Unconfirmed']);
@@ -263,12 +240,9 @@ test('three bottom controls leave the viewport to captions and settings preserve
   expect(controls!.y + controls!.height).toBe(844);
   expect(box!.y + box!.height).toBeLessThanOrEqual(controls!.y);
   expect(box!.height).toBeGreaterThan(650);
-  await expect(page.getByRole('button', { name: 'Who said what', exact: true })).toHaveAttribute('aria-expanded', 'false');
-  await expect(page.getByRole('region', { name: 'Assigned transcript' })).toBeHidden();
   expect(box!.y + box!.height).toBeLessThanOrEqual(844);
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await page.getByLabel('Speech language').selectOption('en-US');
-  await expect(page.getByRole('heading', { name: 'People & colours' })).toBeVisible();
   await page.getByRole('button', { name: 'Back to captions' }).click();
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   await result(page, 'The captions fill this page.', true);
@@ -286,38 +260,7 @@ test('three bottom controls leave the viewport to captions and settings preserve
   await page.screenshot({ path: `test-results/clean-page-${test.info().project.name}.png` });
 });
 
-test('assigned pane toggles with keyboard, preserves live speech and remembers its state', async ({ page }) => {
-  await mockRecognition(page); await page.setViewportSize({ width: 390, height: 844 }); await page.goto('/');
-  expect(await page.locator('.caption-panes > section').evaluateAll((elements) => elements.map((element) => element.getAttribute('aria-label')))).toEqual(['Live captions', 'Who said what']);
-  const toggle = page.getByRole('button', { name: 'Who said what', exact: true });
-  const live = page.getByRole('region', { name: 'Live transcript' });
-  const assigned = page.getByRole('region', { name: 'Assigned transcript' });
-  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-  const fullHeight = (await live.boundingBox())!.height;
-  await page.getByRole('button', { name: 'Listen', exact: true }).click();
-  await result(page, 'One sentence', false);
-  await toggle.focus(); await page.keyboard.press('Enter');
-  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-  await expect(assigned).toBeVisible();
-  expect((await live.boundingBox())!.y + (await live.boundingBox())!.height).toBeLessThanOrEqual((await toggle.boundingBox())!.y);
-  expect((await live.boundingBox())!.height).toBeLessThan(fullHeight * .65);
-  await result(page, 'One sentence grows once.', true);
-  await expect(live.locator('.caption')).toHaveCount(1);
-  await expect(live).toContainText('One sentence grows once.');
-  await toggle.focus(); await page.keyboard.press('Space');
-  await expect(toggle).toBeFocused();
-  await expect(assigned).toBeHidden();
-  await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeEnabled();
-  await expect(live).toContainText('One sentence grows once.');
-  await page.getByRole('button', { name: 'Stop', exact: true }).click();
-  await page.reload(); await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-  await toggle.click(); await page.reload();
-  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-  await expect(assigned).toBeVisible();
-  await page.screenshot({ path: `test-results/expanded-pane-${test.info().project.name}.png` });
-});
-
-test('Poppins settings centre, order people first, preview size and dismiss only outside the panel', async ({ page }) => {
+test('Poppins settings centre, preview size and dismiss only outside the panel', async ({ page }) => {
   await mockRecognition(page); await page.setViewportSize({ width: 1440, height: 900 }); await page.goto('/');
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   await result(page, 'A clear live sentence.', true);
@@ -329,13 +272,10 @@ test('Poppins settings centre, order people first, preview size and dismiss only
   await expect(page.locator('body')).toHaveCSS('font-family', 'Poppins, sans-serif');
   const dialog = page.getByRole('dialog');
   expect(await dialog.boundingBox()).toEqual({ x: 220, y: 0, width: 1000, height: 900 });
-  await expect(page.locator('.settings-content > section').first()).toHaveAttribute('aria-labelledby', 'saved-speakers-title');
-  await expect(page.locator('.settings-content > :last-child')).toHaveAttribute('aria-label', 'Caption preferences');
+  await expect(page.locator('.settings-content > section').first()).toHaveAttribute('aria-label', 'Caption preferences');
   await expect(page.getByRole('heading', { name: 'Text size', exact: true })).toHaveCount(0);
   await expect(page.locator('#text-size-label')).toHaveCSS('text-transform', 'uppercase');
   await expect(page.locator('#text-size-label')).toHaveCSS('letter-spacing', '2.8px');
-  await expect(page.getByText('No speakers yet.', { exact: true })).toHaveCSS('font-size', '14px');
-  await expect(page.getByText('No speakers yet.', { exact: true })).toHaveCSS('font-weight', '400');
   await expect(page.locator('.size-preview')).toHaveCSS('font-size', '32px');
   await page.getByRole('button', { name: 'Larger text' }).click();
   await expect(page.locator('.size-preview')).toHaveCSS('font-size', '36px');
@@ -468,7 +408,7 @@ test('Android keeps a deliberately repeated sentence from a later native session
   await expect(page.locator('.confirmed')).toHaveText(['Yes, very very good.', 'Yes, very very good.']);
 });
 
-test('unsupported capability preserves readable UI and accessible speaker dialog', async ({ page }) => {
+test('unsupported capability preserves readable UI and accessible settings dialog', async ({ page }) => {
   await page.addInitScript(() => Object.assign(window, { SpeechRecognition: undefined, webkitSpeechRecognition: undefined }));
   await page.goto('/');
   await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeDisabled();

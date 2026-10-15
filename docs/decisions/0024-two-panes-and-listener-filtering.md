@@ -1,5 +1,7 @@
 # ADR 0024: Two caption panes and filtering the listener's speech
 
+Speaker/two-pane scope superseded by [ADR 0046](0046-live-transcription-only-mvp.md); non-speaker decisions and historical evidence remain.
+
 Date: 2026-10-12
 Status: Proposed; recommendation only, not implemented or deployed
 

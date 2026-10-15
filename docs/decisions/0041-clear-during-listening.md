@@ -1,5 +1,7 @@
 # ADR 0041: Clear captions without restarting capture
 
+Speaker/two-pane scope superseded by [ADR 0046](0046-live-transcription-only-mvp.md); non-speaker decisions and historical evidence remain.
+
 Date: 2026-10-14
 Status: Superseded by [ADR 0043](0043-session-reset-and-pause-lines.md)
 

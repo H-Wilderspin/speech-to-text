@@ -1,5 +1,7 @@
 # ADR 0023: Browser captions first, delayed experimental name estimates
 
+Speaker/two-pane scope superseded by [ADR 0046](0046-live-transcription-only-mvp.md); non-speaker decisions and historical evidence remain.
+
 Date: 2026-10-11
 Status: Accepted for opt-in estimates; device coexistence and human matching pending
 

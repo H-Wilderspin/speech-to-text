@@ -1,5 +1,7 @@
 # ADR 0032: Delayed speaker attribution on a shared audio timeline
 
+Speaker/two-pane scope superseded by [ADR 0046](0046-live-transcription-only-mvp.md); non-speaker decisions and historical evidence remain.
+
 Date: 2026-10-13
 Status: Proposed; no runtime change, service purchase or audio upload authorized by this document
 

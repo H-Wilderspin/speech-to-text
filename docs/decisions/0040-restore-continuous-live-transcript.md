@@ -1,5 +1,7 @@
 # ADR 0040: Restore continuous Live sentence composition
 
+Speaker/two-pane scope superseded by [ADR 0046](0046-live-transcription-only-mvp.md); non-speaker decisions and historical evidence remain.
+
 Date: 2026-10-14
 Status: Accepted; supersedes ADR 0039's split Live reading layout
 
