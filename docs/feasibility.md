@@ -17,7 +17,11 @@
   The first CI run stopped at an unchanged delayed-attribution assertion looking
   for Listening in the former hidden status. Updating that assertion to the visible
   indicator passed the affected real-model Chromium test locally (42.1s).
-  Publication results follow after verification.
+  Commit `3e9d062` passed 276 unit tests, three capture probes (10.6s) and all 86
+  Linux browser cases (6.9m), then deployed in
+  [run 38755149079](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38755149079).
+  Published `main-slD5yOsA.js` passed the same indicator smoke checks in Chromium
+  and WebKit: all states, reduced motion, stable layout and no uncaught page errors.
 - **Limits:** simulated recognition on Windows desktop browsers; no physical iPad
   or screen-reader acceptance claimed. No new microphone, inference or storage.
 
