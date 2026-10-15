@@ -26,6 +26,15 @@
   are coalesced. The browser pause check now introduces its full stop late too.
   All 260 unit tests and required checks pass; 12 focused Chromium/WebKit Clear,
   pause/correction and scroll cases pass on the final build.
+- **Publication:** final app commit `09560a0` passed all 78 Linux browser cases
+  (5.2m), plus three capture-start probes (9.0s). Pages deployed successfully in
+  [run 38733943958](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38733943958).
+  The earlier run for `18c7e1e` was cancelled when superseded by the punctuation
+  correction. The served `main-7PURJvE1.js` passed Chromium/WebKit smoke checks in
+  both standard and simulated Android modes: button/voice Clear, session increment,
+  stale callbacks, late punctuation, inline corrections, voice Stop and Stop during
+  restart, with no uncaught page errors. These public checks use simulated
+  recognition and no microphone; they do not establish physical-phone behavior.
 - **Limits:** no new physical-device verification. Exact 500ms silence splitting
   is not established: the provider can delay or omit speech-end. Corrections can
   merge provisional display lines. Restart introduces a capture gap; automatic
