@@ -232,8 +232,8 @@ test('permission denial is actionable and a new gesture can recover', async ({ p
 
 test('bottom icon controls leave the viewport to captions and settings preserve an active session', async ({ page }) => {
   await mockRecognition(page); await page.setViewportSize({ width: 390, height: 844 }); await page.goto('/');
-  await expect(page.getByRole('contentinfo').getByRole('button')).toHaveText(['Listen', '', '', '']);
-  for (const name of ['Clear', 'Meal planner', 'Settings']) await expect(page.getByRole('contentinfo').getByRole('button', { name, exact: true })).toHaveCount(1);
+  await expect(page.getByRole('contentinfo').getByRole('button')).toHaveText(['Listen', '', '', '', '']);
+  for (const name of ['Clear', 'Meal planner', 'Task planner', 'Settings']) await expect(page.getByRole('contentinfo').getByRole('button', { name, exact: true })).toHaveCount(1);
   await expect(page.getByRole('button', { name: 'Clear', exact: true })).toBeDisabled();
   const transcript = page.getByRole('region', { name: 'Live transcript' });
   const box = await transcript.boundingBox();
@@ -247,7 +247,7 @@ test('bottom icon controls leave the viewport to captions and settings preserve 
   await page.getByRole('button', { name: 'Back to captions' }).click();
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   await result(page, 'The captions fill this page.', true);
-  await expect(page.getByRole('contentinfo').getByRole('button')).toHaveText(['Stop', '', '', '']);
+  await expect(page.getByRole('contentinfo').getByRole('button')).toHaveText(['Stop', '', '', '', '']);
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await expect(page.getByLabel('Speech language')).toBeDisabled();
   await page.getByRole('button', { name: 'Larger text' }).click();
@@ -273,7 +273,8 @@ test('Poppins settings centre, preview size and dismiss only outside the panel',
   await expect(page.locator('body')).toHaveCSS('font-family', 'Poppins, sans-serif');
   const dialog = page.getByRole('dialog');
   expect(await dialog.boundingBox()).toEqual({ x: 220, y: 0, width: 1000, height: 900 });
-  await expect(page.locator('.settings-content > section').first()).toHaveAttribute('aria-label', 'Caption preferences');
+  await expect(page.locator('.settings-content > section').first()).toHaveAttribute('aria-label', 'App updates');
+  await expect(page.getByRole('region', { name: 'Caption preferences' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Text size', exact: true })).toHaveCount(0);
   await expect(page.locator('#text-size-label')).toHaveCSS('text-transform', 'uppercase');
   await expect(page.locator('#text-size-label')).toHaveCSS('letter-spacing', '2.8px');
@@ -533,7 +534,7 @@ test('reading earlier speech preserves scroll and returning to bottom resumes fo
   });
   const region = page.getByRole('region', { name: 'Live transcript', exact: true });
   await region.evaluate((element) => { element.scrollTop = 0; element.dispatchEvent(new Event('scroll')); });
-  await expect(page.getByRole('contentinfo').getByRole('button')).toHaveCount(4);
+  await expect(page.getByRole('contentinfo').getByRole('button')).toHaveCount(5);
   await page.evaluate(() => {
     const host = window as Window & { testRecognition?: { onresult: (event: unknown) => void } };
     host.testRecognition?.onresult({ results: [

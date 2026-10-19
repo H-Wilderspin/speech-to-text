@@ -1,11 +1,15 @@
 # Documentation
 
-The current product combines live captions and shared meal planning. Start with
-the root README, [meal setup](meal-planner.md),
+The current product combines live captions and shared meal/task planning. Start with
+the root README, [meal setup](meal-planner.md), [task setup](cleaning-planner.md),
 [ADR 0046](decisions/0046-live-transcription-only-mvp.md),
 [ADR 0047](decisions/0047-shared-meal-planner.md),
 [remembered editing access](decisions/0048-remember-meal-access.md) and
-[weekly defaults](decisions/0049-recurring-meal-defaults.md), plus
+[weekly defaults](decisions/0049-recurring-meal-defaults.md) and
+[meals alongside captions](decisions/0050-meals-alongside-captions.md) with
+[split orientation icons](decisions/0051-explicit-split-orientation.md), plus
+[cleaning checklists](decisions/0052-shared-cleaning-checklists.md),
+[Update app](decisions/0053-user-triggered-app-updates.md) and
 [manual testing](manual-testing.md). The latest feasibility entries record changes
 and checks; older entries describe historical builds.
 

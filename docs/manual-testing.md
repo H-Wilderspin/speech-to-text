@@ -4,6 +4,21 @@ Current scope: live captions and shared meals (ADRs 0046–0047). Record device 
 browser version and Safari tab/Home Screen mode for each physical run. Automated
 recognition fixtures are not physical acceptance evidence.
 
+## Update app
+
+- On an Apple tablet, record iPadOS/browser version and test both Safari and the
+  installed Home Screen app. Open a deployed release, then publish a newer one.
+  In Settings tap Update app; verify the new UI appears without clearing browser
+  data, remembered GitHub access and reading preferences remain, and the shell
+  subsequently reopens offline. Current captions clear on reload.
+- Keep another app tab open; updating must not force that tab to reload. Check
+  that Update app is disabled while listening, while a planner is open and
+  during GitHub connection. Stop/close first and retry.
+- Try offline and interrupted downloads. Show an error and let the user retry
+  without losing the working app. Test a second press when already up to date.
+- For older versions, open online to download the release, then close all its
+  tabs/windows and reopen to activate the button. Physical checks remain pending.
+
 ## Meal planner
 
 - Add a meal with Apply to set to Every Monday breakfast (or another slot).
@@ -13,7 +28,7 @@ recognition fixtures are not physical acceptance evidence.
   Try competing default edits and a failed save; keep the unsaved draft.
 - Open the cutlery icon on a tablet/phone. Check Monday–Sunday, three slots per
   day, today's marker, week arrows, scrolling and legible meal text.
-- Connect a repository-restricted owner token via Settings → Meal editing. Add/change/
+- Connect a repository-restricted owner token via Settings → Planner editing. Add/change/
   remove a meal. Read it from a second device with no GitHub login; use Refresh
   if needed. Do not use real credentials in screenshots or test logs.
 - Edit the same meal on two devices: the second save must report a conflict,
@@ -29,9 +44,30 @@ recognition fixtures are not physical acceptance evidence.
   Settings should remain open until the request finishes or reports an error.
 - During Listen, open and close meals, then Clear captions: listening continues
   and the meal plan is retained. Test offline/save failure without losing drafts.
+- Use the vertical/horizontal split icons while speaking: both panes remain
+  readable, captions continue updating and Listen/Stop/Clear remain usable. Check
+  both orientations on tablets/phones, active-button state, independent scrolling,
+  large caption text and the on-screen keyboard. Toggle with an unsaved meal and
+  a different week selected: both must survive. Press the active icon to return
+  to the full planner. Back hides the plan; Escape works
+  while focused inside it. Open/close Settings without losing the combined view.
 - With a keyboard, save/cancel a meal and confirm focus returns to its slot.
   Keep a draft open during an automatic refresh; its text must remain unchanged.
   Leave the planner open across Monday and check This week selects the new week.
+
+## Tasks and planner switching
+
+- Open the checklist beside cutlery, add a shopping trip, other daily tasks and a weekly task,
+  and confirm next week's occurrence starts unchecked. Tick/untick on one device
+  and check another reflects it after refresh. Test remembered editor access.
+- Edit one date, skip/restore, remove a recurrence and confirm dated exceptions
+  survive. Disconnect and verify reading still works but writing/ticking is disabled.
+- While listening in either split, switch meal/task icons with drafts in both:
+  exactly one planner is visible, drafts survive and captions keep updating.
+  Stop/Clear must work during a delayed save; planner switching must be disabled.
+- Check phone keyboard, tablet/phone layouts, 48px icon targets, screen-reader
+  checkbox labels, enlarged text and focus after save/remove. Simulate offline
+  save and concurrent edits: show errors and retain drafts/confirmed tick state.
 
 ## Captions
 

@@ -60,6 +60,9 @@ async function connect(page: Page, remember = false) {
   await planner(page);
 }
 const breakfast = (page: Page) => page.getByRole('button', { name: /^Monday 19 Oct, Breakfast:/ });
+const split = (page: Page, mode: 'vertical' | 'horizontal') => page.getByRole('button', {
+  name: mode === 'vertical' ? 'Vertical split (side by side)' : 'Horizontal split (stacked)', exact: true,
+});
 
 test('one Monday-first week, today marker, readable slots and project-path support', async ({ page, context }) => {
   await fixture(context);
@@ -75,7 +78,7 @@ test('one Monday-first week, today marker, readable slots and project-path suppo
   await expect(page.locator('.meal-day').first()).toHaveAccessibleName('Monday 26 Oct');
   await expect(page.locator('[aria-current=date]')).toHaveCount(0);
   await page.getByRole('button', { name: 'This week', exact: true }).click();
-  await expect(page.locator('.today-marker')).toHaveText('Today');
+  await expect(page.locator('.meal-day .today-marker')).toHaveText('Today');
   await page.setViewportSize({ width: 320, height: 740 });
   expect(await page.locator('dialog').evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
   await page.getByRole('button', { name: 'Back to captions' }).click();
@@ -157,11 +160,85 @@ test('opening meals preserves listening and caption Clear does not clear meals',
   });
   await page.getByRole('button', { name: 'Meal planner', exact: true }).click();
   await expect(breakfast(page)).toContainText('Toast');
-  await page.getByRole('button', { name: 'Back to captions' }).click();
+  await split(page, 'horizontal').click();
+  await expect(page.getByRole('dialog', { name: 'Meal planner' })).toHaveAttribute('aria-modal', 'false');
+  await expect(page.getByRole('region', { name: 'Live transcript' })).toContainText('A caption.');
+  await page.evaluate(() => {
+    (window as Window & { testRecognition?: { onresult: (event: unknown) => void } }).testRecognition?.onresult({ resultIndex: 1, results: [
+      { 0: { transcript: 'A caption.', confidence: .9 }, length: 1, isFinal: true },
+      { 0: { transcript: 'Let us discuss toast.', confidence: .9 }, length: 1, isFinal: false },
+    ] });
+  });
+  await expect(page.getByRole('region', { name: 'Live transcript' })).toContainText('Let us discuss toast.');
   await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: 'Clear', exact: true }).click();
+  await expect(page.getByRole('region', { name: 'Live transcript' })).toContainText('Tap Listen to start.');
+  await expect(breakfast(page)).toContainText('Toast');
+  await page.getByRole('button', { name: 'Stop', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Back to captions' }).click();
+  await expect(page.getByRole('button', { name: 'Meal planner', exact: true })).toBeFocused();
   await page.getByRole('button', { name: 'Meal planner', exact: true }).click();
   await expect(breakfast(page)).toContainText('Toast');
+  await expect(split(page, 'horizontal')).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('combined view keeps both panes and controls usable at tablet and phone widths', async ({ page, context }) => {
+  await fixture(context); await open(page);
+  for (const width of [1280, 768, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const mode of ['vertical', 'horizontal'] as const) {
+    await split(page, mode).click();
+    await expect(split(page, mode)).toHaveAttribute('aria-pressed', 'true');
+    await expect(split(page, mode === 'vertical' ? 'horizontal' : 'vertical')).toHaveAttribute('aria-pressed', 'false');
+    const captions = await page.getByRole('region', { name: 'Live transcript' }).boundingBox();
+    const meals = await page.getByRole('dialog', { name: 'Meal planner' }).boundingBox();
+    const toolbar = await page.getByRole('contentinfo').boundingBox();
+    expect(captions!.height).toBeGreaterThan(100);
+    expect(meals!.height).toBeGreaterThan(200);
+    if (mode === 'vertical') expect(captions!.x + captions!.width).toBeLessThanOrEqual(meals!.x);
+    else expect(captions!.y + captions!.height).toBeLessThanOrEqual(meals!.y);
+    expect(meals!.y + meals!.height).toBeLessThanOrEqual(toolbar!.y + 1);
+    expect(await page.getByRole('dialog', { name: 'Meal planner' }).evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+    await page.getByRole('button', { name: 'Next week' }).click();
+    await expect(page.locator('.week-heading')).toHaveText('26 Oct - 1 Nov, 2026');
+    await page.getByRole('button', { name: 'Previous week' }).click();
+    const groups = page.locator('.meal-header-actions');
+    await expect(groups.nth(0).getByRole('button')).toHaveCount(2);
+    await expect(groups.nth(1).getByRole('button')).toHaveCount(2);
+    await expect(groups.nth(0).getByRole('button').nth(0)).toHaveAccessibleName('Back to captions');
+    await expect(groups.nth(0).getByRole('button').nth(1)).toHaveAccessibleName('Refresh');
+    await page.screenshot({ path: `test-results/split-${mode}-${width}-${test.info().project.name}.png` });
+    }
+  }
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('dialog', { name: 'Settings' }).getByRole('button', { name: 'Back to captions' }).click();
+  await expect(split(page, 'horizontal')).toHaveAttribute('aria-pressed', 'true');
+  await split(page, 'horizontal').click();
+  await expect(page.getByRole('dialog', { name: 'Meal planner' })).toHaveAttribute('aria-modal', 'true');
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+});
+
+test('switching planner layout preserves the selected week and unsaved meal', async ({ page, context }) => {
+  await fixture(context); await open(page); await connect(page);
+  await page.getByRole('button', { name: 'Next week' }).click();
+  await page.getByRole('button', { name: /^Monday 26 Oct, Breakfast:/ }).click();
+  await page.locator('#meal-text').fill('Porridge and berries');
+  await page.getByLabel('Apply to').selectOption('default');
+  for (const mode of ['vertical', 'horizontal', 'horizontal', 'vertical'] as const) {
+    await split(page, mode).click();
+    await expect(page.locator('.week-heading')).toHaveText('26 Oct - 1 Nov, 2026');
+    await expect(page.locator('#meal-text')).toHaveValue('Porridge and berries');
+    await expect(page.getByLabel('Apply to')).toHaveValue('default');
+    await expect(split(page, mode)).toBeFocused();
+  }
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.getByRole('button', { name: /^Monday 26 Oct, Breakfast:/ })).toContainText('Porridge and berries');
+  await expect(page.getByRole('button', { name: /^Monday 26 Oct, Breakfast:/ })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Meal planner', exact: true })).toBeFocused();
 });
 
 test('This week follows the current date when the planner stays open across Monday', async ({ page, context }) => {

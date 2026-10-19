@@ -11,7 +11,7 @@ export function MealAccessSettings({ access, onToken, onBusy }: {
   const [error, setError] = useState('');
 
   return <section className="meal-access" aria-labelledby="meal-access-title">
-    <h3 id="meal-access-title">Meal editing</h3>
+    <h3 id="meal-access-title">Planner editing</h3>
     {access.notice && <p className="notice" role="status">{access.notice}</p>}
     {error && <p className="notice error" role="alert">{error}</p>}
     {access.token ? <>
@@ -25,7 +25,7 @@ export function MealAccessSettings({ access, onToken, onBusy }: {
       catch (error) { setError(error instanceof Error ? error.message : 'Could not connect to GitHub. Try again.'); }
       finally { setConnecting(false); onBusy(false); }
     }}>
-      <p>Connect your GitHub access token to edit meals. Reading the public plan needs no token.</p>
+      <p>Connect your GitHub access token to edit meals and tasks. Reading the public plans needs no token.</p>
       <label htmlFor="github-token">GitHub token</label>
       <input id="github-token" type="password" autoComplete="off" spellCheck={false} required value={draftToken} disabled={connecting} onChange={event => setDraftToken(event.target.value)} />
       <label className="remember-access"><input type="checkbox" checked={remember} disabled={connecting} aria-describedby="remember-access-note" onChange={event => setRemember(event.target.checked)} />Remember on this device</label>

@@ -3,11 +3,21 @@
 Open the cutlery button next to Clear. The planner shows one Monday–Sunday week
 with Breakfast, Lunch and Dinner. Today has a green border and a Today marker.
 Use the arrows to change weeks. Readers need no login. The plan refreshes every
-minute while open; the refresh icon at the right of the title bar also checks
-for family updates. The back button is at the left. A GitHub cache may
+minute while open; the refresh icon next to Back on the left of the title bar
+also checks for family updates. A GitHub cache may
 briefly delay another device seeing a recent edit. Internet access is required.
 Returning to the tab refreshes the plan. This week returns to the current week,
 including if the planner was left open across Monday.
+
+Use the two split icons at the top right to keep the plan visible during a
+conversation. **Vertical split** puts captions and meals side by side;
+**Horizontal split** puts captions above meals. The selected icon is highlighted.
+Scroll either pane separately; Listen/Stop, Clear and Settings remain available.
+Back hides the planner. Press the active split again to use the full planner.
+Both orientations are available at every width; horizontal split gives each pane
+more readable width on a phone.
+Switching layouts preserves the selected week and unsaved meal; the choice is kept
+for this page session only. Opening the planner never starts the microphone.
 
 ## Editing in the app
 
@@ -17,7 +27,7 @@ from app code. Every meal and its commit history is public.
 
 For the repository owner:
 
-1. Open **Settings → Meal editing → Create an owner token**.
+1. Open **Settings → Planner editing → Create an owner token**.
 2. Sign in to GitHub as `H-Wilderspin`. Choose **Only select repositories** and
    select **speech-to-text-meals**. Give Contents **Read and write** permission
    and an expiry. Do not select the app repository or all repositories.
@@ -27,7 +37,7 @@ For the repository owner:
 4. Tap a meal slot, type its description, and Save. Tap an existing meal to change
    it or use Remove meal. Cancel leaves the saved plan unchanged.
 
-Connection, Remember and Disconnect controls are all in **Settings → Meal editing**.
+Connection, Remember and Disconnect controls are all in **Settings → Planner editing**.
 The planner contains the calendar and meal editor. With Remember selected,
 reopening the app restores editing access without
 entering the token again. Set this up separately in the browser or installed app
@@ -50,7 +60,7 @@ no editor setup.
 
 A failed save retains the typed text; it is not queued for later upload.
 Conflicting edits to the same meal need review before retrying. If access
-expires, open **Settings → Meal editing**, disconnect, then connect a replacement token.
+expires, open **Settings → Planner editing**, disconnect, then connect a replacement token.
 
 ## Weekly defaults and one-off changes
 
@@ -76,7 +86,7 @@ repository**, and have them accept the invitation. An account alone does not
 provide write access. No invitations are sent by the app.
 
 GitHub currently does not support fine-grained tokens for outside/repository
-collaborators. They can use **Settings → Meal editing → edit on GitHub**, sign in and edit
+collaborators. They can use **Settings → Planner editing → edit on GitHub**, sign in and edit
 the week's JSON file directly, without putting a token in the app.
 
 For in-app editing they may instead supply a personal classic token with

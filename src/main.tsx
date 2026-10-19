@@ -11,7 +11,7 @@ createRoot(root).render(<App engine={createBrowserEngine()} />);
 
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => {
+    void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`, { updateViaCache: 'none' }).catch(() => {
       // Listening remains available when storage policy prevents offline installation.
       window.dispatchEvent(new Event('offline-install-failed'));
     });

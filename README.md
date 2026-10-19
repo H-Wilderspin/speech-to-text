@@ -2,7 +2,8 @@
 
 [Open the app](https://h-wilderspin.github.io/speech-to-text/).
 
-Large, readable live captions for family conversations. The MVP uses the browser's
+Large, readable live captions for family conversations, with shared meal and
+task planners. The MVP uses the browser's
 speech recognition service. Speaker identification, voice registration, model
 downloads and the PC comparison service have been removed. See
 [ADR 0046](docs/decisions/0046-live-transcription-only-mvp.md).
@@ -16,9 +17,13 @@ downloads and the PC comparison service have been removed. See
   a pending restart. Spoken **command clear** and **command stop** work on confirmed
   recognition; Android can wait until a pause. Wait for Reconnecting to finish
   before speaking after Clear.
-- **Settings:** text size, speech language, meal editing access, screen-awake status and About.
+- **Settings:** text size, speech language, planner editing access, screen-awake status and About.
   Language changes are disabled during listening. The centred, full-height panel
   closes with the return button, Escape or a click outside it.
+- **Update app:** open Settings and tap Update app to download and reload the
+  latest version. Stop listening and close any planner first. Reloading clears
+  current captions and session-only access; remembered access and reading
+  preferences stay. If offline or a download fails, reconnect and try again.
 
 Each sentence composes inline. A provider speech-end hint, debounced for 500ms,
 can start a new line; this is not an exact acoustic silence detector. Late wording
@@ -46,8 +51,10 @@ not make speech recognition offline.
 
 ## Upgrading from the speaker prototype
 
-Close all app tabs and reopen after deployment so the new offline shell can
-activate. The upgrade removes this app path's obsolete voiceprint database,
+Use Settings → Update app after deployment. For older versions without that
+button, open the app online to download the release, then close all its tabs/windows
+and reopen so it can activate. The upgrade
+removes this app path's obsolete voiceprint database,
 model caches and speaker preferences while retaining text size and language.
 Blocked storage cleanup retries on later loads; old database connections may need
 to close. It does not remove other GitHub Pages projects' data. The old comparison
@@ -58,17 +65,38 @@ kept in [docs](docs/README.md). Ignored private local research files are untouch
 
 The cutlery button opens a shared Monday–Sunday meal planner, with three meals
 per day and today highlighted. Week headings use `19 Oct - 25 Oct, 2026`, showing
-both years when a week crosses New Year. Its title bar has Back on the left and a refresh
-icon on the right. Clear and Settings use labelled icons; Settings is a cog.
+both years when a week crosses New Year. Its title bar has Back and Refresh on
+the left, with vertical and horizontal split icons on the right. Clear and
+Settings use labelled icons; Settings is a cog.
+Choose **Vertical split** for captions and meals side by side, or **Horizontal
+split** for captions above meals. Each pane scrolls separately and caption controls
+stay available. Press the active split icon again for the full planner, or use
+Back to return to captions alone. The
+layout choice lasts until reload; switching layouts keeps the selected week and draft.
 In a meal's editor, choose **Apply to → Every [weekday] [meal]** to save a weekly
 default. Dated meals take priority; skip a single occurrence or use its weekly
 default again without changing other weeks.
 The public plan lives in a separate GitHub data repository; reading needs no
-login. Set up a personal GitHub token under **Settings → Meal editing**. Select **Remember on
+login. Set up a personal GitHub token under **Settings → Planner editing**. Select **Remember on
 this device** to keep editing access after reopening the app; otherwise access
 lasts only for the page session. Disconnect removes saved access from that browser.
 See [meal planner setup and family editing](docs/meal-planner.md), including
 GitHub's collaborator limitations, public history and conflict handling.
+
+## Task planner
+
+The checklist icon beside the cutlery opens a daily task list for shopping trips,
+housework and other activities. Add a task for
+one date, or choose **Apply to → Every Monday** (or the selected weekday) for a
+recurring task. Completion ticks belong only to that date; the following week
+starts unchecked. Dated edits and skips leave the weekly task unchanged.
+
+Meals and tasks share one planner pane and the same split controls, so either
+can stay visible with captions. Switching icons preserves the selected week,
+layout and unsaved drafts while the pane stays open; it is disabled during saves.
+Only the visible planner checks for updates. Both use the existing GitHub access
+in Settings; previously remembered access continues to work. Tasks use their
+own files in the same public data repository. See [task setup and data](docs/cleaning-planner.md).
 
 ## Development
 
@@ -96,6 +124,8 @@ See [manual testing](docs/manual-testing.md) and [evidence](docs/feasibility.md)
 - `src/features/listening/`: transcript, display formatting and active indicator.
 - `src/features/settings/`: reading preferences and settings dialog.
 - `src/features/meals/`: weekly calendar, meal editor and GitHub data adapter.
+- `src/features/cleaning/`: task recurrence, dated completion and task editor (original internal name).
+- `src/features/planners/`: shared planner frame and GitHub JSON transport.
 - `src/audio/interruption.ts`: stop listening when leaving the app.
 - `public/`: fonts, icons and manifest only; no speech models.
 - `tests/`: browser regressions and scoped upgrade checks.
@@ -108,6 +138,6 @@ The existing repository is configured; `scripts/setup-github-pages.ps1` is a
 bootstrap helper for a new repository, not a normal release step.
 
 Changes are considered published only after CI/deployment pass and the served
-page is checked. New offline-shell versions wait for old tabs to close, preserving
-in-memory captions. Captions and reading public meals need no API key or hosting
+page is checked. New offline-shell versions wait for old tabs to close unless
+Settings → Update app explicitly activates one. Captions and reading public meals need no API key or hosting
 subscription. Meal editors connect their own GitHub access as described above.

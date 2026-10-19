@@ -1,42 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { Icon } from '../../shared/Icon';
-import { Modal } from '../../shared/Modal';
-import { addDays, dateKey, defaultMealKey, mealKey, mealSlots, monday, resolvedMeal, weekdayNames, weekDays, type MealPlan, type MealValue } from './calendar';
+import { dateKey, defaultMealKey, mealKey, mealSlots, resolvedMeal, weekdayNames, weekDays, type MealPlan, type MealValue } from './calendar';
 import { PlanConflict, readDefaults, readPlan, saveDefault, saveMeal } from './github-plan';
-
 const dayLabel = (date: Date) => date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' });
 const errorMessage = (error: unknown) => error instanceof Error ? error.message : 'Something went wrong. Try again.';
 
-export function MealPlanner({ token, onClose }: {
-  token: string; onClose: () => void;
-}) {
-  const [today, setToday] = useState(() => new Date());
-  const [start, setStart] = useState(() => monday(new Date()));
-  const [busy, setBusy] = useState(false);
-  const [refresh, setRefresh] = useState(0);
-  useEffect(() => {
-    const timer = window.setInterval(() => setToday(new Date()), 60000);
-    return () => clearInterval(timer);
-  }, []);
-  const week = dateKey(start);
-  const end = addDays(start, 6);
-  const thisWeek = dateKey(monday(today));
-  return <Modal title="Meal planner" id="meal-title" onClose={onClose} busy={busy}
-    headerAction={<button className="icon-button" aria-label="Refresh" title="Refresh meal plan" disabled={busy} onClick={() => setRefresh(value => value + 1)}><Icon name="refresh" /></button>}>
-    <div className="meal-content">
-      <nav className="week-navigation" aria-label="Choose week">
-        <button className="icon-button" aria-label="Previous week" disabled={busy} onClick={() => setStart(value => addDays(value, -7))}><Icon name="previous" /></button>
-        <div><p className="week-heading">{start.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}{start.getFullYear() !== end.getFullYear() ? `, ${start.getFullYear()}` : ''} - {end.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}, {end.getFullYear()}</p>
-          {week !== thisWeek && <button className="this-week" disabled={busy} onClick={() => setStart(monday(new Date()))}>This week</button>}</div>
-        <button className="icon-button" aria-label="Next week" disabled={busy} onClick={() => setStart(value => addDays(value, 7))}><Icon name="next" /></button>
-      </nav>
-      <WeekPlan key={week} start={start} today={dateKey(today)} token={token} refresh={refresh} onBusy={setBusy} />
-    </div>
-  </Modal>;
-}
-
-function WeekPlan({ start, today, token, refresh, onBusy }: {
-  start: Date; today: string; token: string; refresh: number; onBusy: (busy: boolean) => void;
+export function MealWeek({ start, today, token, refresh, onBusy, active }: {
+  active: boolean; start: Date; today: string; token: string; refresh: number; onBusy: (busy: boolean) => void;
 }) {
   const week = dateKey(start);
   const [plan, setPlan] = useState<MealPlan>({});
@@ -57,6 +26,7 @@ function WeekPlan({ start, today, token, refresh, onBusy }: {
   const savingRef = useRef(false);
 
   useEffect(() => {
+    if (!active) return;
     let disposed = false;
     const load = async () => {
       if (document.hidden || savingRef.current) return;
@@ -81,14 +51,14 @@ function WeekPlan({ start, today, token, refresh, onBusy }: {
       disposed = true; clearInterval(interval); window.removeEventListener('focus', focus);
       document.removeEventListener('visibilitychange', focus);
     };
-  }, [week, refresh, token]);
+  }, [week, refresh, token, active]);
 
-  useEffect(() => { if (edit) editor.current?.focus(); }, [edit]);
+  useEffect(() => { if (active && edit) editor.current?.focus(); }, [edit, active]);
   useEffect(() => {
-    if (!edit && !saving && selected.current && !selected.current.disabled) {
+    if (active && !edit && !saving && selected.current && !selected.current.disabled) {
       selected.current.focus(); selected.current = null;
     }
-  }, [edit, saving]);
+  }, [edit, saving, active]);
   const closeEditor = () => setEdit(null);
   const save = async (value: string | null) => {
     if (!edit || savingRef.current) return;

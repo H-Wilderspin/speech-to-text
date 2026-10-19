@@ -1,5 +1,96 @@
 # Feasibility evidence
 
+## 2026-10-19 - Update app without browser cache clearing
+
+- **Change:** Settings has an Update app button that checks the scoped worker,
+  waits for a complete download, activates it and reloads the requesting page.
+  Worker checks and precache requests bypass stale HTTP cache entries. Saved
+  preferences and remembered editor access remain; caption/session state clears
+  on reload. Listening, open planners and pending connection block the button.
+  ADR 0053 records the lifecycle and one-time rollout limitation.
+- **Checks:** typecheck, lint, all 135 unit tests and production build passed.
+  All 100 Windows Chromium/mobile-WebKit browser tests passed (2.7 minutes).
+  Eight new checks exercise two real HTTP releases with cacheable responses at
+  root/project paths, another open tab, saved access/preferences, unrelated
+  caches, same-release reload, offline use, incomplete downloads and retry.
+- **Visual review:** the button is visible near the top of Settings; both engines
+  fit the 320px layout without horizontal overflow. Updated the existing Settings
+  order assertion for App updates preceding Caption preferences.
+- **Limits:** no physical iPad/Safari/Home Screen test or deployment performed.
+  Existing installs must receive this release before the button is available.
+
+## 2026-10-19 - Task planner naming
+
+- **Change:** broadened Cleaning planner to Task planner at the user's request
+  for shopping trips and other activities. Replaced the broom with a checklist
+  icon and updated editor labels, status/error messages and Settings wording.
+  Existing data paths, recurrence and completion behaviour remain compatible.
+- **Checks:** typecheck, lint, all 135 unit tests and production build passed.
+  All 10 focused Chromium/mobile-WebKit planner and toolbar checks passed,
+  including a dated shopping trip and both caption splits. Reviewed the 320px
+  WebKit screenshot for the new title and icon. No physical-device check or
+  deployment was performed.
+
+## 2026-10-19 - Shared cleaning checklists alongside captions
+
+- **Scope:** the broom icon beside cutlery replaces the active planner pane.
+  Daily task lists support weekly recurrence, dated overrides, skips/restores
+  and date-specific completion ticks. Both caption split directions remain
+  available; pane switches preserve drafts and pause inactive polling.
+- **Data:** cleaning defaults and weekly files use separate paths in the existing
+  GitHub data repository, reusing the saved editor connection. Conditional saves
+  merge unrelated changes and retain drafts on conflicts. Missing files start
+  empty and are created on the first save. See ADR 0052.
+- **Checks:** typecheck, lint, all 135 unit tests and production build passed.
+  All 92 Windows Chromium/mobile-WebKit browser tests passed (1.9 minutes),
+  including recurrence, overrides, skips, shared completion, failed saves,
+  refresh/conflicts, remembered access and continued captions across switches.
+- **Visual review:** inspected desktop and 320px phone layouts, including both
+  split directions and an open cleaning editor beside 56px simulated captions.
+  Controls and editor remained accessible without horizontal panel overflow.
+- **Limits:** browser emulation and mocked GitHub/recognition only; no live data
+  writes or physical device/assistive-technology acceptance. Changes are local
+  and have not been deployed.
+
+## 2026-10-19 - Split icons and paired header controls
+
+- **Change:** replaced the combined-view checkbox with labelled vertical and
+  horizontal split icons at the top right. Back and Refresh are paired on the
+  left. Vertical shows columns; horizontal shows stacked panes at every width.
+  The active button is highlighted and exposes aria-pressed; pressing it again
+  restores the full planner. Week/draft and page-session mode remain preserved.
+  ADR 0051 supersedes the previous automatic split direction.
+- **Checks:** typecheck, lint, 125 unit tests, production build and all 84
+  Windows Chromium/mobile-WebKit browser tests passed (1.5 minutes). Both modes
+  tested at 1280, 768 and 320px, including header pairs, pressed states, full-view
+  return, ongoing captions, Settings and draft/save focus preservation.
+- **Visual review:** reviewed desktop and phone header/split screenshots in
+  Chromium and the narrow WebKit layout. At very narrow panel widths the title,
+  icon pairs and week navigation wrap while retaining 48px controls; horizontal
+  mode gives phone readers wider panes. No horizontal meal-panel overflow.
+- **Limits:** browser emulation only; physical device and assistive-technology
+  acceptance remain pending. Changes are local and have not been deployed.
+
+## 2026-10-19 - Optional meals alongside captions
+
+- **Scope:** user confirmed optional split view. Show alongside captions keeps
+  both visible in columns above 900px and stacked below. The pinned switch can
+  restore the full planner; Back hides it. Caption controls remain available.
+  Layout choice lasts for the page session, and switching preserves week/drafts.
+  ADR 0050 records the mounted nonmodal-dialog approach.
+- **Checks:** typecheck, lint, all 125 unit tests and production build passed;
+  all 84 Chromium/mobile-WebKit browser tests passed (1.5 minutes). New coverage
+  checks incoming captions and Clear/Stop with meals visible, layout at 1280,
+  768 and 320px, Settings, repeated switches with a recurring draft, save focus,
+  and Escape. Corrected a speech fixture to append a new result instead of
+  attempting to replace a finalized result with interim speech.
+- **Visual checks:** populated plans and 56px simulated captions reviewed at
+  1280px Chromium and 320px WebKit on Windows. Both panes scrolled independently,
+  meal content had no horizontal overflow, and controls remained visible.
+  A phone-panel editor overlap was reproduced and fixed; see troubleshooting.
+- **Limits:** no physical phone keyboard, microphone or assistive-technology
+  verification. This change is local and has not been deployed.
+
 ## 2026-10-19 - Shared meal planner publication
 
 - **Release:** user authorized deployment. Published commit `862c97e` to

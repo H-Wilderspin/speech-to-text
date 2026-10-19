@@ -1,5 +1,16 @@
 # Troubleshooting
 
+## 2026-10-19 - Split-view editor covers the layout switch
+
+- **Context:** Windows WebKit, phone-sized combined meal/caption view.
+- **Reproduction:** enter a recurring meal draft, enable the combined view and
+  try returning to the full planner. Pointer checks found the sticky editor
+  covering the layout switch in the shorter panel.
+- **Fix:** keep the layout switch inside the pinned header and make the meal
+  editor scroll normally in combined view. Full planner retains its sticky editor.
+- **Verification:** Chromium and WebKit tests switch both ways with a selected
+  week and recurring draft, then save and verify focus returns to the meal.
+
 ## 2026-10-19 - Meal planner recovery and regression checks
 
 - **Context:** Windows, Chromium 156.0.8078.4 and WebKit 27.2; saved meal-planner

@@ -3,15 +3,19 @@ import { Icon } from '../../shared/Icon';
 import type { WakeStatus } from '../../app/listening-wake-lock';
 import { MealAccessSettings } from '../meals/MealAccessSettings';
 import type { MealAccess } from '../meals/editor-token';
+import { AppUpdate } from './AppUpdate';
 
-export function SettingsDialog({ active, textSize, onTextSize, language, onLanguage, installFailed, onClose, wakeStatus, mealAccess, onMealToken }: {
+export function SettingsDialog({ active, plannerOpen, textSize, onTextSize, language, onLanguage, installFailed, onClose, wakeStatus, mealAccess, onMealToken }: {
   active: boolean; textSize: number; onTextSize: (size: number) => void;
+  plannerOpen: boolean;
   language: string; onLanguage: (language: string) => void; installFailed: boolean;
   onClose: () => void;
   wakeStatus?: WakeStatus;
   mealAccess: MealAccess; onMealToken: (token: string, remember?: boolean) => void;
 }) {
-  const [busy, setBusy] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const busy = connecting || updating;
   const dialog = useRef<HTMLDialogElement>(null);
   const pointerStartedOutside = useRef(false);
   useEffect(() => {
@@ -34,9 +38,11 @@ export function SettingsDialog({ active, textSize, onTextSize, language, onLangu
       <h2 id="settings-title">Settings</h2>
     </header>
     <div className="settings-content">
+    <AppUpdate active={active} plannerOpen={plannerOpen} busy={busy} onBusy={setUpdating} />
     {installFailed && <p role="status">Offline installation unavailable.</p>}
     {wakeStatus === 'held' && <p role="status">Keeping screen awake.</p>}
     {wakeStatus === 'unavailable' && <p role="status">Screen may sleep. Check your device’s Auto-Lock settings.</p>}
+    <fieldset className="settings-fields" disabled={updating}>
     <section className="caption-preferences" aria-label="Caption preferences">
       <div className="display-control" role="group" aria-labelledby="text-size-label">
         <span id="text-size-label" className="field-label">Text size</span>
@@ -53,7 +59,8 @@ export function SettingsDialog({ active, textSize, onTextSize, language, onLangu
         </select>
       </label>
     </section>
-    <MealAccessSettings access={mealAccess} onToken={onMealToken} onBusy={setBusy} />
+    <MealAccessSettings access={mealAccess} onToken={onMealToken} onBusy={setConnecting} />
+    </fieldset>
     <details><summary>About</summary>
       <p>Speech uses your browser’s provider. Captions are not saved.</p>
       <p><a href={`${import.meta.env.BASE_URL}fonts/OFL.txt`} target="_blank" rel="noreferrer">Font licence</a></p>

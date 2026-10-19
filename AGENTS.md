@@ -28,12 +28,25 @@ credentials. The user subsequently approved opt-in device persistence for editor
 tokens (ADR 0048): save only after successful connection, restore on reopen, and
 remove on Disconnect. Handle blocked storage without losing caption access or
 claiming persistence succeeded. Keep caption and meal state independent.
-Token entry, Remember and Disconnect belong in Settings → Meal editing; the
+Token entry, Remember and Disconnect belong in Settings → Planner editing; the
 planner contains the calendar and meal editor, not credential setup.
 ADRs 0047–0048 record the extension and GitHub collaborator limitations.
 Weekly defaults (ADR 0049) live in defaults.json. Dated entries take priority;
 version 2 weekly null entries mean skip, absent entries inherit. Retain version 1
 read compatibility and never overwrite dated exceptions when editing defaults.
+The optional combined view (ADR 0050) keeps one mounted planner alongside the
+live transcript, preserving week/drafts during layout switches. Keep caption
+controls reachable and the panels independently scrollable in this mode.
+ADR 0051 replaces the checkbox/automatic direction with explicit vertical and
+horizontal split icons; pressing the active icon restores the full planner.
+Tasks (originally cleaning, ADR 0052) use daily checklists with weekly recurrence,
+dated overrides and date-specific completion. The checklist icon replaces meals
+in the same pane. The user broadened the label to Task planner for shopping trips
+and other activities; retain existing cleaning data paths for compatibility.
+Keep separate cleaning files in the existing data repository and reuse the
+existing token namespace. Settings calls the shared connection Planner editing.
+Preserve both drafts on pane switches, pause hidden polling, block switching
+during saves and keep caption controls independent.
 
 **MVP scope (2026-10-15, explicit user instruction):** Who said what is removed,
 including voice registration, identification, models/workers, comparison service,
@@ -59,6 +72,10 @@ requirements; historical documents are not the current implementation plan.
 - Keep microphone/session lifecycle explicit and clean up on stop/unmount/error.
 - Scope storage/cache cleanup to this application's exact namespace; never clear
   another project on the same origin. Retain reading preferences on upgrades.
+- Settings → Update app (ADR 0053) explicitly activates a fully installed worker
+  and reloads the requesting page. Preserve remembered access and preferences;
+  block updates during listening or while a planner is open. Background updates
+  still wait, and failed updates must leave the existing shell usable.
 - Use feature detection, accessible controls/status, reduced motion and scalable
   typography. No pinch-zoom prevention or additional capture stream.
 

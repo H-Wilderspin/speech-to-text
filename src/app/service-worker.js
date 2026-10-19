@@ -8,8 +8,12 @@ const urls = files.map((file) => new URL(file, scope).href);
 const shellUrl = new URL('index.html', scope).href;
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(cacheName).then((cache) => cache.addAll(urls)));
+  event.waitUntil(caches.open(cacheName).then((cache) => cache.addAll(urls.map(url => new Request(url, { cache: 'reload' })))));
   // Updates wait until all old tabs close, preserving in-memory transcripts.
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'ACTIVATE_UPDATE') event.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener('activate', (event) => {
