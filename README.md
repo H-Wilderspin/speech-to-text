@@ -16,7 +16,7 @@ downloads and the PC comparison service have been removed. See
   a pending restart. Spoken **command clear** and **command stop** work on confirmed
   recognition; Android can wait until a pause. Wait for Reconnecting to finish
   before speaking after Clear.
-- **Settings:** text size and speech language, plus screen-awake status and About.
+- **Settings:** text size, speech language, meal editing access, screen-awake status and About.
   Language changes are disabled during listening. The centred, full-height panel
   closes with the return button, Escape or a click outside it.
 
@@ -54,6 +54,22 @@ to close. It does not remove other GitHub Pages projects' data. The old comparis
 URL is retired. Historical code remains in Git at `37835e4`; research findings are
 kept in [docs](docs/README.md). Ignored private local research files are untouched.
 
+## Meal planner
+
+The cutlery button opens a shared Monday–Sunday meal planner, with three meals
+per day and today highlighted. Week headings use `19 Oct - 25 Oct, 2026`, showing
+both years when a week crosses New Year. Its title bar has Back on the left and a refresh
+icon on the right. Clear and Settings use labelled icons; Settings is a cog.
+In a meal's editor, choose **Apply to → Every [weekday] [meal]** to save a weekly
+default. Dated meals take priority; skip a single occurrence or use its weekly
+default again without changing other weeks.
+The public plan lives in a separate GitHub data repository; reading needs no
+login. Set up a personal GitHub token under **Settings → Meal editing**. Select **Remember on
+this device** to keep editing access after reopening the app; otherwise access
+lasts only for the page session. Disconnect removes saved access from that browser.
+See [meal planner setup and family editing](docs/meal-planner.md), including
+GitHub's collaborator limitations, public history and conflict handling.
+
 ## Development
 
 Requires Node 22.12+ and npm.
@@ -79,6 +95,7 @@ See [manual testing](docs/manual-testing.md) and [evidence](docs/feasibility.md)
   results, pause lines and voice commands.
 - `src/features/listening/`: transcript, display formatting and active indicator.
 - `src/features/settings/`: reading preferences and settings dialog.
+- `src/features/meals/`: weekly calendar, meal editor and GitHub data adapter.
 - `src/audio/interruption.ts`: stop listening when leaving the app.
 - `public/`: fonts, icons and manifest only; no speech models.
 - `tests/`: browser regressions and scoped upgrade checks.
@@ -92,4 +109,5 @@ bootstrap helper for a new repository, not a normal release step.
 
 Changes are considered published only after CI/deployment pass and the served
 page is checked. New offline-shell versions wait for old tabs to close, preserving
-in-memory captions. No API keys, Python service or hosting subscription is needed.
+in-memory captions. Captions and reading public meals need no API key or hosting
+subscription. Meal editors connect their own GitHub access as described above.

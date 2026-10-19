@@ -1,13 +1,17 @@
-import { useEffect, useRef, type PointerEvent } from 'react';
+import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { Icon } from '../../shared/Icon';
 import type { WakeStatus } from '../../app/listening-wake-lock';
+import { MealAccessSettings } from '../meals/MealAccessSettings';
+import type { MealAccess } from '../meals/editor-token';
 
-export function SettingsDialog({ active, textSize, onTextSize, language, onLanguage, installFailed, onClose, wakeStatus }: {
+export function SettingsDialog({ active, textSize, onTextSize, language, onLanguage, installFailed, onClose, wakeStatus, mealAccess, onMealToken }: {
   active: boolean; textSize: number; onTextSize: (size: number) => void;
   language: string; onLanguage: (language: string) => void; installFailed: boolean;
   onClose: () => void;
   wakeStatus?: WakeStatus;
+  mealAccess: MealAccess; onMealToken: (token: string, remember?: boolean) => void;
 }) {
+  const [busy, setBusy] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
   const pointerStartedOutside = useRef(false);
   useEffect(() => {
@@ -19,13 +23,14 @@ export function SettingsDialog({ active, textSize, onTextSize, language, onLangu
     return event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom;
   };
   return <dialog className="settings-dialog" ref={dialog} aria-labelledby="settings-title" onClose={onClose}
+    onCancel={event => { if (busy) event.preventDefault(); }}
     onPointerDown={(event) => { pointerStartedOutside.current = event.button === 0 && outsidePanel(event); }}
     onPointerUp={(event) => {
-      if (pointerStartedOutside.current && outsidePanel(event)) event.currentTarget.close();
+      if (!busy && pointerStartedOutside.current && outsidePanel(event)) event.currentTarget.close();
       pointerStartedOutside.current = false;
     }} onPointerCancel={() => { pointerStartedOutside.current = false; }}>
     <header className="settings-header">
-      <form method="dialog"><button className="icon-button" aria-label="Back to captions" autoFocus><Icon /></button></form>
+      <form method="dialog"><button className="icon-button" aria-label="Back to captions" disabled={busy} autoFocus><Icon /></button></form>
       <h2 id="settings-title">Settings</h2>
     </header>
     <div className="settings-content">
@@ -48,6 +53,7 @@ export function SettingsDialog({ active, textSize, onTextSize, language, onLangu
         </select>
       </label>
     </section>
+    <MealAccessSettings access={mealAccess} onToken={onMealToken} onBusy={setBusy} />
     <details><summary>About</summary>
       <p>Speech uses your browser’s provider. Captions are not saved.</p>
       <p><a href={`${import.meta.env.BASE_URL}fonts/OFL.txt`} target="_blank" rel="noreferrer">Font licence</a></p>

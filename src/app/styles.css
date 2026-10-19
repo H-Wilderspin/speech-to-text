@@ -16,9 +16,8 @@ button, summary, select { cursor: pointer; touch-action: manipulation; }
 button { border: 1px solid #7b8791; border-radius: 12px; min-height: 48px; padding: .65rem 1.1rem; background: #eef0f2; color: #20262c; font-size: var(--text-medium); font-weight: 600; }
 button:hover:not(:disabled) { background: #e0e5e8; }
 button:disabled { opacity: .5; cursor: default; }
-:focus-visible { outline: 3px solid #634500; outline-offset: 4px; }
 .app-shell { height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding: env(safe-area-inset-top) max(.75rem, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(.75rem, env(safe-area-inset-left)); }
-.toolbar { flex-shrink: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; padding: .75rem 0; border-top: 1px solid #7b8791; }
+.toolbar { flex-shrink: 0; display: grid; grid-template-columns: minmax(0, 1fr) repeat(3, 48px); gap: .5rem; padding: .75rem 0; border-top: 1px solid #7b8791; }
 .toolbar button { min-width: 0; padding: .6rem .25rem; overflow-wrap: anywhere; font-size: var(--text-small); text-transform: uppercase; letter-spacing: .2em; }
 .listening-indicator { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: .6rem; min-height: 1.75rem; margin: 0; color: #505b65; font-size: var(--text-small); }
 .listening-indicator[data-phase=listening] { color: #166344; }
@@ -72,4 +71,61 @@ dialog section { border-top: 1px solid #7b8791; margin-top: 1.5rem; padding-top:
 .skip-link { position: absolute; left: 1rem; top: -100px; background: #eef0f2; padding: 1rem; z-index: 2; color: #005b58; }
 .skip-link:focus { top: 1rem; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.meal-content { padding: 1rem max(1.5rem, env(safe-area-inset-right)) max(1.5rem, env(safe-area-inset-bottom)) max(1.5rem, env(safe-area-inset-left)); }
+.meal-dialog button { margin: 0; }
+.week-navigation { display: flex; align-items: center; justify-content: space-between; gap: .5rem; text-align: center; }
+.week-heading { margin: 0; font-size: var(--text-medium); }
+.week-navigation .this-week { width: auto; margin-top: .25rem; }
+.meal-grid { margin-top: .75rem; }
+.meal-grid-head, .meal-day { display: grid; grid-template-columns: minmax(100px, .8fr) repeat(3, minmax(0, 1fr)); gap: .5rem; }
+.meal-grid-head { padding: 0 .5rem .5rem; }
+.meal-dialog .meal-day { border: 1px solid #bbc2c6; border-radius: 12px; margin: 0 0 .5rem; padding: .5rem; }
+.meal-day[aria-current=date] { border: 2px solid #166344; background: #e9f5ed; }
+.meal-day h3 { margin: 0; align-self: center; font-size: var(--text-small); }
+.meal-day h3 > * { display: block; }
+.meal-day time { font-weight: 400; }
+.today-marker { color: #166344; }
+.meal-slot { min-height: 90px; padding: .65rem; background: #fff; text-align: left; font-weight: 400; overflow-wrap: anywhere; }
+.meal-slot:disabled { opacity: 1; cursor: default; }
+.meal-slot-label { display: none; }
+.meal-default-marker { display: block; color: #166344; font-size: var(--text-small); margin-top: .25rem; }
+.unplanned { color: #5a6570; }
+.meal-editor { position: sticky; bottom: 0; border: 1px solid #7b8791; border-radius: 12px; background: #faf9f6; padding: 1rem; margin-top: 1rem; box-shadow: 0 -4px 16px #20262c20; }
+.meal-editor label { display: block; letter-spacing: .1em; }
+.meal-editor textarea, .meal-access input { width: 100%; min-height: 48px; font: inherit; font-size: var(--text-medium); padding: .5rem; background: #fff; color: #20262c; border: 1px solid #7b8791; border-radius: 6px; }
+.meal-editor textarea { resize: vertical; }
+.meal-repeat { margin-top: .5rem; }
+.meal-editor select { width: 100%; }
+.meal-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .5rem; }
+.meal-actions button { flex: 1 1 auto; width: auto; }
+.meal-access { margin-top: 1rem; }
+.meal-access button { width: auto; margin: .5rem 0; }
+.remember-access { display: flex; align-items: center; gap: .65rem; min-height: 48px; text-transform: none; letter-spacing: normal; }
+.meal-access .remember-access input { flex: 0 0 24px; width: 24px; height: 24px; min-height: 24px; margin: 0; accent-color: #166344; }
+@media (max-width: 650px) {
+  .meal-grid-head { display: none; }
+  .meal-dialog .meal-day { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .meal-day h3 { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: .5rem; }
+  .meal-slot-label { display: block; letter-spacing: .05em; font-size: var(--text-small); }
+  .meal-slot { padding: .5rem; }
+  .meal-content { padding-left: .75rem; padding-right: .75rem; }
+}
+@media (max-width: 370px) {
+  .meal-dialog .meal-day { grid-template-columns: 1fr; }
+  .meal-slot { min-height: 48px; }
+}
+/* Keep focus after component borders so active buttons and form fields share it. */
+:root :focus-visible, :root :is(input, textarea, select):focus {
+  border-color: #98cbff;
+  outline: 2px solid #98cbff;
+  outline-offset: 0;
+  box-shadow: 0 0 0 4px #98cbff80, 0 0 8px #98cbff99;
+}
+@media (forced-colors: active) {
+  :root :focus-visible, :root :is(input, textarea, select):focus {
+    outline-color: Highlight;
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+}
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; } }

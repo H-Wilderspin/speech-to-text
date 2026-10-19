@@ -4,7 +4,7 @@ This file gives persistent instructions to Codex (and other coding agents) worki
 
 ## Mission and priorities
 
-Deliver a **small, accessible, static-hosted TypeScript PWA** for live speech transcription, for browser live captions only. Prioritise:
+Deliver a **small, accessible, static-hosted TypeScript PWA** for browser live captions and a shared family meal planner (ADR 0047). Prioritise:
 
 1. Correctness, accessibility and an immediately usable anonymous listening experience.
 2. User privacy: no saved audio/transcripts, accurate provider disclosure, minimal retention.
@@ -21,6 +21,19 @@ Deliver a **small, accessible, static-hosted TypeScript PWA** for live speech tr
 5. Implement an independently testable increment. Do not add unrelated features.
 
 ## Architecture rules
+
+**Meal planner (2026-10-19, explicit user instruction):** separate public GitHub
+data repository, authenticated conditional meal commits, no embedded/shared
+credentials. The user subsequently approved opt-in device persistence for editor
+tokens (ADR 0048): save only after successful connection, restore on reopen, and
+remove on Disconnect. Handle blocked storage without losing caption access or
+claiming persistence succeeded. Keep caption and meal state independent.
+Token entry, Remember and Disconnect belong in Settings → Meal editing; the
+planner contains the calendar and meal editor, not credential setup.
+ADRs 0047–0048 record the extension and GitHub collaborator limitations.
+Weekly defaults (ADR 0049) live in defaults.json. Dated entries take priority;
+version 2 weekly null entries mean skip, absent entries inherit. Retain version 1
+read compatibility and never overwrite dated exceptions when editing defaults.
 
 **MVP scope (2026-10-15, explicit user instruction):** Who said what is removed,
 including voice registration, identification, models/workers, comparison service,

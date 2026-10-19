@@ -1,5 +1,129 @@
 # Feasibility evidence
 
+## 2026-10-19 - Blue focus borders and glow
+
+- **Change:** shared focus styling replaces the brown outline with a blue edge
+  and soft pale-blue halo, inspired by [Forma 36's primary glow](https://f36.contentful.com/tokens/shadows-and-glows).
+  Keyboard focus remains visible across controls; inputs, textareas and selects
+  also show it on pointer focus. Rules follow component borders to cover active
+  controls. Forced-colors mode uses a solid system Highlight outline because
+  shadows are unavailable there. No dependency or animation was added.
+- **Verification:** typecheck, lint, 125 unit tests and production build passed.
+  All 80 Chromium/mobile-WebKit browser regression tests passed (1.3 minutes).
+  Separate Playwright checks verified input, textarea, select and button focus
+  in Windows Chromium at 1280px and WebKit at 320px. Reviewed meal editor and
+  button screenshots; Chromium forced-colors emulation retained its outline.
+  These are browser checks, not physical-device or assistive-technology acceptance.
+- **Publication:** local changes only.
+- **Visual refinement:** at the user's request, lightened the focus border and
+  outline from #498aca to #98cbff to match the pale-blue glow.
+
+## 2026-10-19 - Recurring defaults with dated overrides
+
+- **Scope:** user confirms weekly recurrence for a chosen weekday and meal slot,
+  with date-specific overrides. The editor now offers This date only or Every
+  weekday/meal, marks inherited meals as Weekly default, and supports skipping
+  one occurrence, restoring inheritance and removing a recurring default.
+- **Data:** optional shared defaults.json plus existing weekly files. Old version
+  1 weekly files remain readable; new writes use version 2 with null for explicit
+  skips. Defaults apply to all weeks lacking dated entries; they do not snapshot
+  history. Both documents use validated conditional GitHub writes and same-slot
+  conflict detection. See ADR 0049 and the updated meal-planner guide.
+- **Checks:** typecheck, lint, all 125 unit tests and production build passed.
+  All 80 Windows Chromium/mobile-WebKit browser cases passed in 1.3 minutes.
+  Tests cover default creation/sharing across weeks/pages, date precedence,
+  skip/reset, deletion preserving dated exceptions, concurrent default edits,
+  retained failed-save drafts, v1/v2 parsing and malformed data rejection.
+  Existing caption, connection, persistence, refresh and upgrade cases pass.
+- **Layout:** visually reviewed recurring editor screenshots at 1280px Chromium
+  and 320px WebKit, with no horizontal overflow. Native on-device keyboard and
+  assistive-technology behavior remain subject to physical acceptance.
+- **Handover:** local changes only; no real meal/default writes or deployment.
+  The first saved default creates defaults.json, requiring no manual repository
+  initialization. Deploy the new client before writing v2 weeks to live data.
+
+## 2026-10-19 - Planner title-bar refresh and Settings cog
+
+- **Change:** the meal title bar now places Back, the centred Meal planner title
+  and a labelled refresh icon in its three columns. Removed the entire visible
+  Shared plan/Refresh row. Loading/save announcements remain screen-reader-only;
+  errors remain visible. Refresh still preserves drafts and is disabled during
+  saves. Replaced the Settings sliders icon with a cog using the existing SVG
+  component; no dependency or image asset was added.
+- **Checks:** typecheck, lint, 119 unit tests, production build and all 76 Windows
+  Chromium/mobile-WebKit browser tests passed (browser suite: 1.2 minutes).
+  A separate visual check verified the header order, working refresh and no
+  horizontal overflow at 1280px Chromium and 320px WebKit widths. The narrow
+  header and toolbar screenshots were visually reviewed. Existing refresh/error
+  recovery and draft/conflict checks still pass after moving the control.
+- **Limits:** browser-emulated layout and simulated meal responses; no new
+  physical-device acceptance or deployment.
+
+## 2026-10-19 - Meal access setup moved to Settings
+
+- **Change:** at the user's request, token entry, Remember, access status and
+  Disconnect now live in Settings → Meal editing. The planner retains calendar,
+  refresh and meal editing, with a short Settings pointer for readers. Stored
+  credentials and refresh/conflict behavior are unchanged. Settings prevents
+  dismissal during connection verification, avoiding a late hidden connection.
+- **Verification:** typecheck, lint, all 119 unit tests and production build
+  passed. All 76 Windows Chromium/mobile-WebKit browser cases passed in 1.2
+  minutes, including setup through Settings, remembered access, disconnect,
+  blocked storage, expired tokens, active captions and pending-connection
+  dismissal. The desktop Settings screenshot was visually reviewed.
+- **Limits:** fake credentials/simulated GitHub writes; no physical-device test,
+  live token setup or deployment in this session.
+
+## 2026-10-19 - Remember meal access on a personal device
+
+- **Scope:** the user explicitly approves saving editor tokens to avoid repeated
+  setup for an elderly family member. ADR 0048 supersedes the session-only rule
+  in ADR 0047. Remember is opt-in, saved after access validation and restored when
+  the app loads. Disconnect removes the app-scoped key and updates other open
+  tabs. Caption preferences and sibling keys are preserved. Storage failures are
+  reported without breaking captions or claiming credentials were saved/removed.
+- **Checks:** `npm run check` passed typecheck, lint, 119 unit tests and production
+  build. `npm run test:e2e -- --workers=1 --max-failures=1` passed all 74 Windows
+  Chromium/mobile-WebKit tests in 1.1 minutes. New browser checks cover reload
+  and a reopened page, editing with restored access, cross-tab disconnect,
+  app-path scoping, blocked storage and invalid/expired credentials. Existing
+  session-only, editing/conflict, caption and upgrade cases still pass.
+- **Limits:** only fake credentials and simulated GitHub responses were used in
+  persistence tests. No real token was saved or logged, and no live write or
+  deployment was performed. The tests reopen pages in the same browser context;
+  full browser restart and phone/tablet/Home Screen storage behavior still need
+  physical acceptance. Token expiry/revocation, storage deletion and private
+  browsing can require setup again. localStorage is readable by same-origin
+  scripts; app-path namespacing is not a security boundary.
+
+## 2026-10-19 - Shared meal planner, local implementation verified
+
+- **Scope:** recovered the saved implementation after a reboot and completed the
+  weekly planner, GitHub data adapter, editor and caption-toolbar integration
+  described in ADR 0047. Fixed focus after saving, a stale This week destination
+  across Monday, and loading status after a failed request. Returning to a visible
+  tab also refreshes the plan. No new dependencies or caption-engine changes.
+- **Checks:** `npm run check` passed TypeScript, ESLint, 115 unit tests and the
+  production build. `npm run test:e2e -- --workers=1 --max-failures=1` passed all
+  68 Windows Chromium/mobile-WebKit cases in 54.5 seconds. Fourteen meal browser
+  cases cover navigation/date rollover, narrow layout, editing/deletion/sharing,
+  credentials retained only for the page session, keyboard focus, network
+  recovery, concurrent changes, automatic refresh with a draft and independent
+  captions. GitHub writes and speech recognition are simulated in these tests.
+- **Live reads:** the public `H-Wilderspin/speech-to-text-meals` repository exists
+  with a `main` branch and `weeks/2026-10-19.json` (version 1, empty meals).
+  Both API metadata and the raw file returned HTTP 200. The locally built app
+  loaded the real raw file without credentials in Chromium 156.0.8078.4 and
+  WebKit 27.2, showing seven days with no uncaught page errors. Desktop and
+  iPhone 13 emulation screenshots were visually reviewed. This checks browser
+  cross-origin reads, not authenticated writes or physical iPhone behavior.
+- **Handover:** app changes remain local and uncommitted; no app deployment was
+  performed in this session. Real editor-token saves, family access and physical
+  device/microphone acceptance remain unverified. Editing setup is documented in
+  [meal planner](meal-planner.md); physical checks are in
+  [manual acceptance](manual-testing.md). Publication must still follow CI and
+  verify the served site before being reported as deployed.
+
 ## 2026-10-15 - Live-transcription-only MVP
 
 - **Scope:** user removes Who said what completely. Removed 189 tracked feature

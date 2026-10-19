@@ -1,5 +1,28 @@
 # Troubleshooting
 
+## 2026-10-19 - Meal planner recovery and regression checks
+
+- **Context:** Windows, Chromium 156.0.8078.4 and WebKit 27.2; saved meal-planner
+  implementation resumed after a reboot.
+- **Reproduced issues:** saving left keyboard focus inactive because the meal
+  button was still disabled when focus was restored. A planner left open across
+  Monday kept its initial week as This week. An initial network failure showed
+  an error alongside Loading plan indefinitely.
+- **Fix:** restore focus in an effect after the save state renders; keep the
+  displayed calendar separate from the current date; end loading status on
+  failure while retaining any displayed meals. Tests reproduced all three
+  failures before rebuilding and pass against the fixed build in both engines.
+- **Test correction:** WebKit's background speech-unavailable alert also matched
+  the meal-error assertion. Scope assertions to the meal dialog. Fix the clock
+  in the captions/meal test so it does not depend on the actual week of execution.
+- **Environment:** the sandbox prevented Vite's child esbuild process from
+  reading its configuration; the approved browser run outside the sandbox worked.
+  Node HTTPS reads required `node --use-system-ca` to trust the local issuer;
+  certificate verification stayed enabled.
+- **Verification:** all 115 unit and 68 browser cases, typecheck, lint and build
+  pass. Live public reads succeeded in both browsers; no real writes were made.
+  See [meal-planner evidence](feasibility.md).
+
 ## 2026-10-15 - Clear retains recognition context (physical result unresolved)
 
 - **Context/symptom:** user reports both recent active-Clear approaches fail.
