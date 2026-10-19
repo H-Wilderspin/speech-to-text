@@ -1,5 +1,25 @@
 # Feasibility evidence
 
+## 2026-10-19 - Shopping and planner improvements deployed
+
+- Published release `a8f13884cab6e186238a2bb42b29206296dc7545` to
+  [GitHub Pages](https://h-wilderspin.github.io/speech-to-text/).
+  [Actions run 39274353281](https://github.com/H-Wilderspin/speech-to-text/actions/runs/39274353281)
+  passed the check/build/browser-test job and deployment job.
+- Includes shopping CRUD, regular-item toggles, whole-row dragging and batched
+  saves; Sunday task tick resets; narrow-screen/split/settings refinements;
+  protected GitHub disconnect; Forma 36 colours with softly shaded buttons.
+- Live HTML returned HTTP 200. Published JS/CSS matched the tested local assets
+  byte-for-byte. Service-worker code and precache list also matched; only its
+  build-specific cache version differed between local and CI output.
+- Live Windows Chromium and WebKit opened all three planners, shopping alongside
+  captions, narrow-screen split controls and Settings/Update app. Verified the
+  button gradient, controlling worker and offline shell reload, with no uncaught
+  page errors. No shared data was written. Physical iPad/VoiceOver remains untested.
+- Earlier entries marked not deployed describe their status at the time; this
+  release publishes those accumulated changes. Use Settings > Update app on
+  existing installations to activate the new cached shell.
+
 ## 2026-10-19 - Softer action buttons
 
 - Replaced solid Add/Listen/Save/Stop fills with subtle gradients between the
