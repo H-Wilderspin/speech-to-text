@@ -1,5 +1,23 @@
 # Feasibility evidence
 
+## 2026-10-19 - Task planner, split views and Update app deployed
+
+- **Publication:** user authorized deployment. Release `c8133b6ccf9ead6041ad8c2b526492b1f35570d7`
+  is live on [GitHub Pages](https://h-wilderspin.github.io/speech-to-text/).
+  [Workflow 39254296805](https://github.com/H-Wilderspin/speech-to-text/actions/runs/39254296805)
+  completed checks, browser tests and Pages deployment successfully.
+- **Hosted checks:** Windows Chromium 156.0.8078.4 (1280px) and WebKit 27.2
+  (390px) returned HTTP 200. Served JS/CSS hashes match the tested local build
+  (`index-uwoXaZOI.js`, `index-COJRGZtA.css`). Both read the actual public meal
+  and task plans, displayed 21 meal slots/seven task days, switched both split
+  directions and kept the task panel within its width. Settings → Update app
+  completed and reloaded; changed text size survived that reload and a subsequent
+  offline shell reload under the scoped service worker. No uncaught page errors.
+- **Limits:** read-only production data checks; no real tokens, task/meal writes,
+  microphone use or physical iPad/Home Screen acceptance. To receive this first
+  button-enabled release, older installs should open online, then close all app
+  tabs/windows and reopen. Subsequent releases can use Settings → Update app.
+
 ## 2026-10-19 - Update app without browser cache clearing
 
 - **Change:** Settings has an Update app button that checks the scoped worker,
