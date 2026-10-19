@@ -21,21 +21,22 @@ export function Modal({ title, id, onClose, children, busy = false, headerAction
   };
   return <dialog className={inline ? 'meal-dialog meal-inline' : 'meal-dialog'} ref={dialog} aria-labelledby={id} aria-modal={!inline}
     onClose={event => { if (!event.currentTarget.open) onClose(); }}
-    onCancel={event => { if (busy) event.preventDefault(); }}
+    onCancel={event => { event.preventDefault(); if (!busy) onClose(); }}
     onKeyDown={event => {
       if (inline && event.key === 'Escape') {
-        event.stopPropagation();
-        if (!busy) event.currentTarget.close();
+        event.preventDefault(); event.stopPropagation();
+        if (!busy) onClose();
       }
     }}
     onPointerDown={event => { pointerStartedOutside.current = event.button === 0 && outside(event); }}
     onPointerUp={event => {
-      if (!inline && !busy && pointerStartedOutside.current && outside(event)) event.currentTarget.close();
+      if (!inline && !busy && pointerStartedOutside.current && outside(event)) onClose();
       pointerStartedOutside.current = false;
     }} onPointerCancel={() => { pointerStartedOutside.current = false; }}>
     <header className="settings-header meal-header">
       <div className="meal-header-actions">
-        <form method="dialog"><button className="icon-button" aria-label="Back to captions" disabled={busy} autoFocus><Icon /></button></form>
+        <form method="dialog" onSubmit={event => { event.preventDefault(); if (!busy) onClose(); }}><button className="icon-button" aria-label={inline ? 'Close planner' : 'Back to captions'}
+          title={inline ? 'Close planner' : 'Back to captions'} disabled={busy} autoFocus><Icon name={inline ? 'close' : 'back'} /></button></form>
         {headerLeading}
       </div>
       <h2 id={id}>{title}</h2>

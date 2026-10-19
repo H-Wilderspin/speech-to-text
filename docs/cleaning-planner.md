@@ -4,7 +4,12 @@ Use the checklist beside the cutlery to open a Monday–Sunday task list for
 shopping trips, housework or other activities. Only one
 planner is visible at a time. In either split mode, switching between the two
 icons replaces the planner pane while captions and Listen/Stop/Clear remain
-available. Full planner mode uses Back before opening the other planner.
+available. Close (×) hides the split pane; full planner mode uses Back before
+opening the other planner.
+In split view, tapping the active planner's toolbar icon closes its pane;
+tapping the other icon switches planners. Reopening keeps the split direction.
+Below 768px, vertical split is disabled. Existing side-by-side panes stack while
+narrow and return when widened; selected weeks and drafts stay intact.
 
 The existing GitHub connection in **Settings → Planner editing** serves both
 planners. No new token or repository is required. Reading needs no login;
@@ -30,6 +35,18 @@ has its own ID and checkbox. Recurrence applies to every matching weekday,
 including past weeks without exceptions. Changing a task's text retains its ID
 and any existing completion tick. Skipping/restoring also preserves that date's
 tick. Deleting and recreating a task creates a new ID with fresh completion state.
+
+Each week's ticks reset once at the start of its Sunday, using the device's
+local date. Tasks, dated edits, skips and recurring defaults stay in place.
+Ticks made after that reset stay checked; refreshing or opening another device
+does not reset them again. The next week still starts with its own unchecked tasks.
+
+The visible planner checks on opening, every minute and when returning to the
+tab. There is no background scheduler while the app is closed: a missed reset
+catches up when that week is next viewed, including an older week. Anonymous
+readers see the reset without writing; a connected editor saves the reset and
+its marker to GitHub. Failed reset saves show an error and retain the previously
+displayed list; Refresh or the next poll retries.
 
 Both planners retain drafts when switching icons or split direction. Changing
 week, closing the pane or reloading discards unsaved drafts. While saving,
@@ -72,6 +89,13 @@ the named week or weekday. Missing files are empty; malformed files are rejected
 before writes. Stale completion entries for removed tasks are harmless and do
 not recreate tasks. GitHub SHA checks merge edits to separate fields/tasks and
 reject conflicting changes to the same task or checkbox.
+
+After its Sunday reset a weekly file uses version 2, with the same task and
+completion maps plus `"completionReset": "2026-10-25"` (that week's Sunday).
+The marker prevents clearing ticks made afterwards and must be retained on
+all subsequent writes. Existing version 1 files remain readable; defaults stay
+at version 1. Older app versions reject version 2 rather than dropping the marker:
+use Settings → Update app on those devices. See [ADR 0058](decisions/0058-sunday-task-completion-reset.md).
 
 Use GitHub history to recover data. As with meals, deletion in the app does not
 erase public commit history. No deployment is required for data changes.

@@ -3,7 +3,7 @@
 [Open the app](https://h-wilderspin.github.io/speech-to-text/).
 
 Large, readable live captions for family conversations, with shared meal and
-task planners. The MVP uses the browser's
+task planners and a shopping list. The MVP uses the browser's
 speech recognition service. Speaker identification, voice registration, model
 downloads and the PC comparison service have been removed. See
 [ADR 0046](docs/decisions/0046-live-transcription-only-mvp.md).
@@ -20,6 +20,7 @@ downloads and the PC comparison service have been removed. See
 - **Settings:** text size, speech language, planner editing access, screen-awake status and About.
   Language changes are disabled during listening. The centred, full-height panel
   closes with the return button, Escape or a click outside it.
+  On phone-sized screens, text size appears above speech language on separate rows.
 - **Update app:** open Settings and tap Update app to download and reload the
   latest version. Stop listening and close any planner first. Reloading clears
   current captions and session-only access; remembered access and reading
@@ -30,7 +31,10 @@ can start a new line; this is not an exact acoustic silence detector. Late wordi
 corrections remain possible. New speech scrolls into view unless you have scrolled
 back to read earlier text. Clear resumes following the newest text.
 
-Poppins and a light theme support reading. Display-only formatting capitalises
+Poppins, cool white surfaces, dark text and Forma 36 blue/green accents support reading.
+Planner cards use consistent spacing, clear day headings and a tinted Today
+marker. Controls retain large touch targets and the light-blue focus glow.
+See [interface styling](docs/interface-style.md). Display-only formatting capitalises
 line openings and English pronouns and tidies spacing. It does not rewrite words,
 infer punctuation or correct proper names.
 
@@ -70,8 +74,10 @@ the left, with vertical and horizontal split icons on the right. Clear and
 Settings use labelled icons; Settings is a cog.
 Choose **Vertical split** for captions and meals side by side, or **Horizontal
 split** for captions above meals. Each pane scrolls separately and caption controls
-stay available. Press the active split icon again for the full planner, or use
-Back to return to captions alone. The
+stay available. Vertical split is disabled below 768px; a side-by-side view stacks
+while the window is narrow and returns when widened. Press the active split icon again for the full planner, or use
+the Close (×) button to return to captions alone. Full planner mode retains
+the Back arrow. The
 layout choice lasts until reload; switching layouts keeps the selected week and draft.
 In a meal's editor, choose **Apply to → Every [weekday] [meal]** to save a weekly
 default. Dated meals take priority; skip a single occurrence or use its weekly
@@ -79,7 +85,8 @@ default again without changing other weeks.
 The public plan lives in a separate GitHub data repository; reading needs no
 login. Set up a personal GitHub token under **Settings → Planner editing**. Select **Remember on
 this device** to keep editing access after reopening the app; otherwise access
-lasts only for the page session. Disconnect removes saved access from that browser.
+lasts only for the page session. Disconnect asks for confirmation before removing
+saved access from that browser; Keep connected cancels.
 See [meal planner setup and family editing](docs/meal-planner.md), including
 GitHub's collaborator limitations, public history and conflict handling.
 
@@ -90,13 +97,41 @@ housework and other activities. Add a task for
 one date, or choose **Apply to → Every Monday** (or the selected weekday) for a
 recurring task. Completion ticks belong only to that date; the following week
 starts unchecked. Dated edits and skips leave the weekly task unchanged.
+Each week's ticks also reset once from Sunday onwards, keeping all tasks.
+If the planner is closed, the reset catches up when that week is next opened.
+Ticks added after its reset stay checked.
 
 Meals and tasks share one planner pane and the same split controls, so either
 can stay visible with captions. Switching icons preserves the selected week,
 layout and unsaved drafts while the pane stays open; it is disabled during saves.
+In split view, tap the active planner's toolbar icon again to close its pane and
+return to captions alone. Tapping the other planner's icon switches panes.
 Only the visible planner checks for updates. Both use the existing GitHub access
 in Settings; previously remembered access continues to work. Tasks use their
 own files in the same public data repository. See [task setup and data](docs/cleaning-planner.md).
+
+## Shopping list
+
+The shopping-cart icon opens one shared ongoing list. Add an item, use its pencil
+to edit, its bin icon to delete, and tick it when bought. Drag the item's text or
+background to update the order. On touch screens, hold briefly, then drag;
+swiping immediately scrolls normally. The list scrolls when dragging near its edge. With a
+keyboard, focus the item text, press Space, use arrow keys and press Enter to drop
+(Escape cancels). Quantities can be included in the item text.
+
+Grey **Regular items** buttons add the household's fixed items to the main list.
+Items already present show **Added**; tap again to remove them, even if marked
+bought. The supplied 24-item catalogue is included in the app and can be replaced
+by a JSON file in the same data repository.
+
+Shopping uses the same GitHub editing access, Refresh button, automatic updates
+and split controls as the planners. It replaces their pane and can stay alongside
+captions. Switching among the three panes keeps drafts while the pane stays open.
+Shopping changes appear immediately and save together every 30 seconds, or when
+closing/switching the pane. Refresh also saves pending changes first. A failed
+save keeps the local list and leaves the pane open for retry. Close the pane before quitting the browser to
+finish saving; forced browser/app shutdown cannot guarantee a network save.
+See [shopping setup and data](docs/shopping-list.md).
 
 ## Development
 
@@ -125,6 +160,7 @@ See [manual testing](docs/manual-testing.md) and [evidence](docs/feasibility.md)
 - `src/features/settings/`: reading preferences and settings dialog.
 - `src/features/meals/`: weekly calendar, meal editor and GitHub data adapter.
 - `src/features/cleaning/`: task recurrence, dated completion and task editor (original internal name).
+- `src/features/shopping/`: ordered shopping items, fixed quick-add catalogue and shared saves.
 - `src/features/planners/`: shared planner frame and GitHub JSON transport.
 - `src/audio/interruption.ts`: stop listening when leaving the app.
 - `public/`: fonts, icons and manifest only; no speech models.

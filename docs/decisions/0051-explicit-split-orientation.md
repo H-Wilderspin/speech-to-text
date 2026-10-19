@@ -3,6 +3,9 @@
 Date: 2026-10-19
 Status: Accepted; supersedes the layout-selection UI in ADR 0050
 
+The all-width availability rule below is superseded by
+[ADR 0054](0054-narrow-viewport-split-controls.md).
+
 ## Decision
 
 At the user's request, replace the checkbox with vertical and horizontal split

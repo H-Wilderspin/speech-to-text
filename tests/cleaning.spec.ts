@@ -1,7 +1,7 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 
 test.use({ serviceWorkers: 'block' });
-type Document = { version: number; tasks?: Record<string, string | null>; completed?: Record<string, boolean>; meals?: Record<string, string> };
+type Document = { version: number; tasks?: Record<string, string | null>; completed?: Record<string, boolean>; completionReset?: string; meals?: Record<string, string> };
 const week = '2026-10-19';
 const weeklyFile = `cleaning/weeks/${week}.json`;
 const defaultsFile = 'cleaning/defaults.json';
@@ -63,6 +63,71 @@ async function add(page: Page, text: string, recurring = false) {
   await expect(tick(page, text)).toBeVisible();
 }
 
+test('Sunday resets shared ticks once, retains tasks and drafts, and preserves ticks made afterwards', async ({ page, context }) => {
+  const state = await fixture(context);
+  state.documents[defaultsFile] = { version: 1, tasks: { 'monday/vacuum': 'Vacuum' }, completed: {} };
+  state.documents[weeklyFile] = { version: 1, tasks: { [`${week}/shop`]: 'Shopping trip' },
+    completed: { [`${week}/vacuum`]: true, [`${week}/shop`]: true } };
+  await page.clock.install({ time: new Date('2026-10-19T12:00:00') });
+  await open(page, true);
+  await page.clock.setFixedTime(new Date('2026-10-24T23:59:00'));
+  await page.clock.fastForward(60000);
+  await expect(tick(page, 'Vacuum')).toBeChecked();
+  await editTask(page, 'Shopping trip');
+  await page.getByLabel('Task', { exact: true }).fill('Keep my draft');
+  await page.clock.setFixedTime(new Date('2026-10-25T00:00:00'));
+  await page.clock.fastForward(60000);
+  await expect(tick(page, 'Vacuum')).not.toBeChecked();
+  await expect(tick(page, 'Shopping trip')).not.toBeChecked();
+  await expect(page.getByLabel('Task', { exact: true })).toHaveValue('Keep my draft');
+  expect(state.documents[weeklyFile]).toEqual({ version: 2, tasks: { [`${week}/shop`]: 'Shopping trip' },
+    completed: {}, completionReset: '2026-10-25' });
+  await editor(page).getByRole('button', { name: 'Cancel', exact: true }).click();
+  await tick(page, 'Vacuum').click();
+  await expect(tick(page, 'Vacuum')).toBeChecked();
+  const revision = state.revisions[weeklyFile];
+  await page.clock.fastForward(120000);
+  await expect(tick(page, 'Vacuum')).toBeChecked();
+  expect(state.revisions[weeklyFile]).toBe(revision);
+  const other = await context.newPage();
+  await open(other);
+  await other.clock.setFixedTime(new Date('2026-10-25T12:00:00'));
+  await other.getByRole('button', { name: 'Refresh', exact: true }).click();
+  await expect(tick(other, 'Vacuum')).toBeChecked();
+  expect(state.revisions[weeklyFile]).toBe(revision);
+  expect(state.documents[defaultsFile]!.tasks).toEqual({ 'monday/vacuum': 'Vacuum' });
+  await other.close();
+});
+
+test('a failed Sunday reset retains the list and retries on Refresh', async ({ page, context }) => {
+  const state = await fixture(context);
+  state.documents[weeklyFile] = { version: 1, tasks: { [`${week}/shop`]: 'Shopping trip' }, completed: { [`${week}/shop`]: true } };
+  await open(page, true);
+  state.failSave = true;
+  await page.clock.setFixedTime(new Date('2026-10-25T12:00:00'));
+  await page.getByRole('button', { name: 'Refresh', exact: true }).click();
+  await expect(panel(page).getByRole('alert')).toContainText('Sunday task reset');
+  await expect(tick(page, 'Shopping trip')).toBeChecked();
+  state.failSave = false;
+  await page.getByRole('button', { name: 'Refresh', exact: true }).click();
+  await expect(tick(page, 'Shopping trip')).not.toBeChecked();
+  await expect(panel(page).getByRole('alert')).toHaveCount(0);
+  expect(state.documents[weeklyFile]!.completionReset).toBe('2026-10-25');
+});
+
+test('anonymous readers catch up after Sunday without writing or deleting tasks', async ({ page, context }) => {
+  const state = await fixture(context);
+  state.documents[weeklyFile] = { version: 1, tasks: { [`${week}/shop`]: 'Shopping trip' }, completed: { [`${week}/shop`]: true } };
+  await open(page);
+  await expect(tick(page, 'Shopping trip')).toBeChecked();
+  await page.clock.setFixedTime(new Date('2026-10-27T12:00:00'));
+  await page.getByRole('button', { name: 'Refresh', exact: true }).click();
+  await expect(tick(page, 'Shopping trip')).not.toBeChecked();
+  await expect(tick(page, 'Shopping trip')).toBeDisabled();
+  expect(state.revisions[weeklyFile]).toBeUndefined();
+  expect(state.documents[weeklyFile]!.completed![`${week}/shop`]).toBe(true);
+});
+
 test('tasks are readable anonymously, supports both splits and replaces the meal pane', async ({ page, context }) => {
   const state = await fixture(context);
   state.documents[defaultsFile] = { version: 1, tasks: { 'monday/vacuum': 'Vacuum' }, completed: {} };
@@ -73,10 +138,27 @@ test('tasks are readable anonymously, supports both splits and replaces the meal
   for (const width of [1280, 320]) {
     await page.setViewportSize({ width, height: 900 });
     for (const name of ['Vertical split (side by side)', 'Horizontal split (stacked)']) {
-      await page.getByRole('button', { name, exact: true }).click();
+      const button = page.getByRole('button', { name, exact: true });
+      if (width < 768 && name.startsWith('Vertical')) {
+        await expect(button).toBeDisabled();
+        continue;
+      }
+      if (await button.getAttribute('aria-pressed') !== 'true') await button.click();
       await expect(page.getByRole('region', { name: 'Live transcript' })).toBeVisible();
       expect(await panel(page).evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
       await page.screenshot({ path: `test-results/cleaning-${width}-${name.startsWith('Vertical') ? 'vertical' : 'horizontal'}-${test.info().project.name}.png` });
+      for (const plannerName of ['Task planner', 'Meal planner']) {
+        const toggle = page.getByRole('button', { name: plannerName, exact: true });
+        if (plannerName === 'Meal planner') await toggle.click();
+        await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+        await toggle.click();
+        await expect(page.getByRole('dialog')).toHaveCount(0);
+        await expect(page.locator('.content-layout')).not.toHaveClass(/with-meals/);
+        await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+        await expect(toggle).toBeFocused();
+        await page.getByRole('button', { name: 'Task planner', exact: true }).click();
+        await expect(button).toHaveAttribute('aria-pressed', 'true');
+      }
     }
   }
   await page.getByRole('button', { name: 'Meal planner', exact: true }).click();
@@ -197,6 +279,7 @@ test('planner switching preserves both drafts and captions, and saves block pane
   try {
     await expect(page.getByRole('button', { name: 'Meal planner', exact: true })).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Task planner', exact: true })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Close planner', exact: true })).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Horizontal split (stacked)', exact: true })).toBeDisabled();
     await page.getByRole('button', { name: 'Stop', exact: true }).click();
   } finally { release(); }
@@ -206,7 +289,7 @@ test('planner switching preserves both drafts and captions, and saves block pane
   await page.getByRole('button', { name: 'Meal planner', exact: true }).click();
   await expect(page.locator('#meal-text')).toHaveValue('Meal draft');
   await page.getByRole('button', { name: 'Task planner', exact: true }).click();
-  await page.getByRole('button', { name: 'Back to captions', exact: true }).click();
+  await page.getByRole('button', { name: 'Close planner', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Task planner', exact: true })).toBeFocused();
   await page.reload();
   await page.getByRole('button', { name: 'Task planner', exact: true }).click();

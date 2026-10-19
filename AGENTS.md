@@ -30,6 +30,8 @@ remove on Disconnect. Handle blocked storage without losing caption access or
 claiming persistence succeeded. Keep caption and meal state independent.
 Token entry, Remember and Disconnect belong in Settings → Planner editing; the
 planner contains the calendar and meal editor, not credential setup.
+Disconnect requires a confirmation with Keep connected focused by default;
+opening or cancelling that prompt must not change session or remembered access.
 ADRs 0047–0048 record the extension and GitHub collaborator limitations.
 Weekly defaults (ADR 0049) live in defaults.json. Dated entries take priority;
 version 2 weekly null entries mean skip, absent entries inherit. Retain version 1
@@ -39,14 +41,45 @@ live transcript, preserving week/drafts during layout switches. Keep caption
 controls reachable and the panels independently scrollable in this mode.
 ADR 0051 replaces the checkbox/automatic direction with explicit vertical and
 horizontal split icons; pressing the active icon restores the full planner.
+ADR 0054 disables vertical split below 768px and temporarily displays a selected
+vertical split as horizontal, preserving the mounted planners and drafts.
+Split planner headers use Close (×); full planner headers retain Back.
+In split view, the active planner's toolbar icon toggles its pane closed;
+the other icon switches planners. Keep listening and the split preference intact.
 Tasks (originally cleaning, ADR 0052) use daily checklists with weekly recurrence,
 dated overrides and date-specific completion. The checklist icon replaces meals
 in the same pane. The user broadened the label to Task planner for shopping trips
 and other activities; retain existing cleaning data paths for compatibility.
+ADR 0058 resets each week's completion ticks once from its Sunday onwards,
+including catch-up on reopening. Preserve tasks/defaults and ticks made after
+the reset. Version 2 weekly files carry a shared completionReset marker; keep
+version 1 reads and use conditional writes so devices cannot repeat the reset.
 Keep separate cleaning files in the existing data repository and reuse the
 existing token namespace. Settings calls the shared connection Planner editing.
 Preserve both drafts on pane switches, pause hidden polling, block switching
 during saves and keep caption controls independent.
+
+Shopping (ADR 0055) shares that pane and token. Use an ongoing ordered list in
+shopping/list.json, with stable item IDs, text and bought state. Rows
+support pointer/touch dragging and keyboard pickup/move/drop (ADRs 0056/0059); update
+local state on drop, cancel cleanly and suspend refresh/navigation during a move.
+ADR 0059 extends dragging to the entire row background/text. Keep embedded
+controls separate. Touch rows use a short hold for pickup so immediate swipes
+still scroll; the item text provides keyboard access and pending holds cancel cleanly.
+The user removed the separate grip icon; do not restore it.
+Bin icons delete directly using the existing conflict checks. Grey regular-item buttons toggle items from the user-supplied catalogue;
+selected tiles remove matching items (including bought items) through local batched changes.
+shopping/regular-items.json can override the bundled list. Prevent duplicate
+quick adds. Read latest data before conditional writes, merge independent fields,
+and reject stale item/order changes without discarding drafts. Pause hidden
+polling and retain all three drafts on pane switches.
+ADR 0057 batches shopping changes in memory: save every 30 seconds while dirty,
+and flush before closing/switching or manual Refresh. Failed flushes retain local
+state and keep the pane open. Never replace pending edits during polling. Compare
+base/local/latest lists to merge independent changes and detect conflicts; show
+the shared list for explicit resolution. Close routes must await the flush before
+unmounting; restore focus after controls re-enable. Page exit is best effort with
+a dirty beforeunload guard, not a guaranteed background or durable offline save.
 
 **MVP scope (2026-10-15, explicit user instruction):** Who said what is removed,
 including voice registration, identification, models/workers, comparison service,
@@ -63,6 +96,9 @@ requirements; historical documents are not the current implementation plan.
   Respect selected language; do not infer punctuation or rewrite words (ADR 0044).
 - Keep light colours, Poppins, three size roles, bottom controls, active indicator,
   reduced-motion support, centred scrolling Settings and text/language preferences.
+  Use the Forma 36 blue/green/grey palette and shared control/card tokens in
+  styles.css (docs/interface-style.md). Retain light-blue focus, compact spacing
+  and 48px action targets; shopping has no visible drag-hint or status rows.
 - Keep the native wake lock best effort and release it on stop/error/interruption.
   Returning to the page must never restart recording automatically (ADR 0045).
 - TypeScript/React/Vite, static deployment. No backend, paid API, tracking, models

@@ -1,14 +1,52 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CleaningConflict, readCleaningPlan, saveCleaningChange } from './github-cleaning';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { CleaningConflict, readCleaningPlan, saveCleaningChange, syncCleaningWeek } from './github-cleaning';
+import { cleaningDocument } from './completion-reset';
 import { emptyCleaningPlan, type CleaningPlan } from './tasks';
 
 const week = '2026-10-19';
 const key = `${week}/vacuum`;
-const file = (plan: CleaningPlan, sha = 'a') => new Response(JSON.stringify({ sha, encoding: 'base64', content: Buffer.from(JSON.stringify({ version: 1, ...plan })).toString('base64') }));
+const file = (plan: CleaningPlan, sha = 'a') => new Response(JSON.stringify({ sha, encoding: 'base64', content: Buffer.from(JSON.stringify(cleaningDocument(plan))).toString('base64') }));
 const mock = () => { const fetcher = vi.fn<typeof fetch>(); vi.stubGlobal('fetch', fetcher); return fetcher; };
-afterEach(() => vi.unstubAllGlobals());
+beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(new Date(2026, 9, 19, 12)); });
+afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
 
 describe('shared cleaning documents', () => {
+  it('persists one Sunday reset and preserves a later tick from another device after a SHA race', async () => {
+    vi.setSystemTime(new Date(2026, 9, 25));
+    const initial = { tasks: { [key]: 'Shopping trip' }, completed: { [key]: true } };
+    const fetcher = mock().mockResolvedValueOnce(file(initial)).mockResolvedValueOnce(new Response('{}'));
+    const reset = await syncCleaningWeek(week, 'test-token');
+    expect(reset).toEqual({ tasks: initial.tasks, completed: {}, completionReset: '2026-10-25' });
+    const body = JSON.parse(fetcher.mock.calls[1]?.[1]?.body as string);
+    expect(JSON.parse(Buffer.from(body.content, 'base64').toString())).toEqual(cleaningDocument(reset));
+    const checkedAgain = { ...reset, completed: { [key]: true } };
+    fetcher.mockResolvedValueOnce(file(initial)).mockResolvedValueOnce(new Response('', { status: 409 }))
+      .mockResolvedValueOnce(file(checkedAgain, 'b'));
+    expect(await syncCleaningWeek(week, 'test-token')).toEqual(checkedAgain);
+    expect(fetcher).toHaveBeenCalledTimes(5);
+  });
+  it('resets anonymous views without writes and reports reset failures for retry', async () => {
+    vi.setSystemTime(new Date(2026, 9, 25));
+    const initial = { tasks: { [key]: 'Shopping trip' }, completed: { [key]: true } };
+    const fetcher = mock().mockResolvedValueOnce(new Response(JSON.stringify({ version: 1, ...initial })));
+    expect((await syncCleaningWeek(week)).completed).toEqual({});
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    fetcher.mockResolvedValueOnce(file(initial)).mockResolvedValueOnce(new Response('', { status: 503 }));
+    await expect(syncCleaningWeek(week, 'test-token')).rejects.toThrow('Sunday task reset');
+    fetcher.mockResolvedValueOnce(file(initial)).mockResolvedValueOnce(new Response('{}'));
+    expect((await syncCleaningWeek(week, 'test-token')).completed).toEqual({});
+  });
+  it('combines a newly checked task with a due reset, preserving its marker on later edits', async () => {
+    vi.setSystemTime(new Date(2026, 9, 25));
+    const initial = { tasks: {}, completed: { [`${week}/dust`]: true } };
+    const fetcher = mock().mockResolvedValueOnce(file(initial)).mockResolvedValueOnce(new Response('{}'));
+    const saved = await saveCleaningChange(week, { field: 'completed', key, previous: undefined, value: true }, 'test-token');
+    expect(saved).toEqual({ tasks: {}, completed: { [key]: true }, completionReset: '2026-10-25' });
+    fetcher.mockResolvedValueOnce(file(saved)).mockResolvedValueOnce(new Response('{}'));
+    const edited = await saveCleaningChange(week, { field: 'tasks', key, previous: undefined, value: 'Shop' }, 'test-token');
+    expect(edited.completionReset).toBe('2026-10-25');
+    expect(edited.completed[key]).toBe(true);
+  });
   it('reads missing documents as empty and never sends tokens to public raw URLs', async () => {
     const fetcher = mock().mockResolvedValueOnce(new Response('', { status: 404 }));
     expect(await readCleaningPlan(week)).toEqual(emptyCleaningPlan());

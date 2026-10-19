@@ -1,14 +1,17 @@
 import { dateKey, weekdayNames, weekDays } from '../meals/calendar';
 
-export type CleaningPlan = { tasks: Record<string, string | null>; completed: Record<string, boolean> };
+export type CleaningPlan = {
+  tasks: Record<string, string | null>; completed: Record<string, boolean>;
+  completionReset?: string;
+};
 export const emptyCleaningPlan = (): CleaningPlan => ({ tasks: {}, completed: {} });
 export const cleaningDayLabel = (date: Date) => date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' });
 export const recurringTaskKey = (date: Date, id: string) => `${weekdayNames[date.getDay()]!.toLowerCase()}/${id}`;
 
 export function parseCleaningPlan(value: unknown, week?: string): CleaningPlan {
-  const data = value as { version?: unknown; tasks?: unknown; completed?: unknown } | null;
+  const data = value as { version?: unknown; tasks?: unknown; completed?: unknown; completionReset?: unknown } | null;
   const record = (input: unknown): input is Record<string, unknown> => Boolean(input) && typeof input === 'object' && !Array.isArray(input);
-  if (!data || data.version !== 1 || !record(data.tasks) || (data.completed !== undefined && !record(data.completed))) {
+  if (!data || (data.version !== 1 && data.version !== 2) || !record(data.tasks) || (data.completed !== undefined && !record(data.completed))) {
     throw new Error('The saved task plan has an unsupported format. No changes were made.');
   }
   const days = new Set(week ? weekDays(new Date(`${week}T12:00:00`)).map(dateKey) : weekdayNames.map(day => day.toLowerCase()));
@@ -17,6 +20,12 @@ export function parseCleaningPlan(value: unknown, week?: string): CleaningPlan {
     return days.has(day!) && Boolean(id && /^[a-zA-Z0-9-]{1,64}$/.test(id)) && extra === undefined;
   };
   const result = emptyCleaningPlan();
+  if (data.version === 2 || data.completionReset !== undefined) {
+    if (data.version !== 2 || !week || data.completionReset !== dateKey(weekDays(new Date(`${week}T12:00:00`))[6]!)) {
+      throw new Error('The saved task plan contains an invalid completion reset. No changes were made.');
+    }
+    result.completionReset = data.completionReset as string;
+  }
   for (const [key, task] of Object.entries(data.tasks)) {
     const skipped = Boolean(week) && task === null;
     if (!validKey(key) || (!skipped && !(typeof task === 'string' && task.trim() && task.length <= 300))) {

@@ -113,6 +113,7 @@ test('create, edit, share across pages, delete; session-only credentials are not
   await expect(breakfast(page)).toBeEnabled();
   await settings(page);
   await page.getByRole('button', { name: 'Disconnect GitHub', exact: true }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Disconnect', exact: true }).click();
   await planner(page);
   await expect(breakfast(page)).toBeDisabled();
   await connect(page);
@@ -170,13 +171,20 @@ test('opening meals preserves listening and caption Clear does not clear meals',
     ] });
   });
   await expect(page.getByRole('region', { name: 'Live transcript' })).toContainText('Let us discuss toast.');
+  await page.getByRole('button', { name: 'Meal planner', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Meal planner', exact: true })).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.getByRole('region', { name: 'Live transcript' })).toContainText('Let us discuss toast.');
+  await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Meal planner', exact: true }).click();
+  await expect(split(page, 'horizontal')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: 'Clear', exact: true }).click();
   await expect(page.getByRole('region', { name: 'Live transcript' })).toContainText('Tap Listen to start.');
   await expect(breakfast(page)).toContainText('Toast');
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
-  await page.getByRole('button', { name: 'Back to captions' }).click();
+  await page.getByRole('button', { name: 'Close planner' }).click();
   await expect(page.getByRole('button', { name: 'Meal planner', exact: true })).toBeFocused();
   await page.getByRole('button', { name: 'Meal planner', exact: true }).click();
   await expect(breakfast(page)).toContainText('Toast');
@@ -185,10 +193,15 @@ test('opening meals preserves listening and caption Clear does not clear meals',
 
 test('combined view keeps both panes and controls usable at tablet and phone widths', async ({ page, context }) => {
   await fixture(context); await open(page);
-  for (const width of [1280, 768, 320]) {
+  for (const width of [1280, 768, 767, 320]) {
     await page.setViewportSize({ width, height: 900 });
     for (const mode of ['vertical', 'horizontal'] as const) {
-    await split(page, mode).click();
+    if (mode === 'vertical' && width < 768) {
+      await expect(split(page, mode)).toBeDisabled();
+      continue;
+    }
+    await expect(split(page, mode)).toBeEnabled();
+    if (await split(page, mode).getAttribute('aria-pressed') !== 'true') await split(page, mode).click();
     await expect(split(page, mode)).toHaveAttribute('aria-pressed', 'true');
     await expect(split(page, mode === 'vertical' ? 'horizontal' : 'vertical')).toHaveAttribute('aria-pressed', 'false');
     const captions = await page.getByRole('region', { name: 'Live transcript' }).boundingBox();
@@ -206,7 +219,7 @@ test('combined view keeps both panes and controls usable at tablet and phone wid
     const groups = page.locator('.meal-header-actions');
     await expect(groups.nth(0).getByRole('button')).toHaveCount(2);
     await expect(groups.nth(1).getByRole('button')).toHaveCount(2);
-    await expect(groups.nth(0).getByRole('button').nth(0)).toHaveAccessibleName('Back to captions');
+    await expect(groups.nth(0).getByRole('button').nth(0)).toHaveAccessibleName('Close planner');
     await expect(groups.nth(0).getByRole('button').nth(1)).toHaveAccessibleName('Refresh');
     await page.screenshot({ path: `test-results/split-${mode}-${width}-${test.info().project.name}.png` });
     }
@@ -216,11 +229,14 @@ test('combined view keeps both panes and controls usable at tablet and phone wid
   await expect(split(page, 'horizontal')).toHaveAttribute('aria-pressed', 'true');
   await split(page, 'horizontal').click();
   await expect(page.getByRole('dialog', { name: 'Meal planner' })).toHaveAttribute('aria-modal', 'true');
+  await expect(page.getByRole('button', { name: 'Back to captions' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Close planner' })).toHaveCount(0);
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
 });
 
 test('switching planner layout preserves the selected week and unsaved meal', async ({ page, context }) => {
+  await page.setViewportSize({ width: 768, height: 900 });
   await fixture(context); await open(page); await connect(page);
   await page.getByRole('button', { name: 'Next week' }).click();
   await page.getByRole('button', { name: /^Monday 26 Oct, Breakfast:/ }).click();
@@ -233,6 +249,16 @@ test('switching planner layout preserves the selected week and unsaved meal', as
     await expect(page.getByLabel('Apply to')).toHaveValue('default');
     await expect(split(page, mode)).toBeFocused();
   }
+  await page.setViewportSize({ width: 767, height: 900 });
+  await expect(split(page, 'vertical')).toBeDisabled();
+  await expect(split(page, 'horizontal')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.content-layout')).toHaveClass(/split-horizontal/);
+  await expect(page.locator('#meal-text')).toHaveValue('Porridge and berries');
+  await expect(page.locator('.week-heading')).toHaveText('26 Oct - 1 Nov, 2026');
+  await page.setViewportSize({ width: 768, height: 900 });
+  await expect(split(page, 'vertical')).toBeEnabled();
+  await expect(split(page, 'vertical')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.content-layout')).toHaveClass(/split-vertical/);
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page.getByRole('button', { name: /^Monday 26 Oct, Breakfast:/ })).toContainText('Porridge and berries');
   await expect(page.getByRole('button', { name: /^Monday 26 Oct, Breakfast:/ })).toBeFocused();
@@ -317,6 +343,23 @@ test('remembered access survives reload and reopening; Disconnect forgets it acr
   await expect(breakfast(reopened)).toBeEnabled();
   await settings(reopened);
   await reopened.getByRole('button', { name: 'Disconnect GitHub', exact: true }).click();
+  const confirmation = reopened.getByRole('alertdialog', { name: 'Disconnect GitHub?' });
+  await expect(confirmation).toBeVisible();
+  await expect(confirmation.getByRole('button', { name: 'Keep connected' })).toBeFocused();
+  expect(await reopened.evaluate(key => localStorage.getItem(key), savedKey)).toBe('test-only-token');
+  await expect(breakfast(page)).toBeEnabled();
+  await reopened.keyboard.press('Escape');
+  await expect(confirmation).not.toBeVisible();
+  await expect(reopened.getByRole('dialog', { name: 'Settings', exact: true })).toBeVisible();
+  await expect(reopened.getByRole('button', { name: 'Disconnect GitHub', exact: true })).toBeFocused();
+  await reopened.getByRole('button', { name: 'Disconnect GitHub', exact: true }).click();
+  await confirmation.getByRole('button', { name: 'Keep connected' }).click();
+  await expect(confirmation).not.toBeVisible();
+  expect(await reopened.evaluate(key => localStorage.getItem(key), savedKey)).toBe('test-only-token');
+  await expect(breakfast(page)).toBeEnabled();
+  await reopened.getByRole('button', { name: 'Disconnect GitHub', exact: true }).click();
+  await confirmation.getByRole('button', { name: 'Disconnect', exact: true }).click();
+  await expect(reopened.getByLabel('GitHub token')).toBeFocused();
   await planner(reopened);
   await expect(breakfast(reopened)).toBeDisabled();
   await expect(breakfast(page)).toBeDisabled();
@@ -360,6 +403,7 @@ test('invalid tokens are not remembered and expired saved access can be disconne
   await expect(breakfast(page)).toBeDisabled();
   await settings(page);
   await page.getByRole('button', { name: 'Disconnect GitHub', exact: true }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Disconnect', exact: true }).click();
   await planner(page);
   await expect(page.getByRole('dialog').getByRole('status')).toHaveText('Plan updated');
   await expect(page.getByRole('dialog').getByRole('alert')).toHaveCount(0);

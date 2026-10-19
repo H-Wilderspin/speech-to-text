@@ -1,8 +1,78 @@
 # MVP manual acceptance
 
-Current scope: live captions and shared meals (ADRs 0046–0047). Record device model, OS version,
+Current scope: live captions, shared meals/tasks and shopping. Record device model, OS version,
 browser version and Safari tab/Home Screen mode for each physical run. Automated
 recognition fixtures are not physical acceptance evidence.
+
+Check the Forma 36 blue/green/grey styling on a phone and tablet: headings and
+Today should be distinct, shopping icons align with the item text, and quick-add
+tiles retain readable Added states. Test large text and light-blue keyboard focus
+without horizontal overflow; all action icons should still have 48px targets.
+
+In Settings, check that text size and speech language occupy separate full-width
+rows at 600px and narrower, with text size first. Wider screens keep them side by
+side. Confirm the size buttons, preview and language dropdown remain usable.
+
+With remembered GitHub access, tap Disconnect GitHub. Confirm that access stays
+connected until explicitly choosing Disconnect in the confirmation. Keep connected
+is focused first; it and Escape cancel and return focus to the original button.
+Check on a narrow phone screen and with a keyboard/screen reader. Confirming
+removes remembered access and focuses the token entry; saved plans remain intact.
+
+## Sunday task reset
+
+- With a test data repository, tick recurring and one-off tasks before Sunday.
+  On Sunday, open/return to Task planner: ticks clear and all tasks remain.
+  Keep an editor draft open across the boundary and confirm it survives.
+- Tick a task after the reset, refresh and reopen from another device: it stays
+  checked. Check next week's recurring tasks are still unchecked. Reopen a week
+  whose Sunday was missed and confirm its reset catches up exactly once.
+- Fail a reset save, confirm the list remains visible with an error, then
+  reconnect and Refresh. Anonymous reading should show the reset without writes.
+  Update older app clients before reading newly reset version 2 files.
+
+## Shopping list
+
+- Open the cart icon and verify all 24 supplied regular items appear as muted
+  buttons. Add custom items and quick-add several regular items. Selected tiles
+  show Added; tap again to remove (including bought items), then tap to re-add.
+  Check Enter/Space toggles, focus stays on the tile, and changes save on close.
+  Edit quantities in item text; different quantity names remain separate.
+- Tick/untick bought items and delete directly with the bin. Drag row text/background to reorder
+  using a mouse and actual iPad touch. For quick adds on a long list, confirm
+  the catalogue stays under your finger and its buttons do not reflow when Added
+  appears. Keyboard Space should tick without moving focus to the edit button.
+  The top of the list should stay still as pending/saved status changes. Drag
+  near the pane edge to scroll a long
+  list, then drop at the first/last position. Check that scrolling stops at the
+  list ends and doesn't continue into Regular items. Drag outside and cancel a
+  gesture: neither should save. On touch screens, hold a row briefly then drag;
+  an immediate swipe should scroll. Release before pickup, cancel a held drag,
+  and use a second finger: no delayed move or stuck busy state should remain.
+  Check that checkbox/edit/delete taps keep their actions and never start dragging.
+- Confirm only edit and delete icons remain on each row. With a keyboard, focus
+  the item text; Space picks it up, arrows/Home/End position the item,
+  Enter drops and Escape cancels without closing the planner. Check announcements,
+  focus after saving/deleting, and arrow boundaries. Confirm saved order and edits
+  on another device after Refresh or the next poll. Try simultaneous editing,
+  deleting and moving from two devices.
+- Make several fast changes and confirm they appear immediately, with a pending
+  message and one GitHub update after 30 seconds. Close before the timer using
+  Back, Close, Escape, the cart icon or outside click; each must save before closing.
+  Switching planners and manual Refresh also flush pending changes. No-change
+  and edit-then-undo batches should not create commits.
+- Test failed/offline saves: keep the local list and draft; reconnect and retry.
+  Failed close attempts must leave the pane open. Polling/focus must not replace
+  pending edits. Make a conflicting change on another device; review the shared
+  list and test both Keep my changes and Use shared list. Try page/app exit with
+  unsaved edits: where supported, the browser warns. Mobile forced shutdown is
+  not a guaranteed save; close the pane first and verify GitHub before quitting.
+  Switch among meals, tasks and shopping with drafts and listening active. Confirm
+  only one planner appears and all drafts survive. Save while listening: caption
+  Stop stays usable but planner switching/closing waits for the save.
+- Check full, horizontal and supported vertical splits, scrolling, keyboard focus
+  and VoiceOver labels on an actual iPad/phone. At 320px the toolbar wraps with
+  Listen on its own row; all icon targets remain reachable. Physical checks pending.
 
 ## Update app
 
@@ -46,16 +116,25 @@ recognition fixtures are not physical acceptance evidence.
   and the meal plan is retained. Test offline/save failure without losing drafts.
 - Use the vertical/horizontal split icons while speaking: both panes remain
   readable, captions continue updating and Listen/Stop/Clear remain usable. Check
-  both orientations on tablets/phones, active-button state, independent scrolling,
+  both orientations at widths of 768px and above; below 768px the vertical button
+  must be disabled. Resize/rotate with a vertical split and a draft: panes stack
+  below the cutoff and return when widened without losing the week or draft.
+  Check active-button state, independent scrolling,
   large caption text and the on-screen keyboard. Toggle with an unsaved meal and
   a different week selected: both must survive. Press the active icon to return
-  to the full planner. Back hides the plan; Escape works
+  to the full planner. Split modes show Close (×), full mode shows Back; both hide
+  the plan and restore focus to its toolbar icon without stopping captions. Escape works
   while focused inside it. Open/close Settings without losing the combined view.
 - With a keyboard, save/cancel a meal and confirm focus returns to its slot.
   Keep a draft open during an automatic refresh; its text must remain unchanged.
   Leave the planner open across Monday and check This week selects the new week.
 
 ## Tasks and planner switching
+
+- In each split direction, tap the active cutlery/list icon to close its pane:
+  captions expand, listening continues, focus stays on the icon and it reports
+  collapsed. Tap again to reopen with the same split. Tapping the other icon
+  switches planners. Both icons remain disabled during saves.
 
 - Open the checklist beside cutlery, add a shopping trip, other daily tasks and a weekly task,
   and confirm next week's occurrence starts unchecked. Tick/untick on one device

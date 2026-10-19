@@ -1,5 +1,289 @@
 # Feasibility evidence
 
+## 2026-10-19 - Softer action buttons
+
+- Replaced solid Add/Listen/Save/Stop fills with subtle gradients between the
+  existing palette's 100 and 200 shades. Text and outlines retain the darker
+  colour; hover uses the 200 shade. Other palette/layout rules remain unchanged.
+  Enabled controls retain full opacity so text does not look disabled.
+- Calculated contrast at each gradient's darker endpoint (also its hover fill):
+  blue 5.23:1, green 5.37:1, red 5.31:1. Not a full accessibility audit.
+- `npm run check` passed typecheck, lint, 165 unit tests and production build.
+  Twelve existing Chromium/mobile-WebKit checks passed in 21.9 seconds, covering
+  captions, controls, task/shopping edits and phone/tablet meal splits. Reviewed
+  the 320px shopping catalogue screenshot with the softened Add button.
+  Physical iPad not tested; not deployed.
+
+## 2026-10-19 - Forma 36 colour palette
+
+- Replaced the muted sage palette with values from Contentful's official
+  [Forma 36 colour system](https://f36.contentful.com/tokens/color-system):
+  cool grey surfaces, dark blue-grey text, blue actions/selection/Today, green
+  Listen/Save/Added states, red Stop/errors and orange warnings. Kept dimensions,
+  typography and the existing blue300 focus glow. No new dependencies.
+- Calculated sRGB contrast: text/canvas 14.23:1, secondary text/canvas 5.54:1,
+  white/primary blue 6.44:1, white/positive green 6.54:1, selected green text/tint
+  5.98:1, blue text/tint 5.80:1, control outline/canvas 4.57:1, warning text/tint
+  5.88:1, error text/tint 6.02:1. These cover selected pairs, not a full audit.
+- `npm run check` passed typecheck, lint, 165 unit tests and production build.
+  CSS 17.12 kB / 4.13 kB gzip; JS 297.58 kB / 92.67 kB gzip.
+- Visually reviewed desktop Settings, tablet task split, phone shopping drag
+  and 320px catalogue/WebKit meal split screenshots: controls and text remain
+  clear and contained. The full Chromium/mobile-WebKit browser suite passed
+  150 checks; two Chromium-only native-touch checks were skipped in WebKit.
+  Physical iPad/VoiceOver not tested; not deployed.
+
+## 2026-10-19 - Regular shopping item toggles
+
+- Regular-item tiles now toggle list membership: selected Added tiles remove
+  the matching item, including bought items. Matching uses the existing case/
+  whitespace normalization; quantity variants remain separate. Local changes
+  retain the existing 30-second/on-close batching and conflict handling.
+- Stable accessible names and aria-pressed expose selection. Catalogue anchoring
+  and focus apply to both additions and removals; disabled editing still blocks
+  anonymous readers, loading, saves, editing and dragging.
+- `npm run check` passed typecheck, lint, 165 unit tests and build after the
+  permitted rerun for the known sandbox Vite config-access failure. Shopping
+  browser checks passed 44 tests in 44.2 seconds across Chromium/mobile WebKit;
+  two Chromium-only native-touch tests remain skipped in WebKit. Checks cover
+  click/keyboard deselection and re-add, bought/name matching, focus, saving on
+  close, existing CRUD, batching, conflicts and dragging.
+- Not deployed; physical iPad/VoiceOver acceptance remains pending.
+
+## 2026-10-19 - Warm white and sage interface styling
+
+- **Change:** shared palette/radius/shadow tokens, warmer canvas and charcoal
+  text, sage primary/selected controls, white shopping/planner cards with softer
+  borders, aligned shopping row actions and checkboxes, stronger day headings
+  and Today treatment, and equal-width quick-add tiles with readable Added states.
+  Existing typography sizing, 48px actions, blue focus glow and compact shopping
+  header remain. See interface-style.md for colour measurements and guidelines.
+- **Checks:** `npm run check` passed typecheck, lint, 165 unit tests and build.
+  The sandbox initially blocked Vite config access; the permitted rerun succeeded.
+  Browser validation used the resulting new build: 146 checks passed in the full
+  Chromium/mobile-WebKit run (2.1 minutes); the two old colour expectations were
+  updated to the requested palette and both passed on targeted rerun (7.8 seconds).
+  Two CDP-only touch checks remain skipped in WebKit. No production regression
+  was found. Existing tests cover 320px/enlarged text, splits, CRUD, quick-add
+  anchoring, row/keyboard/touch dragging, scrolling, batching and conflicts.
+- **Visual review:** inspected settings desktop, task tablet split, shopping
+  tablet/phone splits, 320px catalogue and 320px WebKit meal split screenshots.
+  Text wraps, action columns align and controls remain reachable. Palette contrast
+  was calculated directly: main/muted/quick-add/accent text pairs 5.63–12.00:1,
+  neutral control outline 3.11:1. This is not a full accessibility audit.
+- **Limits:** mocked GitHub/speech; physical iPad/VoiceOver acceptance pending.
+  Not deployed. JS 297.59 kB / 92.65 kB gzip; CSS 16.27 kB / 4.02 kB gzip.
+
+## 2026-10-19 - Compact shopping list header
+
+- Removed the visible drag instruction and save-status row, including its
+  reserved space. Retained screen-reader status/help and visible errors/retry.
+- `npm run check` passed typecheck, lint, 165 unit tests and build. Eight focused
+  Chromium/mobile-WebKit checks passed in 15.7 seconds, covering stable layout,
+  CRUD, batching/failures/conflicts and dragging/keyboard cancellation.
+  Not deployed; no physical-device test. JS 297.56 kB / 92.65 kB gzip.
+
+## 2026-10-19 - Remove shopping drag icon
+
+- **Change:** removed the separate grip button and unused icon/styles. The item
+  text is now the keyboard/assistive reorder control, styled as ordinary text;
+  row drag, touch hold, scroll and embedded checkbox/edit/delete remain available.
+- **Checks:** `npm run check` passed typecheck, lint, 165 unit tests and build.
+  The shopping browser suite passed 42 tests in 43.1 seconds across Windows
+  Chromium/mobile WebKit, with the two CDP-only touch checks skipped in WebKit.
+  Verified text/background dragging, item-name keyboard focus, native Chromium
+  touch holding/scrolling, cancellation, only two row action icons, and existing
+  CRUD/batching/conflict/close behaviours. JS 297.85 kB / 92.73 kB gzip;
+  CSS 13.88 kB / 3.66 kB gzip. No live writes or deployment; physical iPad pending.
+
+## 2026-10-19 - Whole-row shopping dragging
+
+- **Change:** mouse/pen pickup from row text or background; embedded checkbox,
+  edit and delete controls retain their actions. Touch rows use a 350ms hold;
+  immediate movement cancels pickup and keeps native scrolling. The grip retains
+  immediate dragging and keyboard access. Existing local batching is unchanged.
+  Pending holds and active gestures clean up on cancellation. See ADR 0059.
+- **Checks:** `npm run check` passed typecheck, lint, 165 unit tests and build.
+  The shopping browser suite passed 40 tests in 42.4 seconds across Windows
+  Chromium/mobile WebKit; two CDP-only native touch tests were skipped in WebKit.
+  Two additional hold/cancellation checks passed in 8.0 seconds after adding
+  exact paused-clock coverage. Typecheck/lint were also rerun for the new tests.
+  Native Chromium touch verified row hold/drag and immediate swipe scrolling;
+  other checks cover row text/background, untouched checkbox state after drag,
+  embedded actions, keyboard movement, cancellation, edge scrolling and batching.
+  JS 298.21 kB / 92.81 kB gzip; CSS 13.81 kB / 3.64 kB gzip.
+- **Test details/limits:** pause the Playwright clock for the 349ms boundary;
+  a running fake clock can cross 350ms during assertion round trips. Escape before
+  pickup cancels the hold and retains normal dialog dismissal. The additional
+  hold tests use synthetic touch events, not native WebKit touch. Physical iPad
+  touch/VoiceOver acceptance remains pending. Mocked GitHub; not deployed.
+
+## 2026-10-19 - Shopping focus and layout stability
+
+- **Finding/change:** CRUD already updates local React state before batched saves.
+  New browser regressions reproduced checkbox and quick-add focus moving into
+  edit buttons. Keep checkbox focus, anchor quick-add catalogue position during
+  layout, reserve Added label width and keep a permanent compact save-status row.
+  Save timing, conflict handling and the brief network-save lock are unchanged.
+- **Checks:** `npm run check` passed typecheck, lint, 165 unit tests and build.
+  `npm run test:e2e -- tests/shopping.spec.ts --workers=2 --max-failures=3`
+  passed 37 tests in 41.9 seconds across Windows Chromium/mobile WebKit. One
+  Chromium-CDP-only touch test remains skipped in WebKit. Coverage includes both
+  new regressions, no immediate writes, the 30-second batch, CRUD, drag/touch,
+  close routes, failures and conflicts. JS 295.76 kB / 92.25 kB gzip;
+  CSS 13.65 kB / 3.61 kB gzip.
+- **Limits:** mocked GitHub and simulated phone viewport; physical tablet
+  smoothness has not been measured. Not deployed. See troubleshooting for cause.
+
+## 2026-10-19 - Sunday task completion reset
+
+- **Change:** reset each week's completion ticks once from its Sunday onwards,
+  retaining tasks, defaults, dated skips and drafts. A version 2 shared marker
+  preserves subsequent ticks across devices. Missed weeks catch up when viewed;
+  anonymous views derive the reset and connected editors save it conditionally.
+  Read and save paths both account for a due reset. See ADR 0058.
+- **Checks:** `npm run check` passed typecheck, lint, all 165 unit tests and
+  production build. `npm run test:e2e -- tests/cleaning.spec.ts --workers=2
+  --max-failures=3` passed all 14 checks across Windows Chromium and mobile
+  WebKit in 29.8 seconds. Tests cover the local Sunday boundary, New Year,
+  catch-up, retained definitions/drafts, later ticks, two pages, anonymous
+  reads, SHA races and failed reset recovery. An initial browser assertion used
+  Playwright check(), which expects an immediate checkbox state; the task UI
+  waits for GitHub confirmation. Using click() followed by a retrying checked
+  assertion, as existing task tests do, passed with no production change.
+- **Limits:** mocked GitHub; no live writes, deployment or physical tablet test.
+  No background execution while closed. Different time zones use local Sunday;
+  the shared marker prevents repeated resets. Older clients need Update app to
+  read version 2 weeks. JS 295.32 kB / 92.11 kB gzip; CSS unchanged.
+
+## 2026-10-19 - Immediate shopping state and 30-second batch saves
+
+- **Change:** adds, edits, ticks, deletes and dropped order update local state
+  immediately. Dirty state flushes in one conditional GitHub write every 30 seconds,
+  before close/switch and manual Refresh. Failed saves retain the local list and
+  keep the pane open. Pending edits block polling replacement. Base/local/latest
+  merging preserves independent changes; conflicts show the shared snapshot with
+  explicit resolution choices. A visibility-loss save and dirty beforeunload
+  guard provide best-effort page-exit protection. See ADR 0057.
+- **Checks:** `npm run check` passed typecheck, lint, 158 unit tests and production
+  build. The full Chromium/mobile-WebKit suite passed 133 tests in 2.2 minutes
+  on Windows. One existing Chromium-CDP touch test is skipped in WebKit. Coverage
+  verifies immediate state, no write before the 30-second tick, one batched write,
+  no writes for clean/net-zero state, all five close routes, switching while a
+  save is held, shared modal regressions, retry/conflict choices, exit-handler
+  cancellation, stale-order protection and retry after an already-applied batch.
+  Initial close checks found and verified a focus restoration fix; see troubleshooting.
+- **Limits:** GitHub and speech are fixtures; no live data write or physical iPad
+  test. The exit test dispatches a cancellable event and does not prove native
+  browser prompts or delivery after mobile process termination. Pending changes
+  are in memory and can be lost on forced exit; finish closing the pane first.
+  Not deployed. JS 294.32 kB / 91.80 kB gzip; CSS 13.53 kB / 3.58 kB gzip.
+
+## 2026-10-19 - Shopping drag handles and quick delete
+
+- **Change:** per-item bin icons remove directly; grip buttons replace up/down
+  buttons. Pointer capture supports mouse/touch, an insertion line and floating
+  label indicate the destination, and edge scrolling stops at the list ends.
+  Keyboard pickup/move/drop and cancellation remain available. One save occurs
+  per drop, preserving concurrent-order checks. Polling and planner navigation
+  pause during dragging; cancelled/failed moves leave confirmed order intact.
+- **Checks:** `npm run check` passed typecheck, lint, all 149 unit tests and build.
+  Final focused browser run passed 17 checks in 27.9 seconds across Chromium and
+  mobile WebKit on Windows. Covered multiple-position mouse moves, keyboard
+  boundaries/cancellation, pointer cancellation/outside drops, long-list scrolling
+  to the last position, polling suspension, direct deletion/failure/conflict,
+  restored focus and regular-item availability. Chromium CDP native touch events
+  also reordered successfully. That CDP-specific test is skipped in WebKit;
+  WebKit still runs mouse/keyboard and all other shopping checks.
+- **Visual/limits:** reviewed the 390px stacked WebKit drag screenshot with the
+  destination line and new grip/pencil/bin row. Physical iPad/Safari gestures and
+  VoiceOver remain untested. GitHub/recognition use fixtures; no live data writes.
+  Not deployed. Final JS 289.28 kB / 90.04 kB gzip; CSS 13.53 kB / 3.58 kB gzip.
+
+## 2026-10-19 - Shared shopping list
+
+- **Change:** cart toolbar icon opens an ongoing shared list with custom add,
+  edit, remove, bought checkboxes and saved up/down ordering. The user's 24
+  regular items appear as muted quick-add buttons. A separate optional JSON
+  catalogue can replace the bundled list. All three planners share editing
+  access and split controls; drafts survive switching and hidden polling stops.
+- **Checks:** `npm run check` passed typecheck, lint, 148 unit tests and production
+  build. The full browser suite passed all 110 checks in 1.6 minutes on Windows,
+  using Chromium and mobile WebKit. Shopping coverage includes root/project
+  paths, anonymous reads, missing/malformed files, the supplied catalogue,
+  CRUD/checks/order, duplicate quick adds, another reading page, save failures,
+  concurrent changes, polling and caption/pane lifecycle. Earlier runs identified
+  outdated five-button toolbar assertions and an immediate checkbox assertion;
+  the tests now expect the cart and await confirmed asynchronous checkbox saves.
+- **Visual checks:** reviewed 320px Chromium/WebKit household-catalogue screenshots,
+  320px stacked WebKit and 1280px side-by-side Chromium. Browser assertions cover
+  320/390/768/1280px, available split directions and no horizontal overflow. The
+  toolbar wraps Listen above its five icons at 375px and below.
+- **Limits:** mocked GitHub and recognition; no real token, live data write,
+  physical microphone, iPad or screen-reader verification. Local only, not
+  deployed. JS 283.90 kB / 88.23 kB gzip; CSS 12.70 kB / 3.36 kB gzip.
+
+## 2026-10-19 - Protected GitHub disconnect
+
+- **Change:** Disconnect GitHub opens a labelled modal confirmation explaining
+  lost editing access and preserved plans. Keep connected receives focus;
+  cancellation/Escape leave access untouched. Explicit Disconnect removes access
+  through the existing handler and focuses token entry. Dismissing the nested
+  prompt does not dismiss Settings.
+- **Checks:** typecheck, lint, 135 unit tests and production build passed. Six
+  Chromium/mobile-WebKit checks passed (23.8 seconds), including cancellation,
+  focus, session-only and remembered disconnect, other-tab propagation and expired
+  access recovery. A final CSS adjustment gives the prompt content height;
+  rebuilt and checked centring, no overflow and Enter-to-cancel at 320px in both
+  engines. No live token used. Local only; not deployed or physically tested.
+
+## 2026-10-19 - Phone Settings controls on separate rows
+
+- **Change:** at 600px and narrower, text size occupies a full row above speech
+  language. Its decrease button, preview and increase button remain together.
+  Wider screens retain the existing side-by-side layout.
+- **Checks:** typecheck, lint, all 135 unit tests and production build passed.
+  A local production preview in Chromium and WebKit confirmed stacked controls
+  at 320/390/600px, side-by-side controls at 601/768px, functional size/language
+  changes and no horizontal overflow. Reviewed the 320px WebKit screenshot.
+  Local only; no deployment or physical-device check performed.
+
+## 2026-10-19 - Planner toolbar toggles
+
+- **Change:** tapping the active planner's toolbar icon in split view closes
+  that pane and expands captions. The other icon switches planners. Focus stays
+  on the clicked icon, aria-expanded reflects the visible pane, and reopening
+  retains the split direction. Closing uses the existing draft-discard behaviour.
+- **Checks:** typecheck, lint, 135 unit tests and production build passed; six
+  focused Chromium/mobile-WebKit checks passed (20.9 seconds). Both icons toggle
+  in both available split directions, captions/listening survive closing, and
+  saves continue to disable switching/closing. Local only; not deployed.
+
+## 2026-10-19 - Close button in split planners
+
+- **Change:** both split layouts now show an × icon labelled Close planner;
+  full planner mode retains Back to captions. Closing still restores toolbar
+  focus and is blocked during saves. Settings retains its Back button.
+- **Checks:** typecheck, lint, 135 unit tests and production build passed.
+  Ten focused Chromium/mobile-WebKit checks passed (30.3 seconds), covering
+  both planners, both split modes, full-mode restoration, closing/focus and
+  disabled controls during saves. Local only; not deployed.
+
+## 2026-10-19 - Narrow viewport split controls
+
+- **Change:** vertical split is disabled below 768 CSS pixels for both planners.
+  A selected vertical split temporarily stacks on narrowing and returns on
+  widening. App layout and button state use one viewport subscription; mounted
+  planners retain their selected week and draft. See ADR 0054.
+- **Checks:** typecheck, lint, all 135 unit tests and production build passed.
+  All eight focused Chromium/mobile-WebKit browser checks passed (26.8 seconds),
+  covering 320/767/768/1280px, both planners, resize with an unsaved recurring
+  meal, return to full planner and switching panes while captions continue.
+  Reviewed the 320px WebKit screenshot: vertical is visibly disabled and
+  horizontal remains selected and usable.
+- **Limits:** local changes only; not deployed. Physical tablet rotation and
+  browser zoom have not been tested.
+
 ## 2026-10-19 - Task planner, split views and Update app deployed
 
 - **Publication:** user authorized deployment. Release `c8133b6ccf9ead6041ad8c2b526492b1f35570d7`

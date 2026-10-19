@@ -1,5 +1,37 @@
 # Troubleshooting
 
+## 2026-10-19 - Shopping edits jump despite local state updates
+
+- **Context:** batched shopping state, production preview on Windows.
+- **Reproduction:** keyboard-tick an item or quick-add from the catalogue beneath
+  a long list. Browser regressions initially failed because focus moved to the
+  item's edit button. Pending status also changed from screen-reader-only to an
+  ordinary paragraph, inserting space above the list.
+- **Cause:** local mutations already used synchronous React state; focus effects
+  and conditional status layout introduced movement independently of GitHub.
+- **Fix:** keep checkbox focus; preserve the quick-add button's viewport position
+  during layout and focus without scrolling. Use guarded aria-disabled for Added
+  buttons so focus survives; reserve their Added label space to prevent reflow.
+  Keep a compact visible save row and separate full assistive announcements.
+- **Verification:** both new regressions pass in Chromium and mobile WebKit,
+  including stable list position before/after the 30-second batch, catalogue
+  visibility and no immediate writes. Existing save timing is unchanged. Controls
+  still briefly disable during actual network saves. Physical iPad retest pending.
+
+## 2026-10-19 - Toolbar focus lost after saving on close
+
+- **Context:** shopping batch saves, Chromium production preview on Windows.
+- **Reproduction:** change the shopping list, then close using Back, Escape or
+  the split Close button. Saving and closing succeeded, but the cart was not focused.
+- **Root cause:** navigation attempted focus immediately after the async flush,
+  before React rendered the toolbar's re-enabled state. Disabled buttons cannot
+  receive focus. Native dialog dismissal also needs to wait for the save request.
+- **Fix:** route modal dismissal through controlled navigation, await the flush,
+  and restore focus from an effect after the planner/busy state renders.
+- **Verification:** all five Chromium shopping close-route regressions pass;
+  they assert a saved batch, unmounted pane and focused cart. The full browser
+  regression result is recorded in feasibility evidence with ADR 0057.
+
 ## 2026-10-19 - Split-view editor covers the layout switch
 
 - **Context:** Windows WebKit, phone-sized combined meal/caption view.

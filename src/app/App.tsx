@@ -7,8 +7,10 @@ import type { TranscriptionEngine } from '../transcription/types';
 import { readPreferences, savePreferences } from '../features/settings/preferences';
 import { useListeningWakeLock } from './use-listening-wake-lock';
 import { Icon } from '../shared/Icon';
-import { Planner, type PlannerKind, type PlannerLayout } from '../features/planners/Planner';
+import { Planner, type PlannerKind } from '../features/planners/Planner';
+import { usePlannerLayout } from '../features/planners/use-planner-layout';
 import { useMealAccess } from '../features/meals/use-meal-access';
+import type { ShoppingHandle } from '../features/shopping/use-shopping-sync';
 
 export function App({ engine }: { engine: TranscriptionEngine }) {
   const snapshot = useSyncExternalStore(engine.subscribe, engine.getSnapshot);
@@ -22,9 +24,30 @@ export function App({ engine }: { engine: TranscriptionEngine }) {
   const settingsButton = useRef<HTMLButtonElement>(null);
   const mealButton = useRef<HTMLButtonElement>(null);
   const cleaningButton = useRef<HTMLButtonElement>(null);
+  const shoppingButton = useRef<HTMLButtonElement>(null);
+  const plannerButton = (kind: PlannerKind) => kind === 'meals' ? mealButton : kind === 'cleaning' ? cleaningButton : shoppingButton;
   const [planner, setPlanner] = useState<PlannerKind | null>(null);
   const [plannerBusy, setPlannerBusy] = useState(false);
-  const [plannerLayout, setPlannerLayout] = useState<PlannerLayout>('full');
+  const shopping = useRef<ShoppingHandle>(null);
+  const navigating = useRef(false);
+  const plannerFocus = useRef<HTMLButtonElement | null>(null);
+  const { layout: plannerLayout, setLayout: setPlannerLayout, verticalSplitAvailable } = usePlannerLayout();
+  const navigatePlanner = async (next: PlannerKind | null) => {
+    if (plannerBusy || navigating.current) return;
+    navigating.current = true;
+    try {
+      if (shopping.current && !await shopping.current.flush()) return;
+      const focusKind = next ?? planner;
+      if (focusKind) plannerFocus.current = plannerButton(focusKind).current;
+      setPlanner(next);
+    } finally { navigating.current = false; }
+  };
+  const togglePlanner = (next: PlannerKind) => void navigatePlanner(planner === next && plannerLayout !== 'full' ? null : next);
+  useEffect(() => {
+    if (plannerBusy || !plannerFocus.current) return;
+    if (!planner || plannerLayout !== 'full') plannerFocus.current.focus();
+    plannerFocus.current = null;
+  }, [planner, plannerBusy, plannerLayout]);
   const { access: mealAccess, connect: connectMeals } = useMealAccess();
   const [offline, setOffline] = useState(!navigator.onLine);
   const [installFailed, setInstallFailed] = useState(false);
@@ -56,8 +79,8 @@ export function App({ engine }: { engine: TranscriptionEngine }) {
       {offline && <p className="notice">You’re offline. Your browser’s speech service may need a connection.</p>}
       <Transcript segments={snapshot.segments} textSize={textSize} language={language} />
     </main>
-    {planner && <Planner kind={planner} token={mealAccess.token} layout={plannerLayout} onLayout={setPlannerLayout} busy={plannerBusy} onBusy={setPlannerBusy}
-      onClose={() => { setPlanner(null); (planner === 'meals' ? mealButton : cleaningButton).current?.focus(); }} />}
+    {planner && <Planner kind={planner} token={mealAccess.token} layout={plannerLayout} onLayout={setPlannerLayout} verticalSplitAvailable={verticalSplitAvailable} busy={plannerBusy} onBusy={setPlannerBusy} shoppingRef={shopping}
+      onClose={() => void navigatePlanner(null)} />}
     </div>
     <footer className="toolbar" aria-label="Caption controls">
       <ListeningIndicator phase={snapshot.phase} />
@@ -66,8 +89,9 @@ export function App({ engine }: { engine: TranscriptionEngine }) {
         {snapshot.phase === 'stopping' ? 'Stopping…' : active ? 'Stop' : 'Listen'}
       </button>
       <button className="icon-button" aria-label="Clear" title="Clear captions" disabled={snapshot.segments.length === 0} onClick={() => engine.clear()}><Icon name="clear" /></button>
-      <button className="icon-button" aria-label="Meal planner" title="Meal planner" aria-expanded={planner === 'meals'} disabled={plannerBusy} ref={mealButton} onClick={() => setPlanner('meals')}><Icon name="meals" /></button>
-      <button className="icon-button" aria-label="Task planner" title="Task planner" aria-expanded={planner === 'cleaning'} disabled={plannerBusy} ref={cleaningButton} onClick={() => setPlanner('cleaning')}><Icon name="tasks" /></button>
+      <button className="icon-button" aria-label="Meal planner" title="Meal planner" aria-expanded={planner === 'meals'} disabled={plannerBusy} ref={mealButton} onClick={() => togglePlanner('meals')}><Icon name="meals" /></button>
+      <button className="icon-button" aria-label="Task planner" title="Task planner" aria-expanded={planner === 'cleaning'} disabled={plannerBusy} ref={cleaningButton} onClick={() => togglePlanner('cleaning')}><Icon name="tasks" /></button>
+      <button className="icon-button" aria-label="Shopping list" title="Shopping list" aria-expanded={planner === 'shopping'} disabled={plannerBusy} ref={shoppingButton} onClick={() => togglePlanner('shopping')}><Icon name="shopping" /></button>
       <button className="icon-button" aria-label="Settings" title="Settings" ref={settingsButton} onClick={() => setSettingsOpen(true)}><Icon name="settings" /></button>
     </footer>
     <p className="sr-only" id="processing-note">Listen uses your browser’s speech service, which may send audio to its provider. Captions are kept only until you clear or reload. Details are in Settings.</p>

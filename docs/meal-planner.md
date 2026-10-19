@@ -13,9 +13,13 @@ Use the two split icons at the top right to keep the plan visible during a
 conversation. **Vertical split** puts captions and meals side by side;
 **Horizontal split** puts captions above meals. The selected icon is highlighted.
 Scroll either pane separately; Listen/Stop, Clear and Settings remain available.
-Back hides the planner. Press the active split again to use the full planner.
-Both orientations are available at every width; horizontal split gives each pane
-more readable width on a phone.
+Close (×) hides the planner in either split mode; full planner mode uses a Back
+arrow. Press the active split again to use the full planner.
+In split view, tapping the cutlery again also closes meals; the task icon switches
+to tasks. Reopening keeps the split direction. Closing discards unsaved drafts.
+Vertical split is disabled below 768px. An existing vertical split displays
+stacked panes while narrow, and returns to side by side when widened unless you
+choose another layout. Horizontal split and full planner remain available.
 Switching layouts preserves the selected week and unsaved meal; the choice is kept
 for this page session only. Opening the planner never starts the microphone.
 
@@ -47,8 +51,10 @@ token creation link currently suggests a 90-day expiry, so choose an appropriate
 expiry during setup and plan for renewal.
 
 Without Remember, the token stays only in memory until reload. **Disconnect
-GitHub** removes access from memory and this app's saved token in that browser,
-and disconnects its other open tabs. It does not revoke the token in GitHub or
+GitHub** opens a confirmation with **Keep connected** selected by default.
+Keep connected or Escape cancels without changing access. Confirm **Disconnect**
+to remove access from memory and this app's saved token in that browser,
+and disconnect its other open tabs. It does not revoke the token in GitHub or
 disconnect other devices. If the browser blocks saving/removal, the app explains
 what failed; do not assume access was remembered or forgotten.
 

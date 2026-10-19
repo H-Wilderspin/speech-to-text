@@ -117,7 +117,7 @@ test('updates are disabled while listening or a planner is open', async ({ page 
   await expect(page.getByRole('button', { name: 'Update app', exact: true })).toBeDisabled();
   await expect(page.getByText('Close the planner before updating.')).toBeVisible();
   await page.getByRole('dialog', { name: 'Settings', exact: true }).getByRole('button', { name: 'Back to captions' }).click();
-  await page.getByRole('dialog', { name: 'Task planner', exact: true }).getByRole('button', { name: 'Back to captions' }).click();
+  await page.getByRole('dialog', { name: 'Task planner', exact: true }).getByRole('button', { name: 'Close planner' }).click();
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Update app', exact: true })).toBeEnabled();
 });

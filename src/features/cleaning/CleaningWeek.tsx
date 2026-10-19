@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '../../shared/Icon';
 import { dateKey, weekdayNames, weekDays } from '../meals/calendar';
-import { CleaningConflict, readCleaningPlan, saveCleaningChange, type CleaningChange } from './github-cleaning';
+import { CleaningConflict, readCleaningPlan, saveCleaningChange, syncCleaningWeek, type CleaningChange } from './github-cleaning';
 import { cleaningDayLabel, emptyCleaningPlan, recurringTaskKey, tasksForDay } from './tasks';
 
 export function CleaningWeek({ start, today, token, refresh, onBusy, active }: {
@@ -33,7 +33,7 @@ export function CleaningWeek({ start, today, token, refresh, onBusy, active }: {
       if (document.hidden || savingRef.current) return;
       const current = ++generation.current;
       try {
-        const [next, recurring] = await Promise.all([readCleaningPlan(week, token), readCleaningPlan(undefined, token)]);
+        const [next, recurring] = await Promise.all([syncCleaningWeek(week, token), readCleaningPlan(undefined, token)]);
         if (disposed || current !== generation.current) return;
         setPlan(next); setDefaults(recurring); setLoaded(true); setError(''); setStatus('Task plan updated');
       } catch (error) {
@@ -50,7 +50,7 @@ export function CleaningWeek({ start, today, token, refresh, onBusy, active }: {
     return () => {
       disposed = true; clearInterval(timer); window.removeEventListener('focus', focus); document.removeEventListener('visibilitychange', focus);
     };
-  }, [active, week, refresh, token]);
+  }, [active, week, refresh, token, today]);
 
   useEffect(() => { if (active && edit) editor.current?.focus(); }, [active, edit]);
   useEffect(() => {
@@ -137,6 +137,7 @@ export function CleaningWeek({ start, today, token, refresh, onBusy, active }: {
         {scope === 'default' && edit.defaultPrevious && <button type="button" disabled={saving || !token} onClick={() => save(undefined)}>Remove weekly task</button>}
       </div>
     </form>}
+    <p>Completion ticks reset once on Sunday. Tasks stay on the list.</p>
     {!token && <p>To edit or tick off tasks, connect GitHub in Settings.</p>}
   </>;
 }
