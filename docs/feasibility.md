@@ -1,5 +1,26 @@
 # Feasibility evidence
 
+## 2026-10-19 - Shared meal planner publication
+
+- **Release:** user authorized deployment. Published commit `862c97e` to
+  [GitHub Pages](https://h-wilderspin.github.io/speech-to-text/), including weekly
+  defaults, optional remembered editing access in Settings, title-bar refresh,
+  the Settings cog, revised date range and pale-blue focus styling.
+- **Checks:** the final local build passed typecheck, lint and 125 unit tests;
+  all 80 Chromium/mobile-WebKit browser tests passed. GitHub's
+  [release workflow](https://github.com/H-Wilderspin/speech-to-text/actions/runs/39245927271)
+  completed both build/checks and Pages deployment successfully.
+- **Hosted verification:** Windows Chromium 156.0.8078.4 and WebKit 27.2 returned
+  HTTP 200 and served JavaScript/CSS identical to the checked local build. Both
+  loaded the real public meal plan and defaults, displayed 21 slots and the new
+  date format, refreshed successfully, exposed remembered access in Settings,
+  and rendered the #98cbff focus outline. No horizontal dialog overflow at
+  1280px/390px and no uncaught page errors. Both controlled service-worker pages
+  reopened the app shell offline.
+- **Limits:** no real tokens or meal writes used during verification; no physical
+  phone, microphone or assistive-technology acceptance claimed. Existing users
+  should close all app tabs/windows and reopen so the waiting shell can activate.
+
 ## 2026-10-19 - Blue focus borders and glow
 
 - **Change:** shared focus styling replaces the brown outline with a blue edge
