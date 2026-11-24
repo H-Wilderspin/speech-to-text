@@ -143,11 +143,16 @@ requirements; historical documents are not the current implementation plan.
   Respect selected language; do not infer punctuation or rewrite words (ADR 0044).
 - Keep light colours, Poppins, three size roles, bottom controls, active indicator,
   reduced-motion support, centred scrolling Settings and text/language preferences.
-  Use the Forma 36 blue/green/grey palette and shared control/card tokens in
-  styles.css (docs/interface-style.md). Retain light-blue focus, compact spacing
+  Use coral actions/highlights and shared control/card tokens in
+  styles.css (docs/interface-style.md). Retain coral focus, compact spacing
   and 48px action targets; shopping has no visible drag-hint or status rows.
-- Keep the native wake lock best effort and release it on stop/error/interruption.
-  Returning to the page must never restart recording automatically (ADR 0045).
+- ADR 0073 supersedes the listening-only wake lock: request it whenever the app
+  is visible, including reading/editing; release on hide/pagehide/disposal and
+  reacquire on return. Returning must never restart recording automatically.
+- Opening a meal/shopping editor or focusing a text-entry field aborts listening,
+  retaining confirmed captions and cancelling pending restarts. Resume only by
+  an explicit Listen action. Browsing panels still preserves listening. The web
+  app cannot pre-empt microphone use by another app (ADR 0073).
 - TypeScript/React/Vite, static deployment. No backend, paid API, tracking, models
   or additional dependencies without a recorded product/architecture decision.
 - Never embed private credentials. Browser speech may use its provider; disclose

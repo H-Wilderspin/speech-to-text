@@ -39,7 +39,7 @@ for (const availability of ['supported', 'denied', 'missing'] as const) test(`sc
   }, availability);
   const counters = () => page.evaluate(() => (window as Window & { wakeCounters?: { requested: number; released: number } }).wakeCounters);
   await page.goto('/');
-  expect(await counters()).toEqual({ requested: 0, released: 0 });
+  await expect.poll(counters).toEqual({ requested: availability === 'missing' ? 0 : 1, released: 0 });
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   await result(page, 'Reading without touching the screen.', true);
   await expect(page.getByRole('region', { name: 'Live transcript' })).toContainText('Reading without touching the screen.');
@@ -52,17 +52,34 @@ for (const availability of ['supported', 'denied', 'missing'] as const) test(`sc
   await expect(page.getByRole('region', { name: 'Live transcript' })).toContainText('Still listening after Clear.');
   expect(await counters()).toEqual({ requested: availability === 'missing' ? 0 : 1, released: 0 });
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
-  await expect.poll(counters).toEqual({ requested: availability === 'missing' ? 0 : 1, released: availability === 'supported' ? 1 : 0 });
+  await expect.poll(counters).toEqual({ requested: availability === 'missing' ? 0 : 1, released: 0 });
   if (availability === 'supported') {
     await page.getByRole('button', { name: 'Listen', exact: true }).click();
     await result(page, 'command stop', true);
     await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
-    await expect.poll(counters).toEqual({ requested: 2, released: 2 });
+    await expect.poll(counters).toEqual({ requested: 1, released: 0 });
     await page.getByRole('button', { name: 'Listen', exact: true }).click();
     await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
     await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
-    await expect.poll(counters).toEqual({ requested: 3, released: 3 });
+    await expect.poll(counters).toEqual({ requested: 1, released: 1 });
+    await page.evaluate(() => window.dispatchEvent(new Event('pageshow')));
+    await expect.poll(counters).toEqual({ requested: 2, released: 1 });
+    await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
   }
+});
+
+test('focusing a connection field stops listening without clearing captions or restarting on blur', async ({ page }) => {
+  await mockRecognition(page); await page.goto('/');
+  await page.getByRole('button', { name: 'Listen', exact: true }).click();
+  await result(page, 'Keep these captions.', true);
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeEnabled();
+  await page.getByLabel('GitHub token').focus();
+  await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
+  expect(await page.evaluate(() => (window as Window & { wasAborted?: boolean }).wasAborted)).toBe(true);
+  await page.getByRole('button', { name: 'Speech to text', exact: true }).click();
+  await expect(page.locator('.transcript')).toContainText('Keep these captions.');
+  await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
 });
 
 test('light live captions remember text preferences', async ({ page }) => {
@@ -607,7 +624,9 @@ test('Settings splits beside captions and its active footer icon returns to capt
   await settings.click();
   await expect(captions).toBeHidden();
   await expect(split).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeEnabled();
   await page.getByLabel('GitHub token').fill('unfinished-token-draft');
+  await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
   await split.click();
   for (const width of [1024, 768, 390, 1024]) {
     await page.setViewportSize({ width, height: 800 });
@@ -642,7 +661,7 @@ test('Settings splits beside captions and its active footer icon returns to capt
   await expect(page.locator('.app-panel:visible')).toHaveCount(0);
   await expect(captions).toBeVisible();
   await expect(page.locator('.confirmed')).toHaveText('Keep listening in Settings.');
-  await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
   await expect(page.getByRole('button', { name: 'Speech to text', exact: true })).toHaveAttribute('aria-expanded', 'true');
   await expect(settings).toBeFocused();
   await expect(split).toBeDisabled();

@@ -245,9 +245,11 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
     try { this.recognizer.stop(); } catch { this.finish('idle', 'Stopped.'); }
   }
 
-  interrupt() {
+  interrupt(reason?: 'editing') {
     if (this.resetting) { this.listeningRequested = false; this.publish('stopping', 'Stopping…'); return; }
-    if (this.recognizer || this.listeningRequested) this.finish('idle', 'Listening paused because you left the app. Tap Listen to continue.');
+    if (this.recognizer || this.listeningRequested) this.finish('idle', reason === 'editing'
+      ? 'Listening stopped for editing. Tap Listen when you have finished.'
+      : 'Listening paused because you left the app. Tap Listen to continue.');
   }
 
   clear() {

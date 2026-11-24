@@ -23,7 +23,7 @@ export interface TranscriptionEngine {
   subscribe(listener: () => void): () => void;
   start(language: string): void;
   stop(): void;
-  interrupt(): void;
+  interrupt(reason?: 'editing'): void;
   clear(): void;
   dispose(): void;
 }

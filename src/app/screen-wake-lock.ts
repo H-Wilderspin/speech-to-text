@@ -1,9 +1,7 @@
-import type { TranscriptionEngine } from '../transcription/types';
-
 export type WakeStatus = 'idle' | 'requesting' | 'held' | 'unavailable';
 
 /** Best effort screen power management, independent of microphone/transcript state. */
-export function watchListeningWakeLock(engine: TranscriptionEngine, onStatus: (status: WakeStatus) => void): () => void {
+export function watchScreenWakeLock(onStatus: (status: WakeStatus) => void): () => void {
   let disposed = false;
   let pageHidden = false;
   let wanted = false;
@@ -36,7 +34,7 @@ export function watchListeningWakeLock(engine: TranscriptionEngine, onStatus: (s
         held = undefined;
         removeReleaseListener?.();
         removeReleaseListener = undefined;
-        // Respect OS revocation; don't retry on every incoming caption.
+        // Respect OS revocation; retry only after returning to the visible app.
         onStatus('unavailable');
       };
       lock.addEventListener('release', onRelease);
@@ -47,9 +45,7 @@ export function watchListeningWakeLock(engine: TranscriptionEngine, onStatus: (s
     }
   };
   const update = () => {
-    const phase = engine.getSnapshot().phase;
-    const next = !disposed && !pageHidden && document.visibilityState === 'visible'
-      && (phase === 'requesting-permission' || phase === 'listening' || phase === 'restarting');
+    const next = !disposed && !pageHidden && document.visibilityState === 'visible';
     if (next === wanted) return;
     wanted = next;
     generation += 1;
@@ -61,7 +57,6 @@ export function watchListeningWakeLock(engine: TranscriptionEngine, onStatus: (s
   };
   const onPageHide = () => { pageHidden = true; update(); };
   const onPageShow = () => { pageHidden = false; update(); };
-  const unsubscribe = engine.subscribe(update);
   document.addEventListener('visibilitychange', update);
   window.addEventListener('pagehide', onPageHide);
   window.addEventListener('pageshow', onPageShow);
@@ -69,7 +64,6 @@ export function watchListeningWakeLock(engine: TranscriptionEngine, onStatus: (s
   return () => {
     disposed = true;
     generation += 1;
-    unsubscribe();
     document.removeEventListener('visibilitychange', update);
     window.removeEventListener('pagehide', onPageHide);
     window.removeEventListener('pageshow', onPageShow);

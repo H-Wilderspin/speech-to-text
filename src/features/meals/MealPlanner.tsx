@@ -6,8 +6,9 @@ const dayLabel = (date: Date) => date.toLocaleDateString('en-GB', { weekday: 'lo
 type MealEditor = { key: string; defaultKey: string; label: string; repeatLabel: string; previous: MealValue; defaultPrevious: MealValue; text: string };
 type Draft = { edit: MealEditor | null; scope: 'date' | 'default'; text: string };
 
-export function MealWeek({ client, start, today, token, refresh, active }: {
+export function MealWeek({ client, start, today, token, refresh, active, onEdit }: {
   client: PlannerSync; active: boolean; start: Date; today: string; token: string; refresh: number;
+  onEdit: () => void;
 }) {
   const week = dateKey(start);
   const weekStore = client.meals(week);
@@ -27,7 +28,7 @@ export function MealWeek({ client, start, today, token, refresh, active }: {
   const selected = useRef<HTMLButtonElement | null>(null);
   const editor = useRef<HTMLTextAreaElement>(null);
   useEffect(() => { client.setDraft(week, edit ? { edit, scope, text } : null); }, [client, week, edit, scope, text]);
-  useEffect(() => { if (active && edit) editor.current?.focus(); }, [edit, active]);
+  useEffect(() => { if (active && edit) { onEdit(); editor.current?.focus(); } }, [edit, active, onEdit]);
   useEffect(() => {
     if (active && !edit && selected.current && !selected.current.disabled) { selected.current.focus(); selected.current = null; }
   }, [edit, active]);
@@ -52,6 +53,7 @@ export function MealWeek({ client, start, today, token, refresh, active }: {
           const defaultKey = defaultMealKey(date, slot);
           return <div className="meal-cell" key={slot}><button className="meal-slot" disabled={!token || !loaded} aria-label={`${dayLabel(date)}, ${slot}: ${meal.text || 'Not planned'}${meal.recurring ? ', weekly default' : ''}`}
             onClick={event => {
+              onEdit();
               selected.current = event.currentTarget;
               setEdit({ key, defaultKey, label: `${dayLabel(date)} · ${slot}`, repeatLabel: `Every ${weekdayNames[date.getDay()]} ${slot.toLowerCase()}`,
                 previous: plan[key], defaultPrevious: defaults[defaultKey], text: meal.text });

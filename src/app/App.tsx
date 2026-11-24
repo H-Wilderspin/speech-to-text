@@ -5,7 +5,7 @@ import { ListeningIndicator } from '../features/listening/ListeningIndicator';
 import { SettingsPanel } from '../features/settings/SettingsPanel';
 import type { TranscriptionEngine } from '../transcription/types';
 import { readPreferences, savePreferences } from '../features/settings/preferences';
-import { useListeningWakeLock } from './use-listening-wake-lock';
+import { useScreenWakeLock } from './use-screen-wake-lock';
 import { Icon } from '../shared/Icon';
 import { Planner, type PlannerKind } from '../features/planners/Planner';
 import { usePlannerLayout } from '../features/planners/use-planner-layout';
@@ -14,7 +14,8 @@ import { PlannerSync } from '../features/planners/planner-sync';
 
 export function App({ engine }: { engine: TranscriptionEngine }) {
   const snapshot = useSyncExternalStore(engine.subscribe, engine.getSnapshot);
-  const wakeStatus = useListeningWakeLock(engine);
+  const wakeStatus = useScreenWakeLock();
+  const stopForEditing = useCallback(() => engine.interrupt('editing'), [engine]);
   const [preferences, setPreferences] = useState(readPreferences);
   const { textSize, language } = preferences;
   const changePreferences = (changes: Partial<typeof preferences>) => {
@@ -78,7 +79,10 @@ export function App({ engine }: { engine: TranscriptionEngine }) {
     };
   }, [engine]);
 
-  return <div className="app-shell">
+  return <div className="app-shell" onFocusCapture={event => {
+    // Also cover restored drafts and connection fields, including keyboard focus.
+    if (event.target.matches('textarea, input:not([type=checkbox]):not([type=radio]), [contenteditable=true]')) stopForEditing();
+  }}>
     <a className="skip-link" href="#main-content">Skip to main content</a>
     <h1 className="sr-only">Speech to Text</h1>
     <main id="main-content" tabIndex={-1} className={panelOpen && plannerLayout === 'split' ? 'content-layout with-meals' : 'content-layout'}>
@@ -88,7 +92,7 @@ export function App({ engine }: { engine: TranscriptionEngine }) {
       {offline && <p className="notice">You’re offline. Your browser’s speech service may need a connection.</p>}
       <Transcript visible={captionsVisible} segments={snapshot.segments} textSize={textSize} language={language} />
     </section>
-    {planner && <Planner client={sync} visible={!settingsOpen} kind={planner} token={mealAccess.token} layout={plannerLayout} refresh={refresh} onRefresh={refreshPlanners} busy={plannerBusy} onBusy={setPlannerBusy} />}
+    {planner && <Planner client={sync} visible={!settingsOpen} kind={planner} token={mealAccess.token} layout={plannerLayout} refresh={refresh} onRefresh={refreshPlanners} busy={plannerBusy} onBusy={setPlannerBusy} onEdit={stopForEditing} />}
     {settingsOpen && <SettingsPanel active={active} beforeUpdate={() => sync.safeToLeave()} textSize={textSize} onTextSize={(textSize) => changePreferences({ textSize })}
       language={language} onLanguage={(language) => changePreferences({ language })} installFailed={installFailed} wakeStatus={wakeStatus}
       mealAccess={mealAccess} onMealToken={connectMeals} needsToken={needsToken} onAccessError={onAccessError}

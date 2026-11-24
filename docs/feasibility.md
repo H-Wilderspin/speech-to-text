@@ -1,5 +1,34 @@
 # Feasibility evidence
 
+## 2026-11-24 - Editing interruption, visible-app wake lock and coral styling
+
+- **Scope:** Local changes only, per the user's request. Opening/restoring a
+  meal or shopping editor aborts recognition before programmatic field focus;
+  text-field focus also interrupts it. Confirmed captions and drafts remain.
+  Closing the editor never restarts recognition. The screen lock now follows
+  visible app lifetime rather than listening lifetime (ADR 0073).
+- **Environment:** Windows, Playwright Chromium 156.0.8078.4 and WebKit 27.2 with
+  desktop and iPhone 13 emulation. Speech and wake-lock providers were mocked;
+  these checks cannot measure OS microphone ownership or physical Auto-Lock.
+- **Checks:** Typecheck, lint, 164 unit tests, two setup-helper tests and build
+  passed. Full browser suite: 192 passed, four existing Chromium-only native-touch
+  cases skipped in WebKit. Family connection: eight passed. The first full run
+  exposed an obsolete expectation that typing a token would preserve listening;
+  it now verifies browsing preserves listening and text entry stops it.
+- **Visuals:** Inspected local 390x900 and 1024x900 meal screenshots with fixture
+  data. No horizontal overflow; uppercase labels consistently measured .2em
+  tracking, and Weekly default measured 11px (.6875rem). Final coral text/border
+  colour `#b04230` has calculated contrast 5.73:1 on white, 5.20:1 on `#fff1ed`,
+  4.60:1 on hover `#ffe0d6`, and 5.42:1 on the canvas. The first colour candidate
+  was darkened after its hover contrast measured below 4.5:1. This is not a full
+  accessibility audit; smaller tag legibility still needs user review.
+- **Limits:** No physical speech-to-editor injection, microphone contention,
+  screen sleep, battery, latency or VoiceOver measurements were made. Browser
+  code cannot force another app to release its microphone; the existing recovery
+  message remains. Screen-awake requests may be denied/revoked by power policy.
+  Follow the editing/contention and wake-lock steps in manual-testing.md on the
+  actual family devices before claiming those behaviours are verified there.
+
 ## 2026-11-24 - Settings split and footer toggle
 
 - Settings now uses the shared split preference: captions left, Settings right at

@@ -3,6 +3,8 @@
 Date: 2026-10-15
 Status: Accepted
 
+The listening-only lifetime is superseded by [ADR 0073](0073-editing-and-visible-screen-awake.md).
+
 ## Context
 
 The target user's tablet sleeps during listening. Its exact model, OS version and

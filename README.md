@@ -12,6 +12,8 @@ downloads and the PC comparison service have been removed. See
 
 - **Listen / Stop:** start or stop captions. A green Listening indicator gently
   pulses; reduced-motion users see a steady dot. Startup/restart is amber.
+  Opening a meal/shopping editor or focusing a text field stops listening before
+  editing. Confirmed captions stay; tap Listen explicitly to resume afterwards.
 - **Clear:** empty the transcript. During listening, capture restarts with a new
   session number; results from the previous session are discarded. Stop cancels
   a pending restart. Spoken **command clear** and **command stop** work on confirmed
@@ -36,21 +38,24 @@ can start a new line; this is not an exact acoustic silence detector. Late wordi
 corrections remain possible. New speech scrolls into view unless you have scrolled
 back to read earlier text. Clear resumes following the newest text.
 
-Poppins, cool white surfaces, dark text and Forma 36 blue/green accents support reading.
+Poppins, cool white surfaces, dark text and coral action/highlight colours support reading.
 Planner cards use consistent spacing, clear day headings and a tinted Today
-marker. Controls retain large touch targets and the light-blue focus glow.
+marker. Controls retain large touch targets and the coral focus glow.
 See [interface styling](docs/interface-style.md). Display-only formatting capitalises
 line openings and English pronouns and tidies spacing. It does not rewrite words,
 infer punctuation or correct proper names.
 
 ## Screen awake and browser limits
 
-Listen requests a screen wake lock while the page is visible. Stop, errors and
-leaving the app release it. Settings shows whether the lock is held. The OS can
+The app requests a screen wake lock whenever the page is visible, including
+while reading or editing without listening. Leaving the app releases it; returning
+requests it again without restarting the microphone. Settings shows whether the lock is held. The OS can
 refuse it, including for power saving. Safari added the API in 16.4; Home Screen
 web apps need the iPadOS/iOS 18.4 fix. Use a Safari tab on older supported systems.
-This does not override manual locking or enable background recording. See
-[ADR 0045](docs/decisions/0045-listening-screen-wake-lock.md).
+This does not override manual locking or enable background recording. A browser
+cannot force another app to release the microphone; stop its microphone use, then
+tap Listen if capture is unavailable. See
+[ADR 0073](docs/decisions/0073-editing-and-visible-screen-awake.md).
 
 Browser recognition needs HTTPS (or localhost), microphone permission and a
 supported browser. The browser provider may send audio to its service and need an

@@ -174,6 +174,21 @@ describe('browser recognition lifecycle', () => {
     engine.start('en-GB'); latest().onerror?.({ error: 'aborted' });
     expect(engine.getSnapshot().phase).toBe('idle');
   });
+  it.each([false, true])('aborts for editing without late speech or automatic restart (permission pending: %s)', pending => {
+    engine.start('en-GB'); const native = latest();
+    if (!pending) { native.onstart?.(); native.result('Keep this.'); }
+    const lateResult = native.onresult;
+    const lateStart = native.onstart;
+    engine.interrupt('editing');
+    expect(native.abort).toHaveBeenCalledOnce();
+    expect(native.stop).not.toHaveBeenCalled();
+    lateStart?.(); lateResult?.({ results: [{ 0: { transcript: 'Late speech', confidence: .9 }, isFinal: true, length: 1 }] });
+    vi.runAllTimers();
+    expect(engine.getSnapshot().phase).toBe('idle');
+    expect(engine.getSnapshot().message).toContain('stopped for editing');
+    expect(engine.getSnapshot().segments.map(segment => segment.text)).toEqual(pending ? [] : ['Keep this.']);
+    expect(instances).toHaveLength(1);
+  });
   it('keeps distinct ids across restarts, even for repeated phrases', () => {
     engine.start('en-GB'); latest().result('Yes.'); latest().onend?.();
     vi.advanceTimersByTime(200); latest().result('Yes.'); latest().onend?.();

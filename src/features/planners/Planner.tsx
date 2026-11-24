@@ -11,10 +11,11 @@ export type PlannerLayout = 'full' | 'split';
 
 export type PlannerKind = 'meals' | 'shopping';
 
-export function Planner({ client, token, visible, layout, refresh, kind, busy, onBusy, onRefresh }: {
+export function Planner({ client, token, visible, layout, refresh, kind, busy, onBusy, onRefresh, onEdit }: {
   client: PlannerSync;
   refresh: number;
   onRefresh: () => void;
+  onEdit: () => void;
   kind: PlannerKind; busy: boolean; onBusy: (busy: boolean) => void; token: string; visible: boolean; layout: PlannerLayout;
 }) {
   const [today, setToday] = useState(() => new Date());
@@ -60,8 +61,8 @@ export function Planner({ client, token, visible, layout, refresh, kind, busy, o
       <div className="week-navigation" hidden={kind === 'shopping' || week === thisWeek}>
         {week !== thisWeek && <button className="this-week" disabled={busy} onClick={() => setStart(monday(new Date()))}>This week</button>}
       </div>
-      <div hidden={kind !== 'meals'}><MealWeek client={client} key={week} start={start} today={dateKey(today)} token={token} refresh={refresh} active={visible && kind === 'meals'} /></div>
-      <div className="shopping-view" hidden={kind !== 'shopping'}><ShoppingList client={client} token={token} refresh={refresh} onBusy={onBusy} active={visible && kind === 'shopping'} /></div>
+      <div hidden={kind !== 'meals'}><MealWeek client={client} key={week} start={start} today={dateKey(today)} token={token} refresh={refresh} active={visible && kind === 'meals'} onEdit={onEdit} /></div>
+      <div className="shopping-view" hidden={kind !== 'shopping'}><ShoppingList client={client} token={token} refresh={refresh} onBusy={onBusy} active={visible && kind === 'shopping'} onEdit={onEdit} /></div>
     </div>
   </section>;
 }

@@ -4,9 +4,9 @@ Current scope: live captions, shared meals and shopping. Record device model, OS
 browser version and Safari tab/Home Screen mode for each physical run. Automated
 recognition fixtures are not physical acceptance evidence.
 
-Check the Forma 36 blue/green/grey styling on a phone and tablet: headings and
+Check the coral highlighting and actions on a phone and tablet: headings and
 Today should be distinct, shopping icons align with the item text, and quick-add
-tiles retain readable Added states. Test large text and light-blue keyboard focus
+tiles retain readable Added states. Test large text and coral keyboard focus
 without horizontal overflow; all action icons should still have 48px targets.
 
 In Settings, check that text size and speech language occupy separate full-width
@@ -168,9 +168,11 @@ removes remembered access and focuses the token entry; saved plans remain intact
    Stop, change language, reload and verify size/language remain.
 6. Check green Listening, amber startup/restart, neutral Stopping and no indicator
    after Stop. Enable reduced motion: the green dot should remain steady.
-7. Leave Listen untouched longer than Auto-Lock. Check screen remains awake when
-   Settings reports Keeping screen awake. Stop and verify normal sleep resumes.
-   Switch apps/lock manually: capture must stop, and returning must not restart it.
+7. Without starting Listen, leave the app visible longer than Auto-Lock while
+   Settings reports Keeping screen awake. Repeat while listening and after Stop,
+   reading meals and editing shopping: the lock should remain while visible.
+   Switch apps/lock manually: capture must stop and normal sleep must resume;
+   returning requests a new screen lock but must not restart the microphone.
 8. Deny microphone access and disconnect the network: keep the UI usable and show
    actionable errors. Offline shell does not imply offline speech recognition.
 9. Test enlarged browser text, portrait/landscape and keyboard/screen reader focus.
@@ -180,6 +182,23 @@ removes remembered access and focuses the token entry; saved plans remain intact
 
 Physical target-user wake-lock and accessibility acceptance remain pending unless
 explicitly recorded in feasibility notes. Do not silently mark these as passed.
+
+## Editing and microphone contention (ADR 0073)
+
+- While listening, open Add item, edit an existing shopping item and edit a meal.
+  In full and split views, verify capture stops before typing, old confirmed
+  captions remain and speaking does not insert text into the editor. Repeat with
+  keyboard focus and while microphone permission is pending. Save/Cancel must
+  leave Listen off. Tap Listen explicitly when finished.
+- Return to an unsaved editor after restarting Listen elsewhere; verify it stops
+  again before the restored field receives focus. Focus the pairing/token field
+  in Settings and check the same protection. Simply browsing panels can keep
+  listening active.
+- With another app using the microphone, tap Listen. If the OS denies capture,
+  verify the recovery message, stop microphone use in the other app, and retry
+  Listen. No automatic priority/takeover can be promised by browser code.
+- Record keyboard dictation settings as well as device/OS/browser: system
+  dictation is separate from this app's speech-recognition session.
 
 ## Token replacement
 

@@ -306,23 +306,30 @@ test('failed batches retain local changes and conflicts offer a reviewed merge',
   expect(state.reads.filter(file => file.startsWith('shopping/')).length).toBe(reads);
 });
 
-for (const split of [false, true]) test(`meal and shopping drafts survive footer switches (${split ? 'split' : 'full'}) and saving allows navigation while captions continue`, async ({ page, context }) => {
+for (const split of [false, true]) test(`meal and shopping drafts survive footer switches (${split ? 'split' : 'full'}) and editing stops listening while keeping captions`, async ({ page, context }) => {
   const state = await fixture(context);
   await page.addInitScript(() => {
     class Recognition {
       onstart?: () => void; onend?: () => void; onresult?: (event: unknown) => void;
       start() { Object.assign(window, { testRecognition: this }); this.onstart?.(); }
-      stop() { this.onend?.(); } abort() { queueMicrotask(() => this.onend?.()); }
+      stop() { this.onend?.(); } abort() { Object.assign(window, { wasAborted: true }); queueMicrotask(() => this.onend?.()); }
     }
     Object.assign(window, { SpeechRecognition: Recognition });
   });
   await open(page, true);
   if (split) await enableSplit(page);
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
+  await page.evaluate(() => {
+    (window as Window & { testRecognition?: { onresult: (event: unknown) => void } }).testRecognition?.onresult({ results: [{ 0: { transcript: 'We need apples.', confidence: .9 }, length: 1, isFinal: true }] });
+  });
   await page.getByRole('button', { name: 'Add item', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
+  expect(await page.evaluate(() => (window as Window & { wasAborted?: boolean }).wasAborted)).toBe(true);
   await page.getByLabel('Shopping item', { exact: true }).fill('Shopping draft');
   await page.getByRole('button', { name: 'Meal planner', exact: true }).click();
+  await page.getByRole('button', { name: 'Listen', exact: true }).click();
   await page.getByRole('button', { name: /^Monday 19 Oct, Breakfast:/ }).click();
+  await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
   await page.locator('#meal-text').fill('Meal draft');
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await expect(page.getByRole('region', { name: 'Settings', exact: true })).toBeVisible();
@@ -333,9 +340,6 @@ for (const split of [false, true]) test(`meal and shopping drafts survive footer
   await expect(page.locator('#meal-text')).toHaveValue('Meal draft');
   await page.getByRole('button', { name: 'Shopping list', exact: true }).click();
   await expect(page.getByLabel('Shopping item', { exact: true })).toHaveValue('Shopping draft');
-  await page.evaluate(() => {
-    (window as Window & { testRecognition?: { onresult: (event: unknown) => void } }).testRecognition?.onresult({ results: [{ 0: { transcript: 'We need apples.', confidence: .9 }, length: 1, isFinal: true }] });
-  });
   await expect(page.locator('.transcript')).toContainText('We need apples.');
   if (!split) await expect(page.locator('.transcript')).toBeHidden();
   await expect(page.getByRole('contentinfo')).toBeVisible();
@@ -350,7 +354,7 @@ for (const split of [false, true]) test(`meal and shopping drafts survive footer
     for (const name of navigation) {
       await expect(page.getByRole('button', { name, exact: true })).toBeEnabled();
     }
-    await page.getByRole('button', { name: 'Stop', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
   } finally { release(); }
   await expect(page.locator('#meal-text')).toHaveValue('Meal draft');
   expect(state.reads.some(file => file.startsWith('cleaning/'))).toBe(false);

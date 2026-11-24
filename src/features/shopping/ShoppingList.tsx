@@ -5,8 +5,9 @@ import { useShoppingReorder } from './use-shopping-reorder';
 import { useShoppingSync } from './use-shopping-sync';
 import type { PlannerSync } from '../planners/planner-sync';
 
-export function ShoppingList({ client, token, active, refresh, onBusy }: {
+export function ShoppingList({ client, token, active, refresh, onBusy, onEdit }: {
   token: string; active: boolean; refresh: number; onBusy: (busy: boolean) => void;
+  onEdit: () => void;
   client: PlannerSync;
 }) {
   const draft = client.getDraft<{ edit: { id: string; previous?: ShoppingItem }; text: string }>('shopping');
@@ -29,7 +30,7 @@ export function ShoppingList({ client, token, active, refresh, onBusy }: {
     if (pane) pane.scrollTop += anchor.button.getBoundingClientRect().top - anchor.top;
     anchor.button.focus({ preventScroll: true });
   }, [items]);
-  useEffect(() => { if (active && edit) input.current?.focus(); }, [active, edit]);
+  useEffect(() => { if (active && edit) { onEdit(); input.current?.focus(); } }, [active, edit, onEdit]);
   useEffect(() => {
     if (active && !edit && focusTarget.current) {
       const target = document.getElementById(focusTarget.current) as HTMLButtonElement | null;
@@ -42,6 +43,7 @@ export function ShoppingList({ client, token, active, refresh, onBusy }: {
     if (change(operation) && finish) setEdit(null);
   };
   const beginEdit = (item?: ShoppingItem) => {
+    onEdit();
     const id = item?.id ?? crypto.randomUUID();
     focusTarget.current = item ? `shopping-edit-${id}` : 'shopping-add';
     setEdit({ id, previous: item }); setText(item?.text ?? ''); clearError();

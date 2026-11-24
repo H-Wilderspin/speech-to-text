@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { WakeStatus } from '../../app/listening-wake-lock';
+import type { WakeStatus } from '../../app/screen-wake-lock';
 import { MealAccessSettings } from '../meals/MealAccessSettings';
 import { DeviceAccessSettings } from '../meals/DeviceAccessSettings';
 import { familyServiceUrl, isDeviceToken } from '../planners/family-service';
