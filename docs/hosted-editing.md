@@ -12,8 +12,8 @@ The GitHub App installation is verified with access only to
 secret storage with explicit owner approval. Remote migration `0001_devices.sql`
 is applied. The ignored `service/.admin.local` contains local owner configuration.
 The public Pages Actions variable `VITE_SYNC_SERVICE_URL` is configured and
-verified. Frontend release `d09d906` passed the
-[Pages workflow](https://github.com/H-Wilderspin/speech-to-text/actions/runs/45440669464)
+verified. Frontend release `7e52555` passed the
+[Pages workflow](https://github.com/H-Wilderspin/speech-to-text/actions/runs/45444887729)
 and is published at https://h-wilderspin.github.io/speech-to-text/.
 `SYNC_PAUSED=false`; the 5,000-request daily guard and owner pause switch are active.
 Pairing, live reads/saves, stale-revision rejection, pause/resume and revocation
@@ -30,8 +30,10 @@ was revoked. App and owner secrets were absent from the built static assets.
 After publication, the actual served app passed pairing, remembered access after
 reload, and authenticated shopping/meal reads in desktop Chromium and mobile
 WebKit on Windows. Both verification devices were revoked; no family data changed.
-The served script is `assets/index-Qtopn5EZ.js` and the service-worker version is
-`29666de41ab0574b`. Physical family devices have not been tested. Existing users
+The latest release also verified the clearer pairing and Update app instructions
+on the actual published Settings screen. The served script is
+`assets/index-BV0LUksE.js` and the service-worker version is
+`ab16c62eca800501`. Physical family devices have not been tested. Existing users
 should stop listening and choose **Settings → Update app**, then enter their
 individual pairing code under **Family connection**.
 
@@ -261,7 +263,7 @@ and SQL against Node SQLite, verify real JWT signatures and mock GitHub response
 The local Wrangler smoke check exercises actual Worker/D1 binding behaviour.
 No test here measures physical iPad speech or guarantees hosted availability.
 
-Validation on 2026-11-24: TypeScript, lint, 160 unit tests, two setup-helper tests and the production build
+Validation on 2026-11-24: TypeScript, lint, 162 unit tests, two setup-helper tests and the production build
 passed. Eight paired browser tests passed in Windows Chromium/WebKit, including
 project paths, replacement codes and paused edits surviving reload. Existing
 full-app regressions passed 190 tests; four Chromium-only native-touch tests

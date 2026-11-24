@@ -26,7 +26,7 @@ Deliver a **small, accessible, static-hosted TypeScript PWA** for browser live c
 The GitHub App/device-pairing service must pause syncing rather than
 incur hosting charges. ADR 0071 is implemented; the Worker and D1 are deployed,
 with live reads/saves, pairing and pause/revocation verified. Frontend pairing
-is published and verified in Chromium/WebKit (2026-11-24, release d09d906).
+is published and verified in Chromium/WebKit (2026-11-24, release 7e52555).
 The GitHub App is configured. Target free-only
 hosting and storage plans with provider-enforced quotas; do not enable paid
 plans, metered add-ons or automatic paid upgrades without explicit user approval.

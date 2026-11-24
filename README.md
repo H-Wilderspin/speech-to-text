@@ -212,8 +212,8 @@ page is checked. New offline-shell versions wait for old tabs to close unless
 Settings → Update app explicitly activates one. Captions and reading public meals need no API key or hosting
 subscription. Meal editors pair their devices as described above.
 The public Actions variable `VITE_SYNC_SERVICE_URL` enables the deployed family
-service. Release `d09d906` passed CI and published-site pairing/read checks in
+service. Release `7e52555` passed CI and published-site pairing/read checks in
 desktop Chromium and mobile WebKit on 2026-11-24; physical family devices remain
-to be connected. See the [successful deployment](https://github.com/H-Wilderspin/speech-to-text/actions/runs/45440669464).
+to be connected. See the [successful deployment](https://github.com/H-Wilderspin/speech-to-text/actions/runs/45444887729).
 The Pages workflow tests both modes but never deploys the Worker or changes its
 billing plan. See [the deployment checklist](docs/hosted-editing.md).
