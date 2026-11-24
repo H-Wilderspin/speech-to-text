@@ -5,19 +5,24 @@ and older results are in [the archive](archive/feasibility-history.md).
 
 ## Latest published app
 
-Release `532f6a7`, verified 2026-11-24:
-[successful Pages workflow](https://github.com/H-Wilderspin/speech-to-text/actions/runs/45470212237).
+Release `85e3ae8`, verified 2026-11-24:
+[successful Pages workflow](https://github.com/H-Wilderspin/speech-to-text/actions/runs/45475898615).
 
-- Local checks: typecheck, lint, 164 unit tests, two setup-helper tests and build.
-  Browser suite: 192 passed, four expected native-touch skips in WebKit.
-  Family connection suite: eight passed. CI and Pages deployment also passed.
-- Served JavaScript: `assets/index-fJvpXlYe.js`; service worker: `8e14abb03df590d8`.
-- Live checks: Windows Chromium 156.0.8078.4 (1024?900) and WebKit 27.2
-  (iPhone 13 emulation). Verified the accent, 11px weekly tags with 2.2px tracking,
-  no horizontal overflow and 24-hour pairing instructions.
-- Simulated speech/wake providers verified editing interruption, retained
-  confirmed captions, no automatic restart and a wake lock while visible,
-  including after stopping. Public meals were read only.
+- Local checks: typecheck, lint, 173 unit tests, two setup-helper tests, production
+  build, 12 paired-browser tests, Worker bundle and local Worker/D1 smoke checks
+  passed. Full CI browser suites and Pages deployment passed.
+- Served JavaScript: `assets/index-BHC-zNBY.js`; service worker: `4c8833ead49a25c6`.
+- Actual published app: Windows Chromium 156.0.8078.4 (1024 by 900) and WebKit 27.2
+  (iPhone 13 emulation). Verified six-digit instructions, numeric-keypad/autofill
+  hints, live pairing, access after reload and authenticated meal/shopping reads.
+  Temporary devices were revoked; no family data changed.
+- Worker version `07167713-fb46-4413-89b8-1a4b1b6c07ca`; migration 0002 applied.
+  Local Worker/D1 verified issuance, claiming, 429/Retry-After and existing-device
+  access during the pairing limit. Unit tests cover time boundaries, concurrency,
+  leading zeros/collisions, old-code compatibility and fail-closed behaviour.
+  Live checks deliberately did not exhaust the family's pairing budget.
+- Earlier editing/wake-lock checks used simulated speech/wake providers;
+  detailed evidence remains in the archive. Physical acceptance is still pending.
 
 ## Family service
 

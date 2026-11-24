@@ -18,7 +18,7 @@ through a GitHub App. Meals and shopping data live in a separate public reposito
 - In meals, use the week arrows or swipe left/right on touch screens.
   Pull down from a planner's header to refresh both planners; desktop layouts
   have a Refresh icon.
-- **Settings ? Family connection:** enter a code from the family administrator
+- **Settings ? Family connection:** enter a six-digit code from the family administrator
   once per device. Unused codes last 24 hours; connected devices have no routine
   expiry. Viewing public meals and shopping needs no code.
 - **Settings ? Update app** installs the latest release. Stop listening first.
