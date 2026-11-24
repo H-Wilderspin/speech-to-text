@@ -46,7 +46,7 @@ async function enableSplit(page: Page) {
 }
 async function saveNow(page: Page) {
   await refreshPlanners(page);
-  await expect(panel(page).getByRole('status')).toHaveText('Shopping list updated');
+  await expect(panel(page).getByRole('status', { name: 'Shopping updates' })).toHaveText('Shopping list updated');
 }
 async function keyboardMove(page: Page, text: string, key: string) {
   await grip(page, text).press('Space');
@@ -74,7 +74,7 @@ async function open(page: Page, connected = false, base = '/') {
     await toggleCurrentPanel(page);
   }
   await page.getByRole('button', { name: 'Shopping list', exact: true }).click();
-  await expect(panel(page).getByRole('status')).toHaveText('Shopping list updated');
+  await expect(panel(page).getByRole('status', { name: 'Shopping updates' })).toHaveText('Shopping list updated');
 }
 
 test('anonymous reading, responsive splits and shopping toggle work at the project path', async ({ page, context }) => {
@@ -156,7 +156,7 @@ test('local ticks and saves keep the list position stable and preserve checkbox 
   expect(await top()).toBeCloseTo(before, 0);
   expect(state.revisions[path]).toBeUndefined();
   await page.clock.fastForward(30000);
-  await expect(panel(page).getByRole('status')).toHaveText('Shopping list saved');
+  await expect(panel(page).getByRole('status', { name: 'Shopping updates' })).toHaveText('Shopping list saved');
   expect(await top()).toBeCloseTo(before, 0);
 });
 
@@ -243,23 +243,24 @@ test('custom CRUD, bought ticks, order and quick-add persist across devices', as
 test('the supplied household catalogue is available without a data file and malformed lists cannot be overwritten', async ({ page, context }) => {
   const state = await fixture(context); delete state.documents[cataloguePath];
   await open(page, true);
-  await expect(page.locator('.shopping-quick-add button')).toHaveCount(24);
-  await expect(quick(page, 'Puppy pads')).toBeEnabled();
+  await expect(page.locator('.shopping-quick-add button')).toHaveCount(25);
+  await expect(quick(page, 'Volila 60x90 puppy pads')).toBeEnabled();
   await expect(quick(page, 'Semi skimmed milk')).toBeEnabled();
+  await expect(quick(page, 'Cornish gold top milk')).toBeEnabled();
   await expect(quick(page, 'Coffee')).toBeEnabled();
   await page.setViewportSize({ width: 320, height: 844 });
   await page.screenshot({ path: `test-results/shopping-catalogue-${test.info().project.name}.png` });
-  await quick(page, 'Puppy pads').click();
-  await expect(tick(page, 'Puppy pads')).toBeVisible();
-  await expect(quick(page, 'Puppy pads')).toHaveAttribute('aria-pressed', 'true');
+  await quick(page, 'Volila 60x90 puppy pads').click();
+  await expect(tick(page, 'Volila 60x90 puppy pads')).toBeVisible();
+  await expect(quick(page, 'Volila 60x90 puppy pads')).toHaveAttribute('aria-pressed', 'true');
   await saveNow(page);
   state.documents[path] = { version: 9, items: [] };
   await page.reload();
   await page.getByRole('button', { name: 'Shopping list', exact: true }).click();
   await expect(panel(page).getByRole('alert')).toContainText('unsupported');
   await expect(page.getByRole('button', { name: 'Add item', exact: true })).toBeEnabled();
-  await expect(tick(page, 'Puppy pads')).toBeVisible();
-  await tick(page, 'Puppy pads').click();
+  await expect(tick(page, 'Volila 60x90 puppy pads')).toBeVisible();
+  await tick(page, 'Volila 60x90 puppy pads').click();
   await refreshPlanners(page);
   await expect(panel(page).getByRole('alert')).toContainText('unsupported');
   expect(state.documents[path]).toEqual({ version: 9, items: [] });
@@ -289,7 +290,7 @@ test('failed batches retain local changes and conflicts offer a reviewed merge',
   await expect(page.getByRole('group', { name: 'Resolve My milk' })).toContainText('Oat milk');
   await page.getByRole('button', { name: 'Keep mine', exact: true }).click();
   await page.clock.fastForward(2000);
-  await expect(panel(page).getByRole('status')).toHaveText('Shopping list saved');
+  await expect(panel(page).getByRole('status', { name: 'Shopping updates' })).toHaveText('Shopping list saved');
   await expect(labels(page)).toHaveText(['Bread', 'My milk', 'Eggs']);
   await expect(tick(page, 'My milk')).toBeChecked();
   state.failRead = true;
@@ -376,9 +377,9 @@ test('dragging moves across positions once and keyboard pickup supports boundari
   expect(state.revisions[path]).toBeUndefined();
   await grip(page, 'Milk').press('Space');
   await page.keyboard.press('ArrowUp');
-  await expect(panel(page).getByRole('status')).toContainText('Position 1 of 3');
+  await expect(panel(page).getByRole('status', { name: 'Shopping updates' })).toContainText('Position 1 of 3');
   await page.keyboard.press('End');
-  await expect(panel(page).getByRole('status')).toContainText('Position 3 of 3');
+  await expect(panel(page).getByRole('status', { name: 'Shopping updates' })).toContainText('Position 3 of 3');
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Escape');
   await expect(panel(page)).toBeVisible();
@@ -421,7 +422,7 @@ test('quick delete updates locally, retains failed batches and protects concurre
   await page.getByRole('button', { name: 'Retry saving', exact: true }).click();
   await expect(page.getByRole('group', { name: 'Resolve Milk' })).toContainText('Milk (bought)');
   await page.getByRole('button', { name: 'Keep mine', exact: true }).click();
-  await expect(panel(page).getByRole('status')).toHaveText('Shopping list saved');
+  await expect(panel(page).getByRole('status', { name: 'Shopping updates' })).toHaveText('Shopping list saved');
   await expect(tick(page, 'Milk')).toHaveCount(0);
   await expect(quick(page, 'Milk')).toBeEnabled();
   await page.getByRole('button', { name: 'Delete Bread', exact: true }).click();
@@ -441,7 +442,7 @@ test('a long list scrolls during dragging and queues the dropped order', async (
   const pane = (await panel(page).boundingBox())!;
   await page.mouse.move(source.x + 24, source.y + 24); await page.mouse.down();
   await page.mouse.move(pane.x + pane.width / 2, pane.y + pane.height - 12, { steps: 5 });
-  await expect(panel(page).getByRole('status')).toContainText('Position 12 of 12');
+  await expect(panel(page).getByRole('status', { name: 'Shopping updates' })).toContainText('Position 12 of 12');
   expect(state.revisions[path]).toBeUndefined();
   const reads = state.reads.length;
   await page.evaluate(() => window.dispatchEvent(new Event('focus')));
@@ -569,13 +570,13 @@ test('local edits batch after two seconds of inactivity; clean and net-zero chan
   await keyboardMove(page, 'Eggs', 'Home');
   await expect(labels(page)).toHaveText(['Eggs', 'Milk', 'Bread']);
   await expect(tick(page, 'Milk')).toBeChecked();
-  await expect(panel(page).getByRole('status')).toContainText('Changes waiting to save');
+  await expect(panel(page).getByRole('status', { name: 'Shopping updates' })).toContainText('Changes waiting to save');
   expect(state.revisions[path]).toBeUndefined();
   await page.clock.fastForward(1000);
   expect(state.revisions[path]).toBeUndefined();
   await page.clock.fastForward(1000);
   await expect.poll(() => state.revisions[path]).toBe(2);
-  await expect(panel(page).getByRole('status')).toHaveText('Shopping list saved');
+  await expect(panel(page).getByRole('status', { name: 'Shopping updates' })).toHaveText('Shopping list saved');
   expect((state.documents[path] as { items: ShoppingItem[] }).items.map(item => item.text)).toEqual(['Eggs', 'Milk', 'Bread']);
   await page.clock.fastForward(30000);
   await expect.poll(() => state.revisions[path]).toBe(2);
@@ -713,7 +714,7 @@ test('Refresh appears only with desktop input and width, with no empty footer co
     await expect(footer.locator('button:visible')).toHaveCount(buttons);
     const columns = await footer.evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ').length);
     expect(columns).toBe(width <= 431 ? 5 : buttons);
-    await expect(footer.getByRole('status').filter({ hasText: 'All changes saved' })).toHaveCount(1);
+    await expect(footer.locator('.saving-indicator')).toHaveCount(1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
 });

@@ -13,6 +13,7 @@ export function useShoppingSync({ client, token, active, refresh, reordering }: 
   const snapshot = useSyncDocument(client, store, active, refresh);
   const [regularItems, setRegularItems] = useState<readonly string[]>(bundledItems);
   const [localError, setLocalError] = useState('');
+  const [removal, setRemoval] = useState<{ edit: ShoppingEdit; inverse: Extract<ShoppingEdit, { type: 'restore' }> } | null>(null);
   const [announcement, setAnnouncement] = useState<{ message: string; snapshot: typeof snapshot } | null>(null);
   const previousRefresh = useRef(refresh);
   useEffect(() => {
@@ -54,14 +55,21 @@ export function useShoppingSync({ client, token, active, refresh, reordering }: 
         edit = { type: 'put', id: change.id, previous, item };
       }
       setLocalError(''); setAnnouncement(null);
-      return store.change(edit);
+      const changed = store.change(edit);
+      if (changed && change.type === 'remove') setRemoval({ edit,
+        inverse: { type: 'restore', id: change.id, item: change.previous, order: items.map(item => item.id) } });
+      return changed;
     } catch (error) { setLocalError(error instanceof Error ? error.message : 'Could not change this item.'); return false; }
   };
   const status = (announcement?.snapshot === snapshot ? announcement.message : '') || (snapshot.saving ? 'Saving shopping changes' : snapshot.pending ? 'Shopping changes waiting to sync' : snapshot.status === 'Saved' ? 'Shopping list saved' : snapshot.loaded ? 'Shopping list updated' : 'Loading shopping list');
   return { items: snapshot.value.items, regularItems, loaded: snapshot.loaded, status,
     error: localError || snapshot.error, saving: snapshot.saving, dirty: snapshot.pending > 0,
     conflicts: snapshot.conflicts, remoteItems: store.getRemote().items,
-    change, flush: store.flush,
+    change, flush: store.flush, removedItem: removal?.inverse.item,
+    undoRemoval: () => {
+      if (!removal || !store.undoChange(removal.edit, removal.inverse)) return false;
+      setRemoval(null); return true;
+    }, dismissRemoval: () => setRemoval(null),
     resolveConflict: (key: string, keepLocal: boolean) => store.resolve(key, keepLocal),
     invalidate: () => store.hold(reordering.current), setStatus: (message: string) => setAnnouncement({ message, snapshot: store.getSnapshot() }), clearError: () => setLocalError('') };
 }

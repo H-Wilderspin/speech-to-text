@@ -5,6 +5,7 @@ export type ShoppingDocument = { version: 1; items: ShoppingList };
 export type ShoppingEdit =
   | { type: 'put'; id: string; previous?: ShoppingItem; item: ShoppingItem; allowDuplicate?: boolean }
   | { type: 'remove'; id: string; previous: ShoppingItem }
+  | { type: 'restore'; id: string; item: ShoppingItem; order: string[] }
   | { type: 'move'; id: string; previousOrder: string[]; order: string[] };
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 const key = (edit: ShoppingEdit) => edit.type === 'move' ? '$order' : edit.id;
@@ -18,6 +19,18 @@ export const shoppingDocument: DocumentAdapter<ShoppingDocument, ShoppingEdit> =
   apply(document, edit, force) {
     const items = document.items;
     const current = items.find(item => item.id === edit.id);
+    if (edit.type === 'restore') {
+      parseShoppingList({ version: 1, items: [edit.item] });
+      // An undo restores a missing row, never overwrites a newer row or duplicates it.
+      if (current || items.some(item => itemName(item.text) === itemName(edit.item.text))) return document;
+      const next = [...items];
+      const position = edit.order.indexOf(edit.id);
+      const after = edit.order.slice(position + 1).find(id => next.some(item => item.id === id));
+      const before = edit.order.slice(0, position).reverse().find(id => next.some(item => item.id === id));
+      const index = after ? next.findIndex(item => item.id === after) : before ? next.findIndex(item => item.id === before) + 1 : next.length;
+      next.splice(index, 0, edit.item);
+      return { version: 1, items: next };
+    }
     if (edit.type === 'remove') {
       if (current && !same(current, edit.previous) && !force) throw new EditConflict();
       return { version: 1, items: items.filter(item => item.id !== edit.id) };

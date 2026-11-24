@@ -45,6 +45,53 @@ async function open(page: Page, screen: 'Shopping list' | 'Meal planner') {
 }
 const refresh = refreshPlanners;
 
+test('shopping drafts recover after reload and reopening, and Cancel clears them without a shared write', async ({ page, context }) => {
+  const state = await fixture(context); await open(page, 'Shopping list');
+  await page.getByRole('button', { name: 'Edit Milk', exact: true }).click();
+  await page.getByLabel('Shopping item', { exact: true }).fill('Unfinished milk wording');
+  await expect(page.locator('.activity-status .saving-indicator')).toContainText('Draft kept on this device');
+  await page.reload(); await page.getByRole('button', { name: 'Shopping list', exact: true }).click();
+  await expect(page.getByLabel('Shopping item', { exact: true })).toHaveValue('Unfinished milk wording');
+  expect(state.puts).toBe(0);
+  await page.close();
+  const reopened = await context.newPage(); await open(reopened, 'Shopping list');
+  await expect(reopened.getByLabel('Shopping item', { exact: true })).toHaveValue('Unfinished milk wording');
+  await reopened.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await reopened.reload(); await reopened.getByRole('button', { name: 'Shopping list', exact: true }).click();
+  await expect(reopened.getByLabel('Shopping item', { exact: true })).toHaveCount(0);
+  expect(state.puts).toBe(0);
+});
+
+test('a meal draft restores its week and scope after reload and detects a newer family default', async ({ page, context }) => {
+  const state = await fixture(context); await open(page, 'Meal planner');
+  await page.getByRole('button', { name: 'Next week', exact: true }).click();
+  await page.getByRole('button', { name: /^Monday 26 Oct, Breakfast:/ }).click();
+  await page.locator('#meal-scope').selectOption('default');
+  await page.locator('#meal-text').fill('Porridge draft');
+  await page.reload(); await page.getByRole('button', { name: 'Meal planner', exact: true }).click();
+  await expect(page.locator('#meal-text')).toHaveValue('Porridge draft');
+  await expect(page.locator('#meal-scope')).toHaveValue('default');
+  expect(state.puts).toBe(0);
+  state.documents['defaults.json'] = { version: 1, meals: { 'monday/breakfast': 'Family eggs' } }; state.revision++;
+  await page.getByRole('button', { name: 'Save', exact: true }).click(); await refresh(page);
+  await expect(page.getByRole('group', { name: 'Resolve Monday 26 Oct Breakfast weekly default' })).toContainText('Family eggs');
+});
+
+test('Undo restores a saved shopping deletion and its position, with visible sync status on mobile', async ({ page, context }) => {
+  const state = await fixture(context); await open(page, 'Shopping list');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('button', { name: 'Delete Milk', exact: true }).click();
+  await expect(page.locator('.saving-indicator')).toContainText('Saved on this device');
+  await refresh(page);
+  await expect.poll(() => state.documents[listPath]?.items).toEqual([{ id: 'bread', text: 'Bread', checked: false }]);
+  await expect(page.locator('.saving-indicator')).toHaveText('Saved');
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  await expect(page.locator('.shopping-item-name')).toHaveText(['Milk', 'Bread']);
+  await refresh(page);
+  await expect.poll(() => state.documents[listPath]?.items).toEqual([{ id: 'milk', text: 'Milk', checked: false }, { id: 'bread', text: 'Bread', checked: false }]);
+  await expect(page.locator('.shopping-undo')).toHaveCount(0);
+});
+
 test('editing and navigation continue during a shopping write; its response cannot erase newer edits', async ({ page, context }) => {
   const state = await fixture(context); await open(page, 'Shopping list');
   await expect(page.getByRole('checkbox', { name: 'Bought Milk', exact: true })).toBeEnabled();

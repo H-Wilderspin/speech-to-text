@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { dateKey, defaultMealKey, mealKey, mealSlots, resolvedMeal, weekdayNames, weekDays, type MealValue } from './calendar';
+import { dateKey, defaultMealKey, mealKey, mealSlots, resolvedMeal, weekdayNames, weekDays } from './calendar';
 import type { PlannerSync } from '../planners/planner-sync';
 import { useSyncDocument } from '../planners/use-sync-document';
+import type { MealDraft } from '../planners/drafts';
 const dayLabel = (date: Date) => date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' });
-type MealEditor = { key: string; defaultKey: string; label: string; repeatLabel: string; previous: MealValue; defaultPrevious: MealValue; text: string };
-type Draft = { edit: MealEditor | null; scope: 'date' | 'default'; text: string };
 
 export function MealWeek({ client, start, today, token, refresh, active, onEdit }: {
   client: PlannerSync; active: boolean; start: Date; today: string; token: string; refresh: number;
@@ -18,8 +17,8 @@ export function MealWeek({ client, start, today, token, refresh, active, onEdit 
   const plan = weekly.value.meals;
   const defaults = recurring.value.meals;
   const loaded = weekly.loaded && recurring.loaded;
-  const savedDraft = client.getDraft<Draft>(week);
-  const [edit, setEdit] = useState<MealEditor | null>(savedDraft?.edit ?? null);
+  const savedDraft = client.getDraft<MealDraft>(week);
+  const [edit, setEdit] = useState<MealDraft['edit'] | null>(savedDraft?.edit ?? null);
   const [scope, setScope] = useState<'date' | 'default'>(savedDraft?.scope ?? 'date');
   const [text, setText] = useState(savedDraft?.text ?? '');
   const error = weekly.error || recurring.error;

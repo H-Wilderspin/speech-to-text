@@ -2,6 +2,7 @@ import { mealDocument } from '../meals/meal-document';
 import { shoppingDocument } from '../shopping/shopping-document';
 import { readLocal } from './local-store';
 import { SyncDocument, type DocumentAdapter } from './sync-document';
+import { PlannerDrafts } from './drafts';
 
 // A client lives for the app session, not for a visible screen. Hiding a planner
 // therefore never abandons its local queue or stops its background saves.
@@ -11,8 +12,8 @@ export class PlannerSync {
   private token = '';
   private channel?: BroadcastChannel;
   private accessError: (token: string) => void = () => undefined;
-  private state = { pending: 0, saving: false, durable: true, conflict: false };
-  private drafts = new Map<string, unknown>();
+  private state = { pending: 0, saving: false, durable: true, conflict: false, confirmed: false, error: false, drafts: 0, draftsDurable: true };
+  private drafts = new PlannerDrafts();
   ready: Promise<void> = Promise.resolve();
   getSnapshot = () => this.state;
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
@@ -20,7 +21,9 @@ export class PlannerSync {
     const snapshots = [...this.documents.values()].map(document => document.getSnapshot());
     this.state = { pending: snapshots.reduce((sum, snapshot) => sum + snapshot.pending, 0),
       saving: snapshots.some(snapshot => snapshot.saving), durable: snapshots.every(snapshot => snapshot.durable),
-      conflict: snapshots.some(snapshot => snapshot.conflicts.length > 0) };
+      conflict: snapshots.some(snapshot => snapshot.conflicts.length > 0),
+      confirmed: snapshots.some(snapshot => snapshot.confirmed), error: snapshots.some(snapshot => !!snapshot.error),
+      drafts: this.drafts.count, draftsDurable: this.drafts.durable };
     for (const listener of this.listeners) listener();
   };
   document<T, C>(path: string, adapter: DocumentAdapter<T, C>): SyncDocument<T, C> {
@@ -33,8 +36,9 @@ export class PlannerSync {
   }
   meals(week?: string) { return this.document(week ? `weeks/${week}.json` : 'defaults.json', mealDocument(week)); }
   shopping() { return this.document('shopping/list.json', shoppingDocument); }
-  getDraft<T>(key: string): T | null { return this.drafts.get(key) as T ?? null; }
-  setDraft(key: string, value: unknown) { if (value === null) this.drafts.delete(key); else this.drafts.set(key, value); }
+  getDraft<T>(key: string): T | null { return this.drafts.get<T>(key); }
+  draftWeek() { return this.drafts.latestMealWeek(); }
+  setDraft(key: string, value: unknown) { this.drafts.set(key, value); this.notify(); }
   private restore = async () => {
     try {
       const stored = await readLocal();
@@ -65,10 +69,11 @@ export class PlannerSync {
   private written = () => { this.channel?.postMessage('changed'); };
   private wake = () => { for (const document of this.documents.values()) document.wake(); };
   private beforeUnload = (event: BeforeUnloadEvent) => {
-    if (!this.state.durable) { event.preventDefault(); event.returnValue = ''; }
+    if (!this.state.durable || !this.state.draftsDurable) { event.preventDefault(); event.returnValue = ''; }
   };
   async safeToLeave() {
     await this.ready;
+    if (!this.drafts.durable) return false;
     return (await Promise.all([...this.documents.values()].map(document => document.safeToLeave()))).every(Boolean);
   }
   async navigate() {

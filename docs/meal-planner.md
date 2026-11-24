@@ -2,6 +2,7 @@
 
 Open Meal planner from the footer. It shows Monday?Sunday with Breakfast, Lunch
 and Dinner. Use the arrows or swipe left/right on touch screens to change weeks.
+When viewing another week, **Go to this week** stays at the panel bottom and hides while editing.
 The date sits beneath the title; Today is highlighted. For shared layout and
 refresh controls, see [the interface guide](interface-style.md).
 
@@ -13,7 +14,9 @@ Builds without a service URL retain [legacy token access](hosted-editing.md#lega
 
 Tap a meal to edit it. Opening the editor stops listening; Save or Cancel does
 not restart it. Save applies the change locally and queues a background save.
-Draft text survives screen/week switches in the current session, but not reloads.
+Draft text and its date/default scope survive screen switches, reloads and reopening
+on this device. Opening meals recovers the most recent draft's week. Save submits
+the draft; Cancel clears it. Newer family edits still go through conflict review.
 
 - **This date only** sets a dated override.
 - **Every [weekday] [meal]** sets a weekly default, including past weeks without

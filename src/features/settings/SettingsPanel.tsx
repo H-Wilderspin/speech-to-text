@@ -5,11 +5,13 @@ import { DeviceAccessSettings } from '../meals/DeviceAccessSettings';
 import { familyServiceUrl, isDeviceToken } from '../planners/family-service';
 import type { MealAccess } from '../meals/editor-token';
 import { AppUpdate } from './AppUpdate';
+import type { ColourTheme } from './preferences';
 
-export function SettingsPanel({ active, beforeUpdate, textSize, onTextSize, language, onLanguage, installFailed, onBusy, onUpdating, wakeStatus, mealAccess, onMealToken, needsToken, onAccessError }: {
+export function SettingsPanel({ active, beforeUpdate, textSize, onTextSize, language, onLanguage, theme, onTheme, installFailed, onBusy, onUpdating, wakeStatus, mealAccess, onMealToken, needsToken, onAccessError }: {
   active: boolean; textSize: number; onTextSize: (size: number) => void;
   beforeUpdate: () => Promise<boolean>;
   language: string; onLanguage: (language: string) => void; installFailed: boolean;
+  theme: ColourTheme; onTheme: (theme: ColourTheme) => void;
   onBusy: (busy: boolean) => void; onUpdating: (updating: boolean) => void;
   wakeStatus?: WakeStatus;
   mealAccess: MealAccess; onMealToken: (token: string) => void; needsToken: boolean;
@@ -43,6 +45,17 @@ export function SettingsPanel({ active, beforeUpdate, textSize, onTextSize, lang
           <option value="fr-FR">Français</option><option value="de-DE">Deutsch</option><option value="es-ES">Español</option>
         </select>
       </label>
+    </section>
+    <section className="appearance-preferences" aria-label="Appearance">
+      <div className="display-control">
+        <label htmlFor="colour-theme">Colour theme</label>
+        <select id="colour-theme" value={theme} onChange={event => onTheme(event.target.value as ColourTheme)}>
+          <option value="earth">Earthy greens</option>
+          <option value="coral">Coral — high contrast</option>
+          <option value="navy">Navy blue / grey</option>
+        </select>
+      </div>
+      <p className="appearance-note">Your colour theme is remembered on this device.</p>
     </section>
     <AccessSettings needsToken={needsToken} onAccessError={onAccessError} access={mealAccess} onToken={onMealToken} onBusy={setConnecting} />
     </fieldset>

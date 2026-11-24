@@ -19,7 +19,10 @@ export function Planner({ client, token, visible, layout, refresh, kind, busy, o
   kind: PlannerKind; busy: boolean; onBusy: (busy: boolean) => void; token: string; visible: boolean; layout: PlannerLayout;
 }) {
   const [today, setToday] = useState(() => new Date());
-  const [start, setStart] = useState(() => monday(new Date()));
+  const [start, setStart] = useState(() => {
+    const draftWeek = client.draftWeek();
+    return draftWeek ? new Date(`${draftWeek}T12:00:00`) : monday(new Date());
+  });
   const panel = useRef<HTMLElement>(null);
   const changeWeek = useCallback((direction: number) => setStart(value => addDays(value, direction * 7)), []);
   useWeekSwipe(panel, visible && kind === 'meals' && !busy, changeWeek);
@@ -57,12 +60,12 @@ export function Planner({ client, token, visible, layout, refresh, kind, busy, o
       {kind === 'meals' && <button className="icon-button" aria-label="Next week" disabled={busy} onClick={() => changeWeek(1)}><Icon name="next" /></button>}
     </header>
     {pull.pulling && <p className="pull-refresh-status" role="status">{pull.ready ? 'Release to sync and refresh' : 'Pull down to sync and refresh'}</p>}
-    <div className={kind === 'shopping' ? 'meal-content shopping-content' : 'meal-content'}>
-      <div className="week-navigation" hidden={kind === 'shopping' || week === thisWeek}>
-        {week !== thisWeek && <button className="this-week" disabled={busy} onClick={() => setStart(monday(new Date()))}>This week</button>}
-      </div>
+    <div className="meal-content">
       <div hidden={kind !== 'meals'}><MealWeek client={client} key={week} start={start} today={dateKey(today)} token={token} refresh={refresh} active={visible && kind === 'meals'} onEdit={onEdit} /></div>
       <div className="shopping-view" hidden={kind !== 'shopping'}><ShoppingList client={client} token={token} refresh={refresh} onBusy={onBusy} active={visible && kind === 'shopping'} onEdit={onEdit} /></div>
+      {kind === 'meals' && week !== thisWeek && <div className="meal-footer">
+        <button className="this-week" disabled={busy} onClick={() => setStart(monday(new Date()))}>Go to this week</button>
+      </div>}
     </div>
   </section>;
 }

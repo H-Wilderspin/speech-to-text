@@ -29,7 +29,7 @@ export function AppUpdate({ active, beforeUpdate, busy, onBusy }: {
     </button>
     <p id="update-help">{active ? 'Stop listening before updating.'
       : 'If the app looks out of date, tap Update app. It will reopen with the latest version.'}</p>
-    <p id="update-keeps">Your saved settings and connection stay. Current captions and text you have not saved will clear.</p>
+    <p id="update-keeps">Your settings, connection and planner drafts stay on this device. Current captions will clear.</p>
     {updating && <p role="status">Downloading the latest app…</p>}
     {error && <p className="notice error" role="alert">{error}</p>}
   </section>;

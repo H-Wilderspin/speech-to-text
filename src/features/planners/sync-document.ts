@@ -14,7 +14,7 @@ export interface DocumentAdapter<T, C> {
 export type ItemConflict<C> = { key: string; change: C };
 export type SyncSnapshot<T, C> = {
   value: T; loaded: boolean; pending: number; saving: boolean; durable: boolean;
-  error: string; conflicts: ItemConflict<C>[]; status: string;
+  error: string; conflicts: ItemConflict<C>[]; status: string; confirmed: boolean;
 };
 export class EditConflict extends Error {}
 const equal = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
@@ -36,6 +36,7 @@ export class SyncDocument<T, C> {
   private listeners = new Set<() => void>();
   private persisted = new Set<string>();
   private removed = new Set<string>(); // Ignore stale tab snapshots after a local acknowledgement/choice.
+  private unsavedRemovals = new Set<string>();
   private timer: ReturnType<typeof setTimeout> | undefined;
   private poll: ReturnType<typeof setInterval> | undefined;
   private firstPending = 0;
@@ -54,7 +55,7 @@ export class SyncDocument<T, C> {
   constructor(readonly path: string, readonly adapter: DocumentAdapter<T, C>,
     private notify: () => void, private accessError: (token: string) => void) {
     this.remote = adapter.empty;
-    this.snapshot = { value: adapter.empty, loaded: false, pending: 0, saving: false, durable: true, error: '', conflicts: [], status: 'Loading' };
+    this.snapshot = { value: adapter.empty, loaded: false, pending: 0, saving: false, durable: true, error: '', conflicts: [], status: 'Loading', confirmed: false };
   }
   getSnapshot = () => this.snapshot;
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
@@ -93,7 +94,7 @@ export class SyncDocument<T, C> {
     }
     if (equal(value, this.snapshot.value)) value = this.snapshot.value;
     this.snapshot = { ...this.snapshot, ...changes, value, conflicts, pending: this.edits.length,
-      durable: this.edits.every(edit => this.persisted.has(edit.id)) };
+      durable: this.unsavedRemovals.size === 0 && this.edits.every(edit => this.persisted.has(edit.id)) };
     for (const listener of this.listeners) listener();
     this.notify();
   }
@@ -128,6 +129,7 @@ export class SyncDocument<T, C> {
   }
   hold(value: boolean) { this.held = value; if (!value) { this.emit(); this.schedule(); } }
   private persist(add: PendingEdit<C>[], remove: string[] = [], value?: T) {
+    for (const id of remove) this.unsavedRemovals.add(id);
     const operation = this.persistence.catch(() => undefined).then(() => writeLocal({
       add, remove, document: value === undefined ? undefined : { id: this.path, value },
     }));
@@ -135,9 +137,10 @@ export class SyncDocument<T, C> {
     void operation.then(() => {
       for (const edit of add) this.persisted.add(edit.id);
       for (const id of remove) this.persisted.delete(id);
+      for (const id of remove) this.unsavedRemovals.delete(id);
       this.emit();
       this.notifyPeers();
-    }).catch(() => { if (this.edits.length) this.emit({ error: 'This browser could not keep changes on this device. Keep the app open until they are saved to GitHub.' }); });
+    }).catch(() => { if (this.edits.length || this.unsavedRemovals.size) this.emit({ error: 'This browser could not keep changes on this device. Keep the app open until they are saved to GitHub.' }); });
     return operation;
   }
   private notifyPeers() {
@@ -167,6 +170,25 @@ export class SyncDocument<T, C> {
     this.retryAt = 0;
     this.schedule();
   }
+  // Cancel our queued operation, or compensate if it may already be on the server.
+  // The adapter's inverse must preserve concurrent family changes.
+  undoChange(change: C, inverse: C): boolean {
+    const pending = this.edits.find(edit => edit.change === change);
+    const add = this.running || !pending
+      ? [{ id: crypto.randomUUID(), document: this.path, time: timestamp(), change: inverse }] : [];
+    try { for (const edit of add) this.adapter.apply(this.snapshot.value, edit.change, true); }
+    catch { return false; }
+    const remove = pending ? [pending.id] : [];
+    for (const id of remove) this.removed.add(id);
+    for (const id of remove) this.unsavedRemovals.add(id);
+    this.edits = [...this.edits.filter(edit => !remove.includes(edit.id)), ...add];
+    this.firstPending = this.edits.length ? Date.now() : 0;
+    this.retryAt = 0;
+    this.emit({ error: '' });
+    void this.persist(add, remove);
+    this.schedule();
+    return true;
+  }
   private schedule() {
     clearTimeout(this.timer);
     if (this.disposed || !this.token || !this.edits.length || this.held || this.running) return;
@@ -182,7 +204,7 @@ export class SyncDocument<T, C> {
         const file = await readJsonFile(this.path, token);
         if (this.disposed || this.held) return;
         this.remote = file.value === undefined ? this.adapter.empty : this.adapter.parse(file.value);
-        this.emit({ loaded: true, error: this.edits.length ? this.snapshot.error : '', status: 'Up to date' });
+        this.emit({ loaded: true, confirmed: true, error: this.edits.length ? this.snapshot.error : '', status: 'Up to date' });
         await this.persist([], [], this.remote).catch(() => undefined);
       } catch (error) { this.failed(error, token); }
       finally { this.reading = undefined; }
@@ -192,7 +214,7 @@ export class SyncDocument<T, C> {
   private failed(error: unknown, token: string) {
     if (error instanceof GitHubAccessError || error instanceof DeviceAccessError) this.accessError(token);
     if (error instanceof SyncPausedError) this.serviceRetryAt = Math.max(this.serviceRetryAt, error.retryAt);
-    this.emit({ error: error instanceof Error ? error.message : 'Could not sync. Your changes are kept here.', status: 'Waiting to sync' });
+    this.emit({ confirmed: false, error: error instanceof Error ? error.message : 'Could not sync. Your changes are kept here.', status: 'Waiting to sync' });
   }
   flush = (): Promise<boolean> => {
     if (this.running) return this.running;
@@ -236,7 +258,7 @@ export class SyncDocument<T, C> {
           this.failures = 0;
           this.retryAt = blocked.size ? Date.now() + 30000 : 0;
           this.firstPending = this.edits.length ? Date.now() : 0;
-          this.emit({ loaded: true, error: '', status: this.edits.length ? 'Changes waiting to sync' : 'Saved' });
+          this.emit({ loaded: true, confirmed: true, error: '', status: this.edits.length ? 'Changes waiting to sync' : 'Saved' });
           return this.edits.length === 0;
         }
         throw new Error('Other family changes are being saved. Your changes will retry shortly.');
@@ -250,6 +272,10 @@ export class SyncDocument<T, C> {
   };
   async safeToLeave(): Promise<boolean> {
     await this.persistence.catch(() => undefined);
+    if (this.unsavedRemovals.size) {
+      try { await this.persist([], [...this.unsavedRemovals], this.remote); }
+      catch { return false; }
+    }
     if (this.snapshot.durable) { void this.flush(); return true; }
     return this.flush();
   }

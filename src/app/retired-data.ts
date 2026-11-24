@@ -7,7 +7,7 @@ export async function removeRetiredData(appUrl: URL): Promise<void> {
     if (raw) {
       const value = JSON.parse(raw);
       if (value && typeof value === 'object' && ['colours', 'hiddenSpeakers', 'assignedCollapsed'].some((field) => field in value)) {
-        localStorage.setItem(key, JSON.stringify({ textSize: value.textSize, language: value.language }));
+        localStorage.setItem(key, JSON.stringify({ textSize: value.textSize, language: value.language, theme: value.theme }));
       }
     }
   } catch { /* Restricted storage must not prevent live captions. */ }

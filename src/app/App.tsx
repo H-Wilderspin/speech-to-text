@@ -11,13 +11,15 @@ import { Planner, type PlannerKind } from '../features/planners/Planner';
 import { usePlannerLayout } from '../features/planners/use-planner-layout';
 import { useMealAccess } from '../features/meals/use-meal-access';
 import { PlannerSync } from '../features/planners/planner-sync';
+import { savingStatus } from '../features/planners/saving-status';
 
 export function App({ engine }: { engine: TranscriptionEngine }) {
   const snapshot = useSyncExternalStore(engine.subscribe, engine.getSnapshot);
   const wakeStatus = useScreenWakeLock();
   const stopForEditing = useCallback(() => engine.interrupt('editing'), [engine]);
   const [preferences, setPreferences] = useState(readPreferences);
-  const { textSize, language } = preferences;
+  const { textSize, language, theme } = preferences;
+  useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
   const changePreferences = (changes: Partial<typeof preferences>) => {
     setPreferences((current) => { const next = { ...current, ...changes }; savePreferences(next); return next; });
   };
@@ -62,6 +64,7 @@ export function App({ engine }: { engine: TranscriptionEngine }) {
   const [offline, setOffline] = useState(!navigator.onLine);
   const [installFailed, setInstallFailed] = useState(false);
   const active = ['requesting-permission', 'listening', 'restarting', 'stopping'].includes(snapshot.phase);
+  const saving = savingStatus(syncState, offline, needsToken || !mealAccess.token);
 
   useEffect(() => {
     const unwatch = watchInterruptions(() => engine.interrupt());
@@ -94,12 +97,17 @@ export function App({ engine }: { engine: TranscriptionEngine }) {
     </section>
     {planner && <Planner client={sync} visible={!settingsOpen} kind={planner} token={mealAccess.token} layout={plannerLayout} refresh={refresh} onRefresh={refreshPlanners} busy={plannerBusy} onBusy={setPlannerBusy} onEdit={stopForEditing} />}
     {settingsOpen && <SettingsPanel active={active} beforeUpdate={() => sync.safeToLeave()} textSize={textSize} onTextSize={(textSize) => changePreferences({ textSize })}
+      theme={theme} onTheme={theme => changePreferences({ theme })}
       language={language} onLanguage={(language) => changePreferences({ language })} installFailed={installFailed} wakeStatus={wakeStatus}
       mealAccess={mealAccess} onMealToken={connectMeals} needsToken={needsToken} onAccessError={onAccessError}
       onBusy={setSettingsBusy} onUpdating={setUpdating} />}
     </main>
     <footer className={splitAvailable ? "toolbar has-split" : "toolbar"} aria-label="App controls">
-      <ListeningIndicator phase={snapshot.phase} />
+      <div className="activity-status">
+        <ListeningIndicator phase={snapshot.phase} />
+        {active && saving.text && <span className="activity-divider" aria-hidden="true">|</span>}
+        <p className="saving-indicator" data-tone={saving.tone} role="status" aria-live="polite" aria-atomic="true">{saving.text}</p>
+      </div>
       <button className={active ? 'listen is-active' : 'listen'} disabled={updating || Boolean(engine.unavailableReason) || snapshot.phase === 'stopping'}
         aria-describedby="processing-note" onClick={() => active ? engine.stop() : engine.start(language)}>
         {snapshot.phase === 'stopping' ? 'Stopping…' : active ? 'Stop' : 'Listen'}
@@ -109,8 +117,7 @@ export function App({ engine }: { engine: TranscriptionEngine }) {
         disabled={plannerBusy || settingsBusy} onClick={event => void navigatePlanner(null, false, event.currentTarget)}><Icon name="captions" /></button>
       <button className="icon-button" aria-label="Meal planner" title="Meal planner" aria-controls="planner-panel" aria-expanded={!settingsOpen && planner === 'meals'} disabled={plannerBusy || settingsBusy} ref={mealButton} onClick={() => togglePlanner('meals')}><Icon name="meals" /></button>
       <button className="icon-button" aria-label="Shopping list" title="Shopping list" aria-controls="planner-panel" aria-expanded={!settingsOpen && planner === 'shopping'} disabled={plannerBusy || settingsBusy} ref={shoppingButton} onClick={() => togglePlanner('shopping')}><Icon name="shopping" /></button>
-      <button className="icon-button desktop-refresh" aria-label="Refresh" title="Refresh meals and shopping" disabled={!planner || plannerBusy || settingsBusy} onClick={refreshPlanners}><Icon name="refresh" /><span className="sync-dot" data-state={syncState.conflict ? 'conflict' : syncState.saving ? 'saving' : syncState.pending ? 'pending' : 'saved'} aria-hidden="true" /></button>
-      <span className="sr-only" role="status">{!syncState.durable ? 'Changes not yet saved on this device' : syncState.conflict ? 'Family changes need review' : syncState.saving ? 'Saving changes' : syncState.pending ? 'Changes kept on this device, waiting to sync' : 'All changes saved'}</span>
+      <button className="icon-button desktop-refresh" aria-label="Refresh" title="Refresh meals and shopping" disabled={!planner || plannerBusy || settingsBusy} onClick={refreshPlanners}><Icon name="refresh" /></button>
       {splitAvailable && <button className="icon-button split-button" aria-label="Split view" aria-pressed={plannerLayout === 'split'}
         title={plannerLayout === 'split' ? 'Turn split view off' : 'Show captions on the left'} disabled={!panelOpen || plannerBusy || settingsBusy}
         onClick={event => { event.currentTarget.focus(); setPlannerLayout(plannerLayout === 'split' ? 'full' : 'split'); }}><Icon name="split" /></button>}

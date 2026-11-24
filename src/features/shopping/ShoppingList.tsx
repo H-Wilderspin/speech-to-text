@@ -4,22 +4,33 @@ import { itemName, type ShoppingChange, type ShoppingItem } from './items';
 import { useShoppingReorder } from './use-shopping-reorder';
 import { useShoppingSync } from './use-shopping-sync';
 import type { PlannerSync } from '../planners/planner-sync';
+import type { ShoppingDraft } from '../planners/drafts';
 
 export function ShoppingList({ client, token, active, refresh, onBusy, onEdit }: {
   token: string; active: boolean; refresh: number; onBusy: (busy: boolean) => void;
   onEdit: () => void;
   client: PlannerSync;
 }) {
-  const draft = client.getDraft<{ edit: { id: string; previous?: ShoppingItem }; text: string }>('shopping');
+  const draft = client.getDraft<ShoppingDraft>('shopping');
   const [edit, setEdit] = useState<{ id: string; previous?: ShoppingItem } | null>(draft?.edit ?? null);
   const [text, setText] = useState(draft?.text ?? '');
   useEffect(() => { client.setDraft('shopping', edit ? { edit, text } : null); }, [client, edit, text]);
   const input = useRef<HTMLInputElement>(null);
+  const footer = useRef<HTMLDivElement>(null);
   const focusTarget = useRef('');
   const quickAddAnchor = useRef<{ button: HTMLButtonElement; top: number } | null>(null);
   const reorderingRef = useRef(false);
-  const { items, regularItems, loaded, status, error, saving, dirty, conflicts, remoteItems, change, flush, resolveConflict, invalidate, setStatus, clearError } =
+  const { items, regularItems, loaded, status, error, saving, dirty, conflicts, remoteItems, change, flush, resolveConflict, invalidate, setStatus, clearError, removedItem, undoRemoval, dismissRemoval } =
     useShoppingSync({ client, token, active, refresh, reordering: reorderingRef });
+  useLayoutEffect(() => {
+    const element = footer.current;
+    const pane = element?.closest<HTMLElement>('.planner-panel');
+    if (!active || !element || !pane) return;
+    const measure = () => pane.style.setProperty('--planner-footer-height', `${element.getBoundingClientRect().height + 8}px`);
+    measure();
+    const observer = new ResizeObserver(measure); observer.observe(element);
+    return () => { observer.disconnect(); pane.style.removeProperty('--planner-footer-height'); };
+  }, [active, edit]);
   useLayoutEffect(() => {
     const anchor = quickAddAnchor.current;
     if (!anchor) return;
@@ -37,7 +48,7 @@ export function ShoppingList({ client, token, active, refresh, onBusy, onEdit }:
       (target && !target.disabled ? target : document.getElementById('shopping-add'))?.focus();
       focusTarget.current = '';
     }
-  }, [active, edit, saving, items]);
+  }, [active, edit, saving, items, removedItem]);
 
   const commit = (operation: ShoppingChange, finish = false) => {
     if (change(operation) && finish) setEdit(null);
@@ -69,7 +80,7 @@ export function ShoppingList({ client, token, active, refresh, onBusy, onEdit }:
     </div>;
   };
   return <>
-    <p className="sr-only" role="status">{saving ? 'Saving…' : dirty && !status.startsWith('Moving ') && status !== 'Changes waiting to save' ? `${status} Changes waiting to save.` : status}</p>
+    <p className="sr-only" role="status" aria-label="Shopping updates">{saving ? 'Saving…' : dirty && !status.startsWith('Moving ') && status !== 'Changes waiting to save' ? `${status} Changes waiting to save.` : status}</p>
     {error && !edit && <p className="notice error" role="alert">{error}</p>}
     {dirty && error && !conflicts.length && <button disabled={saving || Boolean(drag)} onClick={() => void flush()}>Retry saving</button>}
     {loaded && items.length === 0 && <p className="unplanned">Your shopping list is empty.</p>}
@@ -126,7 +137,15 @@ export function ShoppingList({ client, token, active, refresh, onBusy, onEdit }:
       })}</div>
     </section>
     {!token && <p>To edit the shopping list, connect in Settings.</p>}
-    {!edit && <div className="shopping-footer">
+    {!edit && <div ref={footer} className="shopping-footer">
+      {removedItem && <div className="shopping-undo">
+        <p role="status">Removed {removedItem.text}</p>
+        <button disabled={controlsDisabled} onClick={() => {
+          const id = removedItem.id;
+          if (undoRemoval()) { focusTarget.current = `shopping-edit-${id}`; }
+        }}>Undo</button>
+        <button className="icon-button" aria-label="Dismiss undo" onClick={() => { focusTarget.current = 'shopping-add'; dismissRemoval(); }}><Icon name="clear" /></button>
+      </div>}
       <button id="shopping-add" className="shopping-add" disabled={controlsDisabled} onClick={() => beginEdit()}>Add item</button>
     </div>}
   </>;

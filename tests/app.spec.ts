@@ -98,9 +98,44 @@ test('light live captions remember text preferences', async ({ page }) => {
   await expect(live).toContainText('All speech appears immediately here.');
   await result(page, 'All speech appears immediately here.', true);
   await expect(live).toHaveCSS('font-size', '36px');
-  await expect(live.locator('.caption')).toHaveCSS('color', 'rgb(27, 39, 58)');
-  await expect(page.locator('html')).toHaveCSS('background-color', 'rgb(247, 249, 250)');
+  await expect(live.locator('.caption')).toHaveCSS('color', 'rgb(39, 48, 34)');
+  await expect(page.locator('html')).toHaveCSS('background-color', 'rgb(245, 246, 239)');
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
+});
+
+test('appearance choices persist across reload and panels without changing captions', async ({ page }) => {
+  await mockRecognition(page); await page.goto('/');
+  await page.getByRole('button', { name: 'Listen', exact: true }).click();
+  await result(page, 'Comfortable colours for reading.', true);
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  const theme = page.getByLabel('Colour theme', { exact: true });
+  await expect(theme).toHaveValue('earth');
+  for (const value of ['coral', 'navy', 'earth']) {
+    await theme.selectOption(value);
+    await expect(page.locator('html')).toHaveAttribute('data-theme', value);
+    await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeEnabled();
+  }
+  await theme.selectOption('navy');
+  await page.getByRole('button', { name: 'Speech to text', exact: true }).click();
+  await expect(page.locator('.confirmed')).toHaveText('Comfortable colours for reading.');
+  await page.reload();
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(theme).toHaveValue('navy');
+});
+
+test('the status divider appears only when listening and saving status are both shown', async ({ page }) => {
+  await mockRecognition(page);
+  await page.route('https://raw.githubusercontent.com/**', route => route.fulfill({ json: { version: 1, meals: {} } }));
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Listen', exact: true }).click();
+  await expect(page.locator('.activity-divider')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Meal planner', exact: true }).click();
+  await expect(page.locator('.saving-indicator')).toHaveText('Saved');
+  await expect(page.locator('.activity-divider')).toHaveText('|');
+  await expect(page.locator('.activity-divider')).toHaveAttribute('aria-hidden', 'true');
+  await page.getByRole('button', { name: 'Stop', exact: true }).click();
+  await expect(page.locator('.activity-divider')).toHaveCount(0);
+  await expect(page.locator('.saving-indicator')).toHaveText('Saved');
 });
 
 test('anonymous listening, interim revision, stop, resume, clear, and no persistence', async ({ page }) => {
@@ -538,10 +573,10 @@ test('subdirectory deployment installs scoped assets and opens offline', async (
   await page.reload(); await context.setOffline(true); await page.reload();
   await expect(page.getByRole('button', { name: 'Settings', exact: true })).toBeVisible();
   await expect(page.getByText('You’re offline.', { exact: false })).toBeVisible();
-  const fonts = await page.evaluate(async () => Promise.all(['Poppins-Regular.ttf', 'Poppins-SemiBold.ttf'].map(async (file) => {
+  const fonts = await page.evaluate(async () => Promise.all(['Poppins-Regular.woff2', 'Poppins-SemiBold.woff2'].map(async (file) => {
     const response = await fetch(`./fonts/${file}`); return { ok: response.ok, bytes: (await response.arrayBuffer()).byteLength };
   })));
-  expect(fonts).toEqual([{ ok: true, bytes: 160316 }, { ok: true, bytes: 157312 }]);
+  expect(fonts).toEqual([{ ok: true, bytes: 51564 }, { ok: true, bytes: 51500 }]);
   await page.evaluate(() => document.fonts.ready);
   expect(await page.evaluate(() => document.fonts.check('400 32px Poppins'))).toBe(true);
 });

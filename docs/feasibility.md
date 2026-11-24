@@ -45,10 +45,25 @@ or physical-device guarantee.
   No speaker filtering or separate-device caption transmission is implemented.
 - A browser cannot take microphone priority from another app. Independent OS
   dictation is outside this app's control. Wake locks can be refused/revoked.
-- Current accent `#db6931` contrast: 3.46:1 on white, 3.14:1 on `#fff1ed`,
+- Published accent `#db6931` contrast: 3.46:1 on white, 3.14:1 on `#fff1ed`,
   2.78:1 on `#ffe0d6`, and 3.27:1 on the canvas. Small accent text needs a
   readability follow-up. Earlier `#b04230` measurements in the archive describe
   a different candidate, not this release.
 - Local queues survive normal reloads, not browser-data deletion/eviction.
-  Service quotas and outages can delay shared saves. An unapplied editor draft
-  is session-only. Do not claim guaranteed offline speech or background recording.
+  Service quotas and outages can delay shared saves. The published release keeps
+  unapplied drafts for the session only. Do not claim guaranteed offline speech
+  or background recording.
+
+## Local changes awaiting deployment
+
+Settings now offers earthy green, high-contrast coral and navy/grey themes.
+Calculated accent contrast on canvas/control fills is at least 5.85:1, 4.86:1
+and 6.93:1 respectively.
+Planner drafts now recover locally after reload; shopping has Undo;
+the footer shows saving status beside Listening with a conditional divider. Fonts are
+WOFF2 with unchanged glyph mappings: 103,064 bytes combined, down from 317,628.
+Local checks passed: typecheck, lint, 184 unit tests, two setup tests and build;
+202 Chromium/mobile-WebKit browser checks passed (four platform-specific skips),
+plus all 12 paired-device frontend checks. Screenshots were reviewed for colour
+and footer layout. One WebKit app-update check timed out on the first run and
+passed on rerun. Physical-device acceptance remains separate from emulation.

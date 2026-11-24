@@ -72,7 +72,8 @@ durable local edits and clear evidence over new infrastructure or dependencies.
 - Keep completed edits in a path-scoped IndexedDB journal. Batch after two idle
   seconds, at most ten seconds during continuous edits; serialize writes per tab.
   Read latest+SHA, merge independent changes and acknowledge only captured edits.
-  Overlay newer edits on responses; keep unapplied drafts for the page session.
+  Overlay newer edits on responses; keep unapplied planner drafts locally across
+  reloads with their original edit base. Never submit recovered drafts automatically.
 - Same-field, delete/edit and incompatible-order conflicts require per-item
   Yours/Family resolution. Unrelated edits can save. Refresh never erases drafts.
   If local storage fails, preserve memory state, allow navigation and warn before

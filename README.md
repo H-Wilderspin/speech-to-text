@@ -15,6 +15,8 @@ through a GitHub App. Meals and shopping data live in a separate public reposito
 - The **footer icons** switch between captions, meals, shopping and Settings.
   Tap the active app icon again, or Speech to text, to return to captions.
 - **Split view** is available from 768px: captions left, the selected app right.
+- **Settings** offers earthy green, high-contrast coral and navy/grey themes.
+  Choices stay on this device.
 - In meals, use the week arrows or swipe left/right on touch screens.
   Pull down from a planner's header to refresh both planners; desktop layouts
   have a Refresh icon.
@@ -22,12 +24,16 @@ through a GitHub App. Meals and shopping data live in a separate public reposito
   once per device. Unused codes last 24 hours; connected devices have no routine
   expiry. Viewing public meals and shopping needs no code.
 - **Settings ? Update app** installs the latest release. Stop listening first.
-  Connection and reading preferences remain; captions and unapplied drafts clear.
+  Connection, reading preferences and planner drafts remain; current captions clear.
 
 Completed meal/shopping changes appear immediately, stay on the device and save
 in the background. Offline edits retry later. Competing edits show **Yours** and
 **Family** beside the affected item. Do not clear browser data to fix a sync
 problem: it removes unsynced edits and the remembered connection.
+
+Saving status appears beside Listening in the footer. Unfinished meal/shopping
+drafts stay on this device until Save or Cancel. Undo restores the latest shopping
+removal while the list is open, including its bought state and position where possible.
 
 ## Browser limits and privacy
 

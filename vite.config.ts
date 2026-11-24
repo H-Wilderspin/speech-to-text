@@ -13,7 +13,7 @@ function offlineShell(): Plugin {
     generateBundle(_, bundle) {
       const publicFiles = ['manifest.webmanifest', 'icon.svg', 'icons/icon-192.png',
         'icons/icon-512.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png',
-        'fonts/Poppins-Regular.ttf', 'fonts/Poppins-SemiBold.ttf', 'fonts/OFL.txt'];
+        'fonts/Poppins-Regular.woff2', 'fonts/Poppins-SemiBold.woff2', 'fonts/OFL.txt'];
       // Vite emits index.html in a later hook, so enumerate it explicitly.
       const files = [...new Set(['index.html', ...Object.keys(bundle), ...publicFiles])];
       const worker = readFileSync(new URL('./src/app/service-worker.js', import.meta.url), 'utf8');

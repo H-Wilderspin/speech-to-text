@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SyncDocument } from './sync-document';
 import { mealDocument, type MealDocument } from '../meals/meal-document';
-import { shoppingDocument, type ShoppingDocument } from '../shopping/shopping-document';
+import { shoppingDocument, type ShoppingDocument, type ShoppingEdit } from '../shopping/shopping-document';
 import { readJsonFile, writeJsonFile } from './github';
 import { writeLocal } from './local-store';
 import { SyncPausedError } from './family-service';
@@ -200,6 +200,49 @@ it('reschedules a pending save when a refresh discovers a service pause first', 
 describe('shopping operation merging', () => {
   const milk = { id: 'milk', text: 'Milk', checked: false };
   const bread = { id: 'bread', text: 'Bread', checked: false };
+  it('restores the position and bought state without replacing newer family rows or duplicating names', () => {
+    const restore: ShoppingEdit = { type: 'restore', id: 'milk', item: { ...milk, checked: true }, order: ['milk', 'bread'] };
+    expect(shoppingDocument.apply({ version: 1, items: [bread] }, restore, false).items).toEqual([{ ...milk, checked: true }, bread]);
+    for (const current of [{ ...milk, text: 'Family milk' }, { ...milk, id: 'family-milk' }]) {
+      expect(shoppingDocument.apply({ version: 1, items: [current, bread] }, restore, false).items).toEqual([current, bread]);
+    }
+  });
+  it('undoes a queued deletion without a GitHub write, even when the family has edited that row', async () => {
+    const store = new SyncDocument('shopping/list.json', shoppingDocument, () => undefined, () => undefined);
+    store.configure('test-token'); store.restore({ version: 1, items: [milk, bread] }, []); documents.push(store);
+    const remove: ShoppingEdit = { type: 'remove', id: milk.id, previous: milk };
+    store.change(remove);
+    vi.mocked(readJsonFile).mockResolvedValue({ value: { version: 1, items: [{ ...milk, text: 'Family milk' }, bread] } });
+    await store.refresh();
+    expect(store.getSnapshot().conflicts).toHaveLength(1);
+    expect(store.undoChange(remove, { type: 'restore', id: milk.id, item: milk, order: ['milk', 'bread'] })).toBe(true);
+    await store.safeToLeave();
+    expect(store.getSnapshot().value.items[0]?.text).toBe('Family milk');
+    expect(store.getSnapshot().conflicts).toHaveLength(0);
+    expect(writeJsonFile).not.toHaveBeenCalled();
+  });
+  it('undoes while a deletion is being written without losing a newer family edit', async () => {
+    let remote: ShoppingDocument = { version: 1, items: [milk, bread] };
+    vi.mocked(readJsonFile).mockImplementation(async () => ({ value: structuredClone(remote), sha: 'revision' }));
+    let started!: () => void, release!: () => void;
+    const writing = new Promise<void>(resolve => { started = resolve; });
+    const held = new Promise<void>(resolve => { release = resolve; });
+    vi.mocked(writeJsonFile).mockImplementation(async (_path, next) => {
+      started(); await held; remote = structuredClone(next) as ShoppingDocument; return new Response('', { status: 200 });
+    });
+    const store = new SyncDocument('shopping/list.json', shoppingDocument, () => undefined, () => undefined);
+    store.configure('test-token'); store.restore(remote, []); documents.push(store);
+    const remove: ShoppingEdit = { type: 'remove', id: milk.id, previous: milk };
+    store.change(remove); const saving = store.flush(); await writing;
+    store.undoChange(remove, { type: 'restore', id: milk.id, item: milk, order: ['milk', 'bread'] });
+    expect(store.getSnapshot().value.items).toEqual([milk, bread]);
+    release(); await saving;
+    expect(store.getSnapshot().value.items).toEqual([milk, bread]);
+    remote.items.unshift({ ...milk, text: 'Family milk', checked: true });
+    await store.flush();
+    expect(remote.items).toEqual([{ ...milk, text: 'Family milk', checked: true }, bread]);
+    expect(store.getSnapshot().pending).toBe(0);
+  });
   it('merges a rename with another person ticking the same item', () => {
     const remote: ShoppingDocument = { version: 1, items: [{ ...milk, checked: true }] };
     expect(shoppingDocument.apply(remote, { type: 'put', id: milk.id, previous: milk, item: { ...milk, text: 'Milk 2 bottles' } }, false).items)

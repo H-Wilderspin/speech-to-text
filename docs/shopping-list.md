@@ -9,6 +9,9 @@ controls as meals. Viewing needs no login; editing requires a connection.
 - **Add item** stays at the panel bottom and hides while editing.
 - Use the pencil to edit, bin to delete, and checkbox to mark bought.
   Quantities can be included in the text.
+- After removal, **Undo** restores the latest removed item while this list remains
+  open. It restores bought state and position where possible, preserves newer
+  family rows and avoids duplicate names. Dismiss hides the Undo action.
 - Drag row text/background with a mouse. On touch screens, hold briefly (350ms),
   then drag; an immediate swipe scrolls. Embedded buttons keep their own actions.
 - With a keyboard, focus item text, press Space/Enter to pick up, use arrows or
@@ -37,8 +40,8 @@ Same-field edits, delete-versus-edit and incompatible ordering need the affected
 item's **Keep mine / Use family change** choice. Other items continue saving.
 Newer local edits survive older save responses.
 
-Completed changes survive normal reloads; unapplied editor text only survives
-navigation in the current page session. Outages retain the queue and retry with
+Completed changes and unfinished editor drafts survive normal reloads and reopening
+on this device. Drafts only submit on Save; Cancel clears them. Outages retain the queue and retry with
 backoff; service pauses may delay retries longer. If local storage fails, keep the
 app open until the remote save succeeds. Clearing site data removes unsynced edits.
 See [sync design](decisions/0066-local-first-planner-sync.md).

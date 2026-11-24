@@ -128,7 +128,17 @@ test('one Monday-first week, today marker, readable slots and project-path suppo
   await page.getByRole('button', { name: 'Next week' }).click();
   await expect(page.locator('.meal-day').first()).toHaveAccessibleName('Monday 26 Oct');
   await expect(page.locator('[aria-current=date]')).toHaveCount(0);
-  await page.getByRole('button', { name: 'This week', exact: true }).click();
+  const planner = page.locator('#planner-panel');
+  const returnToThisWeek = page.getByRole('button', { name: 'Go to this week', exact: true });
+  for (const scrollTop of [0, 300, 10000]) {
+    await planner.evaluate((el, top) => { el.scrollTop = top; }, scrollTop);
+    await expect.poll(async () => {
+      const button = (await returnToThisWeek.boundingBox())!;
+      const section = (await planner.boundingBox())!;
+      return Math.abs(section.y + section.height - button.y - button.height);
+    }).toBeLessThan(20);
+  }
+  await page.getByRole('button', { name: 'Go to this week', exact: true }).click();
   await expect(page.locator('.meal-day .today-marker')).toHaveText('Today');
   await page.setViewportSize({ width: 320, height: 740 });
   expect(await page.locator('.app-panel:visible').evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
@@ -352,7 +362,7 @@ test('This week follows the current date when the planner stays open across Mond
   await page.getByRole('button', { name: 'Meal planner', exact: true }).click();
   await expect(page.locator('.app-panel:visible').getByRole('status')).toHaveText('Plan updated');
   await page.clock.fastForward(60000);
-  await page.getByRole('button', { name: 'This week', exact: true }).click();
+  await page.getByRole('button', { name: 'Go to this week', exact: true }).click();
   await expect(page.locator('.meal-day').first()).toHaveAccessibleName('Monday 26 Oct');
   await expect(page.locator('.meal-day').first()).toHaveAttribute('aria-current', 'date');
 });
@@ -406,7 +416,7 @@ test('remembered access survives reload and reopening; Disconnect forgets it acr
   });
   await connect(page);
   await settings(page);
-  await expect(page.getByText('Remembered on this device.', { exact: false })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Planner editing' }).getByText('Remembered on this device.', { exact: false })).toBeVisible();
   expect(await page.evaluate(key => localStorage.getItem(key), savedKey)).toBe('test-only-token');
   await page.reload();
   await page.getByRole('button', { name: 'Meal planner', exact: true }).click();

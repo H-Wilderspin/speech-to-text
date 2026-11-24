@@ -1,5 +1,6 @@
-export type Preferences = { textSize: number; language: string };
-const defaults: Preferences = { textSize: 32, language: 'en-GB' };
+export type ColourTheme = 'earth' | 'coral' | 'navy';
+export type Preferences = { textSize: number; language: string; theme: ColourTheme };
+const defaults: Preferences = { textSize: 32, language: 'en-GB', theme: 'earth' };
 const key = () => `speech-to-text-display:${new URL(import.meta.env.BASE_URL, document.baseURI).pathname}`;
 export function readPreferences(): Preferences {
   try {
@@ -8,6 +9,7 @@ export function readPreferences(): Preferences {
     return {
       textSize: Number.isInteger(data.textSize) && data.textSize >= 28 && data.textSize <= 56 ? data.textSize : 32,
       language: ['en-GB', 'en-US', 'fr-FR', 'de-DE', 'es-ES'].includes(data.language) ? data.language : 'en-GB',
+      theme: ['earth', 'coral', 'navy'].includes(data.theme) ? data.theme : 'earth',
     };
   } catch { return defaults; }
 }

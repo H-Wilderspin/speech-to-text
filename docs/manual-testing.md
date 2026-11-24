@@ -40,8 +40,9 @@ keyboard, sleep, gesture or VoiceOver behaviour.
   Text starts at the top; Weekly default tags sit at the bottom. Shopping Add
   item stays at the panel bottom and hides during editing.
 - Test keyboard/VoiceOver labels, focus, reorder announcements and conflicts.
-  Review small coral text with the user; its contrast limitation is recorded in
-  [verification](feasibility.md#known-limits).
+  Review all three themes with the user. Check small text, forced colours,
+  and remembered choices after reopening.
+  The footer divider should appear only when both Listening and saving status show.
 
 ## Touch gestures and refresh
 
@@ -64,11 +65,17 @@ keyboard, sleep, gesture or VoiceOver behaviour.
   inheritance and remove the default. Dated exceptions survive.
 - Add/edit/tick/delete shopping items and toggle regular items, including bought
   ones. Preserve checkbox/tile focus and catalogue position.
+- Undo a deletion before and after syncing. Restore bought state and placement
+  without replacing a newer family row. Check Undo at large text sizes.
 - Reorder by mouse, touch hold and keyboard Space/Enter/arrows/Home/End. Edge-drag
   a long list. Escape/outside drop/cancel/second finger leaves no stuck move.
   Immediate swipes scroll; embedded controls do not start dragging.
-- Switch screens with drafts/slow saves. Drafts survive session navigation;
+- Switch screens with drafts/slow saves. Drafts survive navigation and reloads;
   completed actions appear immediately. Hidden panes stop polling.
+- Reopen with an unfinished meal in another week: restore its week, scope and
+  text without submitting it. Verify Save/Cancel clears the recovered draft.
+- Check saving status beside Listening on phones and split layouts, including
+  offline edits, a family conflict and a draft that cannot be stored locally.
 
 ## Sync, conflicts and access
 
@@ -93,7 +100,7 @@ keyboard, sleep, gesture or VoiceOver behaviour.
 ## Updates and offline shell
 
 - On an older release, stop Listen and use Settings ? Update app. New assets
-  appear; access/preferences and durable edits remain. Captions/unapplied drafts
+  appear; access/preferences, planner drafts and durable edits remain. Captions
   clear. Other tabs are not forced to reload.
 - Block updates while listening/connecting or when edits are neither durable nor
   saved remotely. Update directly from Settings with a hidden planner.
