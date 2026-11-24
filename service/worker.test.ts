@@ -72,6 +72,27 @@ describe('family device boundary', () => {
     expect(JSON.stringify(sqlite.prepare('SELECT * FROM invites').all())).not.toContain(code.replaceAll('-', ''));
     expect(fetchMock).not.toHaveBeenCalled();
   });
+  it('allows pairing just before 24 hours and keeps the device approved afterwards', async () => {
+    vi.useFakeTimers();
+    const start = Date.now();
+    const code = await invite();
+    vi.setSystemTime(start + 24 * 60 * 60000 - 1);
+    expect((await call('/pair', 'POST', { code, token })).status).toBe(200);
+    vi.setSystemTime(start + 365 * 24 * 60 * 60000);
+    // Creating another invitation also cleans up expired invitations.
+    await invite();
+    expect((await call('/session')).status).toBe(200);
+  });
+  it('expires an unused invitation exactly 24 hours after creation', async () => {
+    vi.useFakeTimers();
+    const start = Date.now();
+    const response = await call('/admin/invites', 'POST', { label: 'Tablet' }, env.ADMIN_TOKEN);
+    const invitation = await response.json() as { code: string; expires: number };
+    expect(invitation.expires).toBe(start + 24 * 60 * 60000);
+    vi.setSystemTime(invitation.expires);
+    expect((await call('/pair', 'POST', { code: invitation.code, token })).status).toBe(400);
+    expect((await call('/session')).status).toBe(401);
+  });
   it('expires unused codes and cannot resurrect a revoked device', async () => {
     const code = await connect();
     const devices = await (await call('/admin/devices', 'GET', undefined, env.ADMIN_TOKEN)).json() as { id: string }[];

@@ -183,7 +183,7 @@ node --env-file=service/.admin.local service/admin.mjs pause
 node --env-file=service/.admin.local service/admin.mjs resume
 ```
 
-`invite` prints a single-use code valid for 15 minutes. Enter it on that device in
+`invite` prints a single-use code valid for 24 hours from creation. Enter it on that device in
 **Settings → Family connection → Connect this device**. The app remembers access
 automatically. Codes are grouped for copying or dictation; generating and entering
 them yourself once is easiest for grandparents. A lost pairing response can retry
@@ -247,7 +247,7 @@ Use separate pairing codes for local development and family devices. Local
 development connected to the hosted Worker edits the real family data.
 
 Settings explains the three connection steps: ask the family member who manages
-the app for a code, enter it, then tap Connect this device. Codes last 15 minutes
+the app for a code, enter it, then tap Connect this device. Codes last 24 hours
 and connect one device; successful access is remembered. Update app explains how
 to refresh an older installed version while retaining settings and connection.
 

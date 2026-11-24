@@ -40,7 +40,7 @@ async function admin(request: Request, env: Env, path: string): Promise<Response
     if ((count?.total ?? 0) + (invites?.total ?? 0) >= 100) throw new HttpError(409, 'Remove an old device or wait for invitations to expire.');
     // 80 random bits, grouped for copy/paste or dictation. Never logged or stored in plaintext.
     const code = random().slice(0, 20).toUpperCase().match(/.{4}/g)!.join('-');
-    const expires = now + 15 * 60000;
+    const expires = now + 24 * 60 * 60000;
     await env.DB.prepare('INSERT INTO invites (code_hash, label, expires_at) VALUES (?, ?, ?)')
       .bind(await hash(code.replaceAll('-', '')), body.label.trim(), expires).run();
     return json({ code, expires });

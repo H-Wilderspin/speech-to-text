@@ -50,7 +50,7 @@ export function DeviceAccessSettings({ access, needsToken, onAccessError, onToke
         <li>Type or paste the code below.</li>
         <li>Tap <strong>Connect this device</strong>. We will remember the connection.</li>
       </ol>
-      <p>Each code works for one device and lasts 15 minutes. Ask for a new code if it has expired or already been used.</p>
+      <p>Each code works for one device and lasts 24 hours. Once connected, this device stays connected. Ask for a new code if it has expired or already been used.</p>
       <label htmlFor="family-code">Pairing code</label>
       <input id="family-code" ref={input} value={code} onChange={event => { setCode(event.target.value); candidate.current = ''; }}
         aria-describedby="family-code-help" autoComplete="off" autoCapitalize="characters" spellCheck={false} maxLength={40} required disabled={connecting} />

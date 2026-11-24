@@ -112,7 +112,8 @@ default again without changing other weeks.
 The public plan lives in a separate GitHub data repository; reading needs no
 login. To edit, enter a one-time pairing code under **Settings → Family connection**.
 The family member who manages the service generates the code; access is remembered
-automatically on this device. Pairing replaces previous GitHub access without
+automatically on this device with no routine expiry. Unused pairing codes last
+24 hours from creation. Pairing replaces previous GitHub access without
 clearing queued edits. Temporary service failures retain the connection and local
 changes. The legacy token flow remains available in builds without a service URL.
 See [meal planner setup and family editing](docs/meal-planner.md), including

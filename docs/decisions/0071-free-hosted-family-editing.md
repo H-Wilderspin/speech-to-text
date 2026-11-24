@@ -2,6 +2,8 @@
 Date: 2026-11-24
 Status: Accepted (Worker, D1 and frontend deployed and verified)
 
+Invitation duration superseded by [ADR 0072](0072-day-long-pairing-codes.md).
+
 ## Context
 The user approved replacing routine GitHub token entry for grandparents with a
 hosted connection, on the condition that hosting must cost nothing. Existing
