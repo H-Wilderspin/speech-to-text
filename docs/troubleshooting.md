@@ -13,7 +13,8 @@
   original sticky-position and card-layout assertions.
 - **Verification:** Ten repetitions each in Chromium and mobile WebKit passed
   (20 total), plus typecheck and lint. This is browser emulation, not a physical
-  phone check.
+  phone check. The subsequent full CI run and Pages deployment also passed
+  ([run 45448630849](https://github.com/H-Wilderspin/speech-to-text/actions/runs/45448630849)).
 
 ## 2026-11-24 - Local Settings still shows GitHub tokens after pairing is published
 

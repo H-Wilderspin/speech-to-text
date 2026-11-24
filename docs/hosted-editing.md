@@ -30,12 +30,19 @@ was revoked. App and owner secrets were absent from the built static assets.
 After publication, the actual served app passed pairing, remembered access after
 reload, and authenticated shopping/meal reads in desktop Chromium and mobile
 WebKit on Windows. Both verification devices were revoked; no family data changed.
-The latest release also verified the clearer pairing and Update app instructions
-on the actual published Settings screen. The served script is
-`assets/index-BV0LUksE.js` and the service-worker version is
-`ab16c62eca800501`. Physical family devices have not been tested. Existing users
+That release also verified the clearer pairing and Update app instructions
+on the actual published Settings screen. Physical family devices have not been tested. Existing users
 should stop listening and choose **Settings → Update app**, then enter their
 individual pairing code under **Family connection**.
+
+The subsequent 24-hour invitation release `1d4c92e` passed the
+[Pages workflow](https://github.com/H-Wilderspin/speech-to-text/actions/runs/45448630849).
+The live Settings instructions were verified in Chromium and mobile WebKit.
+The served script is `assets/index-DV2poAeo.js`, with service-worker version
+`c40142cac6b16a60`. Worker version `51c6d6c9-d69a-46a6-b3a2-0375858a4bf8`
+was verified to issue a code expiring 24 hours after creation; its temporary
+device paired successfully and was revoked. Existing invitations retain their
+original expiry, and approved devices retain access. No family data changed.
 
 ## 1. Create the free account
 
@@ -263,7 +270,7 @@ and SQL against Node SQLite, verify real JWT signatures and mock GitHub response
 The local Wrangler smoke check exercises actual Worker/D1 binding behaviour.
 No test here measures physical iPad speech or guarantees hosted availability.
 
-Validation on 2026-11-24: TypeScript, lint, 162 unit tests, two setup-helper tests and the production build
+Validation on 2026-11-24: TypeScript, lint, 164 unit tests, two setup-helper tests and the production build
 passed. Eight paired browser tests passed in Windows Chromium/WebKit, including
 project paths, replacement codes and paused edits surviving reload. Existing
 full-app regressions passed 190 tests; four Chromium-only native-touch tests
