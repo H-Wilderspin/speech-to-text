@@ -99,11 +99,16 @@ test('meal headings stay below the header while scrolling and default tags sit a
   await panel.evaluate(el => { (el as HTMLElement).style.removeProperty('--text-small'); });
   await page.setViewportSize({ width: 390, height: 600 });
   await expect(headings).toBeHidden();
+  // Let WebKit finish the resize/layout and scroll anchoring before positioning
+  // the card. Hidden column headings alone do not mean that scroll has settled.
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+    await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+  });
   const lunch = page.getByRole('button', { name: /^Monday 19 Oct, Lunch:/ });
   await lunch.evaluate(el => {
     const container = el.closest('.planner-panel')!;
-    container.scrollTop = 0;
-    container.scrollTop = el.getBoundingClientRect().top - container.querySelector('.meal-header')!.getBoundingClientRect().bottom + 50;
+    container.scrollTop += el.getBoundingClientRect().top - container.querySelector('.meal-header')!.getBoundingClientRect().bottom + 50;
   });
   await expect.poll(async () => Math.abs((await lunch.locator('.meal-slot-label').boundingBox())!.y -
     ((await header.boundingBox())!.y + (await header.boundingBox())!.height))).toBeLessThan(2);

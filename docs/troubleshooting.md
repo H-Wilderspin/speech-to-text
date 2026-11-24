@@ -1,5 +1,20 @@
 # Troubleshooting
 
+## 2026-11-24 - Intermittent WebKit sticky-heading test after resizing
+
+- **Context:** The 24-hour invitation release hit an existing meal-layout test
+  failure in Linux CI; the same 191.375px mismatch reproduced on the third
+  isolated Windows WebKit run. No meal layout code changed in that release.
+- **Cause:** A resize/scroll timing race is the working explanation. The test
+  resized from split view to a phone, then reset and repositioned scroll in one
+  evaluation; hiding the column headings did not ensure layout had settled.
+- **Fix:** Wait for fonts and two animation frames after the resize, then position
+  the card relative to current scroll without an intermediate reset. Keep the
+  original sticky-position and card-layout assertions.
+- **Verification:** Ten repetitions each in Chromium and mobile WebKit passed
+  (20 total), plus typecheck and lint. This is browser emulation, not a physical
+  phone check.
+
 ## 2026-11-24 - Local Settings still shows GitHub tokens after pairing is published
 
 - **Context:** The deployed Pages script contained the Worker URL, while the
