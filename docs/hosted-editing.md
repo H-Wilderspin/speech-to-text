@@ -1,6 +1,6 @@
 # Hosted family editing — owner setup
 
-Worker and D1 deployed and verified on 2026-11-24; **frontend pairing release pending**.
+Worker, D1 and the pairing-enabled frontend deployed and verified on 2026-11-24.
 This replaces routine GitHub token entry
 with a one-time pairing code. The static captions app remains on GitHub Pages;
 the Worker only handles family editing. No captions or audio go to this service.
@@ -12,7 +12,9 @@ The GitHub App installation is verified with access only to
 secret storage with explicit owner approval. Remote migration `0001_devices.sql`
 is applied. The ignored `service/.admin.local` contains local owner configuration.
 The public Pages Actions variable `VITE_SYNC_SERVICE_URL` is configured and
-verified. The frontend release has not been published yet.
+verified. Frontend release `d09d906` passed the
+[Pages workflow](https://github.com/H-Wilderspin/speech-to-text/actions/runs/45440669464)
+and is published at https://h-wilderspin.github.io/speech-to-text/.
 `SYNC_PAUSED=false`; the 5,000-request daily guard and owner pause switch are active.
 Pairing, live reads/saves, stale-revision rejection, pause/resume and revocation
 passed. All temporary test devices were revoked. Two owner-approved saves kept
@@ -24,6 +26,14 @@ Chromium, retained access across reload and read shopping data through CORS.
 The browser used local build assets intercepted at the production project URL;
 this verifies the prepared build, not a published Pages release. Its test device
 was revoked. App and owner secrets were absent from the built static assets.
+
+After publication, the actual served app passed pairing, remembered access after
+reload, and authenticated shopping/meal reads in desktop Chromium and mobile
+WebKit on Windows. Both verification devices were revoked; no family data changed.
+The served script is `assets/index-Qtopn5EZ.js` and the service-worker version is
+`29666de41ab0574b`. Physical family devices have not been tested. Existing users
+should stop listening and choose **Settings → Update app**, then enter their
+individual pairing code under **Family connection**.
 
 ## 1. Create the free account
 

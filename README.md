@@ -74,11 +74,11 @@ kept in [docs](docs/README.md). Ignored private local research files are untouch
 
 **Family connection:** a hosted service replaces recurring GitHub token entry
 with a one-time pairing code. The Worker and database are deployed and live
-reads, saves, pairing and pause/revocation checks passed. Enabling pairing in the
-published frontend is still pending. See
+reads, saves, pairing and pause/revocation checks passed. Pairing is available in
+the published app under **Settings → Family connection**. See
 [hosted editing setup](docs/hosted-editing.md). It uses Free-plan quotas, a daily
 request guard and an owner pause switch; completed edits stay local during pauses.
-Until the service URL is configured, the existing GitHub token flow below remains.
+Existing GitHub connections continue working until replaced by successful pairing.
 
 The cutlery button opens a shared Monday–Sunday meal planner, with three meals
 per day and today highlighted. Week headings use `19 Oct - 25 Oct, 2026`, showing
@@ -110,12 +110,11 @@ In a meal's editor, choose **Apply to → Every [weekday] [meal]** to save a wee
 default. Dated meals take priority; skip a single occurrence or use its weekly
 default again without changing other weeks.
 The public plan lives in a separate GitHub data repository; reading needs no
-login. Set up a personal GitHub token under **Settings → Planner editing**.
-Successful connections are saved automatically on this device. If a token stops
-working, enter a replacement in Settings and tap **Save new token**; the app
-checks it and replaces the old connection without a manual disconnect. Failed
-replacements keep the previous access and drafts. Disconnect still asks for
-confirmation before removing saved access; Keep connected cancels.
+login. To edit, enter a one-time pairing code under **Settings → Family connection**.
+The family member who manages the service generates the code; access is remembered
+automatically on this device. Pairing replaces previous GitHub access without
+clearing queued edits. Temporary service failures retain the connection and local
+changes. The legacy token flow remains available in builds without a service URL.
 See [meal planner setup and family editing](docs/meal-planner.md), including
 GitHub's collaborator limitations, public history and conflict handling.
 
@@ -205,8 +204,10 @@ bootstrap helper for a new repository, not a normal release step.
 Changes are considered published only after CI/deployment pass and the served
 page is checked. New offline-shell versions wait for old tabs to close unless
 Settings → Update app explicitly activates one. Captions and reading public meals need no API key or hosting
-subscription. Meal editors connect their own GitHub access as described above.
-When the optional family service is deployed, configure the public Actions
-variable `VITE_SYNC_SERVICE_URL` to enable pairing on the next Pages release.
+subscription. Meal editors pair their devices as described above.
+The public Actions variable `VITE_SYNC_SERVICE_URL` enables the deployed family
+service. Release `d09d906` passed CI and published-site pairing/read checks in
+desktop Chromium and mobile WebKit on 2026-11-24; physical family devices remain
+to be connected. See the [successful deployment](https://github.com/H-Wilderspin/speech-to-text/actions/runs/45440669464).
 The Pages workflow tests both modes but never deploys the Worker or changes its
 billing plan. See [the deployment checklist](docs/hosted-editing.md).

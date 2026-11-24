@@ -1,6 +1,6 @@
 # ADR 0071: Free hosted family editing
 Date: 2026-11-24
-Status: Accepted (Worker and D1 deployed and verified; frontend release pending)
+Status: Accepted (Worker, D1 and frontend deployed and verified)
 
 ## Context
 The user approved replacing routine GitHub token entry for grandparents with a

@@ -2,8 +2,9 @@
 
 The optional [family connection service](hosted-editing.md) lets devices pair once
 instead of entering GitHub tokens. Its Worker and database are deployed and live
-reads/saves are verified. Existing token instructions below apply until
-the service URL is enabled. Completed local edits survive switching connections.
+reads/saves are verified. Pairing is enabled in the published app under Settings →
+Family connection. Token instructions below apply to legacy deployments without
+the service URL. Completed local edits survive switching connections.
 
 Open the cutlery button next to Clear. The planner shows one Monday–Sunday week
 with Breakfast, Lunch and Dinner. Today has a green border and a Today marker.
