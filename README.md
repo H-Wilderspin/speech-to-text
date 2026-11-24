@@ -218,9 +218,11 @@ page is checked. New offline-shell versions wait for old tabs to close unless
 Settings → Update app explicitly activates one. Captions and reading public meals need no API key or hosting
 subscription. Meal editors pair their devices as described above.
 The public Actions variable `VITE_SYNC_SERVICE_URL` enables the deployed family
-service. Release `1d4c92e` passed CI and published-site Settings checks in
-desktop Chromium and mobile WebKit on 2026-11-24; physical family devices remain
-to be connected. The live Worker also verified new codes expire after 24 hours.
-See the [successful deployment](https://github.com/H-Wilderspin/speech-to-text/actions/runs/45448630849).
+service. Release `532f6a7` passed CI and published-site checks in desktop Chromium
+and mobile WebKit on 2026-11-24. Editing interruption, caption retention,
+visible-app wake-lock requests and styling were checked with simulated speech
+and wake-lock providers; physical-device checks remain pending. The earlier
+live Worker checks verified new codes expire after 24 hours.
+See the [successful deployment](https://github.com/H-Wilderspin/speech-to-text/actions/runs/45470212237).
 The Pages workflow tests both modes but never deploys the Worker or changes its
 billing plan. See [the deployment checklist](docs/hosted-editing.md).

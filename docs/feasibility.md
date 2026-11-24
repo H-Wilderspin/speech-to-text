@@ -1,5 +1,24 @@
 # Feasibility evidence
 
+## 2026-11-24 - Published editing interruption and visible-app wake lock
+
+- **Release:** `532f6a7`, [Pages workflow 45470212237](https://github.com/H-Wilderspin/speech-to-text/actions/runs/45470212237).
+  Code checks, production browser tests, paired-family tests, Worker bundle check
+  and Pages deployment all passed. No Worker deployment or billing change.
+- **Served evidence:** JavaScript `assets/index-fJvpXlYe.js`, service-worker
+  version `8e14abb03df590d8`. Checked the actual published URL in Windows
+  Chromium 156.0.8078.4 (1024x900) and WebKit 27.2 (iPhone 13 emulation).
+  Verified the current `#db6931` accent, 11px weekly tags with 2.2px tracking,
+  no horizontal overflow, and retained 24-hour pairing instructions.
+- **Behaviour:** With simulated recognition/wake-lock providers, verified a
+  lock request before listening, Settings browsing retaining listening, pairing
+  field focus aborting recognition, confirmed captions surviving navigation,
+  no automatic restart, and the lock remaining held after interruption.
+  Public meals were read only; no family data was changed. These checks do not
+  establish physical microphone, Auto-Lock or native dictation behaviour.
+- **Limit:** The release preserves the current lighter accent; see the contrast
+  measurements below. Separate-device caption transmission is not implemented.
+
 ## 2026-11-24 - Editing interruption, visible-app wake lock and coral styling
 
 - **Scope:** Local changes only, per the user's request. Opening/restoring a
@@ -17,11 +36,16 @@
   it now verifies browsing preserves listening and text entry stops it.
 - **Visuals:** Inspected local 390x900 and 1024x900 meal screenshots with fixture
   data. No horizontal overflow; uppercase labels consistently measured .2em
-  tracking, and Weekly default measured 11px (.6875rem). Final coral text/border
+  tracking, and Weekly default measured 11px (.6875rem). The tested coral text/border
   colour `#b04230` has calculated contrast 5.73:1 on white, 5.20:1 on `#fff1ed`,
   4.60:1 on hover `#ffe0d6`, and 5.42:1 on the canvas. The first colour candidate
   was darkened after its hover contrast measured below 4.5:1. This is not a full
-  accessibility audit; smaller tag legibility still needs user review.
+  accessibility audit; smaller tag legibility still needs user review. At release,
+  the working tree instead contained `#db6931`, preserved for the request to
+  publish the current app. Its contrast is 3.46:1 on white, 3.14:1 on `#fff1ed`,
+  2.78:1 on `#ffe0d6`, and 3.27:1 on the canvas. The earlier candidate's contrast
+  figures do not describe that release; small accent text needs a readability
+  follow-up.
 - **Limits:** No physical speech-to-editor injection, microphone contention,
   screen sleep, battery, latency or VoiceOver measurements were made. Browser
   code cannot force another app to release its microphone; the existing recovery

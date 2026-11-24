@@ -1,6 +1,6 @@
 # ADR 0073: Stop speech for editing and keep the visible app awake
 Date: 2026-11-24
-Status: Accepted (local implementation; physical-device checks pending)
+Status: Accepted (published in 532f6a7; physical-device checks pending)
 
 ## Context
 The user reports that speech sometimes enters an edit field on their devices.

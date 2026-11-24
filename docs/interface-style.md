@@ -4,11 +4,11 @@ The user requested coral highlights and calls to action on 2026-11-24.
 Keep the familiar controls, targets and compact layout.
 
 - Cool grey canvas, white cards and dark text retain their existing contrast.
-  Coral `#b04230` text/borders with `#fff1ed` and `#ffe0d6` fills identify primary
+  Orange-coral `#db6931` text/borders with `#fff1ed` and `#ffe0d6` fills identify primary
   actions, selected controls, Today, Added items and weekly defaults. Listen,
   Save, Add item, Connect and Update app share those action colours. Green is
   reserved for listening/saved status; red marks Stop/errors and orange warnings.
-  Focus uses a dark coral outline with a pale coral glow.
+  Focus uses the accent outline with a pale coral glow.
 - Actions use a soft gradient and darker hover fill with fully opaque text.
   Opacity remains reserved for disabled controls.
 - All uppercase labels use the shared `--uppercase-spacing: .2em` token,
@@ -48,8 +48,10 @@ Keep the familiar controls, targets and compact layout.
   Save/reorder announcements and keyboard instructions remain available to screen
   readers. Reduced motion and forced-colour focus handling remain in place.
 
-Colour-pair contrast measurements are recorded in feasibility.md. These are not
-a full accessibility audit. Decorative card borders stay quieter than control outlines.
+Colour-pair contrast measurements are recorded in feasibility.md. The current
+accent is lighter than the earlier tested candidate; small accent text falls
+below 4.5:1 against these fills and needs a readability follow-up. These checks
+are not a full accessibility audit. Decorative card borders stay quieter than control outlines.
 
 Check phone/tablet splits, larger text, Today, bought/Added states, keyboard focus
 and drag/scroll behaviour when changing these rules. Physical iPad/VoiceOver
