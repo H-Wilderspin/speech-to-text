@@ -1,5 +1,28 @@
 # Troubleshooting
 
+## 2026-11-24 - Local Settings still shows GitHub tokens after pairing is published
+
+- **Context:** The deployed Pages script contained the Worker URL, while the
+  local Vite server had no `VITE_SYNC_SERVICE_URL`. Actions variables do not
+  configure local development.
+- **Fix:** Put the public URL in ignored `.env.development.local` and restart
+  `npm run dev`. Vite uses a development-only device-endpoint proxy, preserving
+  the hosted Worker's production origin restriction. No App/owner secrets enter
+  Vite. The command trusts the Windows certificate store without disabling TLS.
+- **Local restart issue:** An older app process bound specifically to 127.0.0.1
+  took precedence over a new wildcard listener on the same port. Both were
+  confirmed as this repository's Vite processes before stopping the stale one.
+  Restarting a single server also removed competing dependency-cache access.
+  Direct 127.0.0.1 requests succeeded where localhost probes timed out; use the
+  exact server URL printed by Vite rather than assuming another hostname works.
+- **Verification:** At `http://127.0.0.1:5173/`, Chromium displayed pairing
+  instructions, paired with the live Worker, retained access across reload and
+  read shopping data. The temporary device was revoked without changing family
+  data. Owner endpoints are not proxied. Transport tests cover local proxy routing
+  and reject a development-relative service URL in production.
+- **Prevention:** Keep development configuration separate from test/production
+  modes and restart the correct process after changing environment or Node flags.
+
 ## 2026-11-24 - Concurrent browser suites delete each other's trace files
 
 - **Context:** Main and family Playwright configurations run simultaneously on

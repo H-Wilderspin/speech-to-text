@@ -154,7 +154,7 @@ no longer reads, edits or resets them. See [ADR 0060](docs/decisions/0060-remove
 
 ## Development
 
-Requires Node 22.12+ and npm.
+Requires Node 22.20+ and npm (also used by CI).
 
 ```sh
 npm ci
@@ -168,6 +168,12 @@ npm run test:e2e -- --workers=1 --max-failures=1
 exercise the production build at both root and project-subdirectory paths. They
 use simulated recognition and do not prove physical microphone/browser accuracy.
 See [manual testing](docs/manual-testing.md) and [evidence](docs/feasibility.md).
+
+To use Family connection locally, set the public `VITE_SYNC_SERVICE_URL` in
+an ignored `.env.development.local` and restart `npm run dev`. Vite proxies device
+requests to that service; no App or owner secrets belong in the frontend.
+This development-only file does not affect tests or production builds. Without
+it, local Settings uses the legacy token flow. See [local setup](docs/hosted-editing.md#local-development-and-checks).
 
 ## Code layout
 

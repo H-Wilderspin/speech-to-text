@@ -229,9 +229,25 @@ Copy `service/.dev.vars.example` to `service/.dev.vars`, set local values, and r
 real commits: local Wrangler has local D1 but real outbound GitHub calls. All
 automated service tests mock GitHub and perform no external writes.
 
-For the app's local connection, set `VITE_SYNC_SERVICE_URL=http://localhost:8787`
-in an ignored `.env.local`, match `APP_ORIGIN` to the browser origin including its
-port, and run `npm run dev`. Keep local test credentials separate from production.
+For the app's local connection, set the public `VITE_SYNC_SERVICE_URL` in an
+ignored `.env.development.local`, then restart `npm run dev`. Use the hosted
+Worker origin to connect to the live family data, or `http://localhost:8787` for
+a local Worker. Vite proxies only `/session`, `/pair` and `/files` through the
+local `/family-sync` path, with the production app origin header; keep the local
+Worker's `APP_ORIGIN` at `https://h-wilderspin.github.io` for this route.
+Owner endpoints are not proxied and no owner/App secrets are loaded by Vite.
+TLS verification stays enabled using Node's system certificate store.
+
+This configuration is development-only: tests keep their own fixtures and
+production builds still use the Actions variable. Without local configuration,
+Settings shows legacy token access even when the published app has pairing.
+Use separate pairing codes for local development and family devices. Local
+development connected to the hosted Worker edits the real family data.
+
+Settings explains the three connection steps: ask the family member who manages
+the app for a code, enter it, then tap Connect this device. Codes last 15 minutes
+and connect one device; successful access is remembered. Update app explains how
+to refresh an older installed version while retaining settings and connection.
 
 ```sh
 npm run test:family

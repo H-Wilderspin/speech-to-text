@@ -11,13 +11,14 @@ let pauseMessage = '';
 export async function serviceRequest(path: string, token = '', init?: RequestInit): Promise<Response> {
   if (Date.now() < pausedUntil) throw new SyncPausedError(pauseMessage, pausedUntil);
   if (!familyServiceUrl) throw new Error('The family connection is not configured. Ask the person who set up the app for help.');
-  const url = new URL(familyServiceUrl);
+  // A relative address is only supplied by Vite's opt-in development proxy.
+  const url = new URL(familyServiceUrl, import.meta.env.DEV && familyServiceUrl.startsWith('/') ? window.location.origin : undefined);
   if (url.protocol !== 'https:' && !(url.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(url.hostname))) {
     throw new Error('The family connection needs a secure address.');
   }
   let response: Response;
   try {
-    response = await fetch(`${familyServiceUrl}${path}`, { ...init, headers: {
+    response = await fetch(`${url.href.replace(/\/+$/, '')}${path}`, { ...init, headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}), 'Content-Type': 'application/json', ...init?.headers,
     }, cache: 'no-store', redirect: 'error', credentials: 'omit', signal: AbortSignal.timeout(30000) });
   } catch { throw new Error('Could not reach family syncing. Your changes stay on this device.'); }

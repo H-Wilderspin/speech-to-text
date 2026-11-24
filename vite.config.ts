@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import type { Plugin } from 'vite';
+import { loadEnv } from 'vite';
 
 // Precache only the build's explicitly enumerated public assets. Never cache speech.
 function offlineShell(): Plugin {
@@ -26,8 +27,22 @@ function offlineShell(): Plugin {
   };
 }
 
-export default defineConfig({
-  base: './',
-  plugins: [react(), offlineShell()],
-  test: { include: ['src/**/*.test.ts', 'service/**/*.test.ts'], environment: 'node' },
+export default defineConfig(({ command, mode }) => {
+  const service = loadEnv(mode, process.cwd(), 'VITE_').VITE_SYNC_SERVICE_URL;
+  const proxy = command === 'serve' && mode === 'development' && !!service;
+  return {
+    base: './',
+    plugins: [react(), offlineShell()],
+    // Development uses the same pairing UI without widening the Worker's CORS policy.
+    // Only device endpoints are proxied; owner credentials stay outside Vite.
+    define: proxy ? { 'import.meta.env.VITE_SYNC_SERVICE_URL': JSON.stringify('/family-sync') } : {},
+    server: proxy ? { proxy: {
+      '^/family-sync/(session|pair|files)(\\?|$)': {
+        target: service, changeOrigin: true,
+        headers: { Origin: 'https://h-wilderspin.github.io' },
+        rewrite: path => path.replace(/^\/family-sync/, ''),
+      },
+    } } : {},
+    test: { include: ['src/**/*.test.ts', 'service/**/*.test.ts'], environment: 'node' },
+  };
 });

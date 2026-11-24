@@ -3,6 +3,26 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 beforeEach(() => { vi.resetModules(); vi.stubEnv('VITE_SYNC_SERVICE_URL', 'https://family.example'); });
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.useRealTimers(); });
 
+it('uses the local device proxy during development', async () => {
+  vi.stubEnv('DEV', true);
+  vi.stubEnv('VITE_SYNC_SERVICE_URL', '/family-sync');
+  vi.stubGlobal('window', { location: { origin: 'http://localhost:5173' } });
+  const fetch = vi.fn().mockResolvedValue(Response.json({ connected: true }));
+  vi.stubGlobal('fetch', fetch);
+  const { serviceRequest } = await import('./family-service');
+  await serviceRequest('/session', 'device_secret');
+  expect(fetch.mock.calls[0]![0]).toBe('http://localhost:5173/family-sync/session');
+});
+
+it('does not use a relative development proxy in production', async () => {
+  vi.stubEnv('DEV', false);
+  vi.stubEnv('VITE_SYNC_SERVICE_URL', '/family-sync');
+  const fetch = vi.fn(); vi.stubGlobal('fetch', fetch);
+  const { serviceRequest } = await import('./family-service');
+  await expect(serviceRequest('/session', 'device_secret')).rejects.toThrow();
+  expect(fetch).not.toHaveBeenCalled();
+});
+
 it('routes device credentials only to the family service and retains SHA conflicts', async () => {
   const fetch = vi.fn().mockResolvedValueOnce(Response.json({ sha: 'revision', value: { version: 1, items: [] } }))
     .mockResolvedValueOnce(new Response('', { status: 409 }));

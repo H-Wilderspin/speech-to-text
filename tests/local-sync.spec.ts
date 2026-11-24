@@ -166,7 +166,7 @@ test('blocked device storage keeps navigation available but prevents an unsafe a
   expect(await page.evaluate(() => window.dispatchEvent(new Event('beforeunload', { cancelable: true })))).toBe(false);
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await page.getByRole('button', { name: 'Update app', exact: true }).click();
-  await expect(page.getByRole('alert')).toContainText('could not be saved on this device or to GitHub');
+  await expect(page.getByRole('alert')).toContainText('could not be saved on this device or shared with your family');
   await page.getByRole('button', { name: 'Shopping list', exact: true }).click();
   await expect(page.getByRole('checkbox', { name: 'Bought Milk', exact: true })).toBeChecked();
   state.offline = false; await refresh(page);

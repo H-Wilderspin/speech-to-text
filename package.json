@@ -4,10 +4,10 @@
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=22.20.0"
   },
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
+    "dev": "node --use-system-ca node_modules/vite/bin/vite.js --host 0.0.0.0",
     "service:dev": "wrangler dev --config service/wrangler.jsonc --local",
     "service:setup": "node --use-system-ca service/setup-github.mjs",
     "test:setup": "node --test service/setup-github.test.mjs",

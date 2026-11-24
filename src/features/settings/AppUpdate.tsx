@@ -11,7 +11,7 @@ export function AppUpdate({ active, beforeUpdate, busy, onBusy }: {
     setUpdating(true); onBusy(true); setError('');
     try {
       if (!await beforeUpdate()) {
-        setError('Your planner changes could not be saved on this device or to GitHub. Keep the app open and try again when connected.');
+        setError('Your planner changes could not be saved on this device or shared with your family. Keep the app open and try again when connected.');
         setUpdating(false); onBusy(false);
         return;
       }
@@ -24,11 +24,12 @@ export function AppUpdate({ active, beforeUpdate, busy, onBusy }: {
     }
   };
   return <section aria-label="App updates">
-    <button className="app-update" disabled={busy || active} onClick={() => void update()} aria-describedby="update-help">
+    <button className="app-update" disabled={busy || active} onClick={() => void update()} aria-describedby="update-help update-keeps">
       <Icon name="refresh" />{updating ? 'Updating…' : 'Update app'}
     </button>
     <p id="update-help">{active ? 'Stop listening before updating.'
-      : 'Get the latest app and reload. Current captions and unsaved drafts will clear; saved settings and planner access stay.'}</p>
+      : 'If the app looks out of date, tap Update app. It will reopen with the latest version.'}</p>
+    <p id="update-keeps">Your saved settings and connection stay. Current captions and text you have not saved will clear.</p>
     {updating && <p role="status">Downloading the latest app…</p>}
     {error && <p className="notice error" role="alert">{error}</p>}
   </section>;
