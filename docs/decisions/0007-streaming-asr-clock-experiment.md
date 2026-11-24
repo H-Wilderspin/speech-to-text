@@ -25,6 +25,6 @@ The first text required 2.7 seconds of supplied input in this test. The repeated
 
 ## Validation
 
-`spike:asr` and `spike:asr-browser` each execute actual inference. Both browser engines also test cancellation and aborted encoder download. Pure tests reject malformed audio/timing and preserve the distinction between token points and spans. See [feasibility](../feasibility.md) for exact results and [research reproduction](../../research/README.md).
+`spike:asr` and `spike:asr-browser` each execute actual inference. Both browser engines also test cancellation and aborted encoder download. Pure tests reject malformed audio/timing and preserve the distinction between token points and spans. See [feasibility](../feasibility.md) for exact results and research reproduction (historical path: `research/README.md`; no longer tracked).
 
 Sources: [official model instructions](https://k2-fsa.github.io/sherpa/onnx/pretrained_models/online-transducer/zipformer-transducer-models.html), [Apache-2.0 model card](https://huggingface.co/csukuangfj/sherpa-onnx-streaming-zipformer-en-20M-2023-02-17/blob/d42f2d9f7ca24806fb667456a18a9f1b60f70d16/README.md), [source timing conversion](https://github.com/k2-fsa/sherpa-onnx/blob/9db1af1871ed78cee9357c23898e5a7d8702d21a/sherpa-onnx/csrc/online-recognizer-transducer-impl.h).

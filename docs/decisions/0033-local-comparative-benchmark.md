@@ -51,7 +51,7 @@ on the same set, not independent held-out validation.
 
 ## Validation
 
-See [the benchmark report](../comparison-benchmark.md), machine-readable results
+See [the benchmark report](../archive/comparison-benchmark.md), machine-readable results
 and reproduction instructions linked there. Focused scoring tests cover clipped
 endings, intentional repeats, false names, insertions, gaps and overlapping turns.
 Production checks still run as required by this repository's working agreement.

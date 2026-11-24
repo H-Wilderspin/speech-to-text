@@ -1,5 +1,8 @@
 # MVP cleanup review
 
+> Historical record, archived 2026-11-24. This describes earlier builds and may
+> reference retired code or commands. Use the [current documentation](../README.md).
+
 Date: 2026-10-15
 
 ## Completed

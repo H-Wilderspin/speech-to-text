@@ -1,6 +1,9 @@
 # Static speaker assets
 
-> Historical research: this feature was removed from the MVP by [ADR 0046](decisions/0046-live-transcription-only-mvp.md). Commands and source paths below refer to earlier Git history.
+> Historical record, archived 2026-11-24. This describes earlier builds and may
+> reference retired code or commands. Use the [current documentation](../README.md).
+
+> Historical research: this feature was removed from the MVP by [ADR 0046](../decisions/0046-live-transcription-only-mvp.md). Commands and source paths below refer to earlier Git history.
 
 The optional enrolment path uses three public files in `public/speaker/v1/`. Commit these files with the app, including the ONNX and WASM binaries. They contain public software/model weights, never recordings or voiceprints. All files are below GitHub's per-file 100 MB limit. Do not replace them with Git LFS pointer files in the Pages artifact.
 
@@ -9,7 +12,7 @@ The optional enrolment path uses three public files in `public/speaker/v1/`. Com
 After the first explicit preparation, a separate model/version cache retains all
 three verified files. Enrolment and comparison detect and load that copy without
 another download prompt, including offline; cache eviction or corruption requires
-explicit repair. See [ADR 0016](decisions/0016-reuse-cached-voice-model.md).
+explicit repair. See [ADR 0016](../decisions/0016-reuse-cached-voice-model.md).
 
 | Asset | Bytes | Provenance |
 |---|---:|---|
@@ -21,6 +24,6 @@ Download the model from [this immutable artifact URL](https://huggingface.co/csu
 
 The runtime is reproducibly relinkable from the existing static-library build using `research/build-speaker.ps1 -SherpaBuild <build-directory> -Emsdk <emsdk-directory>`. Required libraries and exact link flags are in that script. It uses ONNX Runtime 1.28.2 SIMD (source-build dependency archive SHA256 `88688849b67fed9ca0e9fb2bf92ce19a5def9e8c2c8c2df34eb235d25893232a`) and Eigen 5.0.1. Copy the resulting `.mjs` and `.wasm` together. The script is a relink recipe, not a complete clean-machine toolchain build; a fresh source build and bit-for-bit reproducibility have not been verified. Ordinary development and GitHub Pages deployment use the included verified binaries and do not need this toolchain.
 
-[THIRD-PARTY-NOTICES.txt](../public/speaker/THIRD-PARTY-NOTICES.txt) accompanies distribution and is linked from Speakers. It includes sherpa, kaldi libraries, sentencepiece, OpenFst, KissFFT, Eigen, JSON, hclust, Emscripten and ONNX Runtime licence/notice texts, plus model provenance. Eigen's unmodified covered source is available from [the exact 5.0.1 source archive](https://gitlab.com/libeigen/eigen/-/archive/5.0.1/eigen-5.0.1.tar.gz). ONNX Runtime notices came from its [v1.28.2 ThirdPartyNotices.txt](https://github.com/microsoft/onnxruntime/blob/v1.28.2/ThirdPartyNotices.txt) and [LICENSE](https://github.com/microsoft/onnxruntime/blob/v1.28.2/LICENSE).
+THIRD-PARTY-NOTICES.txt (historical path: `public/speaker/THIRD-PARTY-NOTICES.txt`; no longer tracked) accompanies distribution and is linked from Speakers. It includes sherpa, kaldi libraries, sentencepiece, OpenFst, KissFFT, Eigen, JSON, hclust, Emscripten and ONNX Runtime licence/notice texts, plus model provenance. Eigen's unmodified covered source is available from [the exact 5.0.1 source archive](https://gitlab.com/libeigen/eigen/-/archive/5.0.1/eigen-5.0.1.tar.gz). ONNX Runtime notices came from its [v1.28.2 ThirdPartyNotices.txt](https://github.com/microsoft/onnxruntime/blob/v1.28.2/ThirdPartyNotices.txt) and [LICENSE](https://github.com/microsoft/onnxruntime/blob/v1.28.2/LICENSE).
 
 Any replacement requires updating hashes, model version, dimensions, notices, benchmarks and compatibility decisions together. Existing profiles must not silently be matched against a different model. No user embeddings belong in these files or the repository.

@@ -23,4 +23,4 @@ No ASR timing support is added by this experiment. M3 still requires common capt
 
 ## Validation
 
-`npm run spike:infer` executes real CPU/WASM inference with synthetic audio. `npm run spike:browser` runs the equivalent worker path plus cancellation and model-download failure in Chromium/WebKit. See [research instructions](../../research/README.md) and [recorded evidence](../feasibility.md). These are runtime tests, not voice identification accuracy measurements.
+`npm run spike:infer` executes real CPU/WASM inference with synthetic audio. `npm run spike:browser` runs the equivalent worker path plus cancellation and model-download failure in Chromium/WebKit. See research instructions (historical path: `research/README.md`; no longer tracked) and [recorded evidence](../feasibility.md). These are runtime tests, not voice identification accuracy measurements.

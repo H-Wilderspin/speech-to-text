@@ -25,7 +25,7 @@ Keep anonymous captions independent. Opening Speakers stops live recognition to 
 
 M2 can now be exercised on a published static site, but its device and false-match acceptance gates remain open. The public distribution grows by about 39 MB; anonymous opening does not fetch these binaries and the offline worker does not precache them. Browser HTTP caching may retain model files. No guarantee of offline enrolment is made. Profile data is sensitive local browser data, not synced, encrypted by this app or recoverable after site data deletion.
 
-The tested prebuilt runtime is included to avoid requiring the user's GitHub build to have an adjacent sherpa/Emscripten checkout. Source/version/provenance and rebuild limitations are in [speaker assets](../speaker-assets.md). Changing preprocessing, dimensions or model must change the model version before matching profiles.
+The tested prebuilt runtime is included to avoid requiring the user's GitHub build to have an adjacent sherpa/Emscripten checkout. Source/version/provenance and rebuild limitations are in [speaker assets](../archive/speaker-assets.md). Changing preprocessing, dimensions or model must change the model version before matching profiles.
 
 ## Validation
 

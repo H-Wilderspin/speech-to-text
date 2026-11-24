@@ -8,7 +8,7 @@ Status: Accepted for research only
 ## Context
 
 The user created a Hugging Face account, accepted model access and confirmed local
-CLI login after the initial [comparative screen](../comparison-benchmark.md).
+CLI login after the initial [comparative screen](../archive/comparison-benchmark.md).
 Access to Community-1's configuration was verified using that saved login.
 The older delayed diarizer merged the two alternating generated voices.
 
@@ -50,7 +50,7 @@ human-data prototype, not immediate deployment or threshold calibration.
 The alignment module is deliberately isolated from WhisperX's full ASR/CLI
 dependency set. Its exercised calls work with the pinned research environment,
 but declared full-package requirements conflict; a production service must use a
-supported dependency combination. See [the complete follow-up](../community-benchmark.md).
+supported dependency combination. See [the complete follow-up](../archive/community-benchmark.md).
 
 ## Validation
 

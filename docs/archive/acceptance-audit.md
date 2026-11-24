@@ -1,6 +1,9 @@
 # Project-plan acceptance audit — 2026-10-12
 
-> Historical research: this feature was removed from the MVP by [ADR 0046](decisions/0046-live-transcription-only-mvp.md). Commands and source paths below refer to earlier Git history.
+> Historical record, archived 2026-11-24. This describes earlier builds and may
+> reference retired code or commands. Use the [current documentation](../README.md).
+
+> Historical research: this feature was removed from the MVP by [ADR 0046](../decisions/0046-live-transcription-only-mvp.md). Commands and source paths below refer to earlier Git history.
 
 **New trace after duplicate removal:** one reference, zero of three accepted voice
 windows and zero ambiguity; reported best 0.59 is below the 0.60 minimum. Capture
@@ -15,7 +18,7 @@ pass. The user confirms the rejected utterance was their own voice.
 
 **Latest phone report:** one correctly transcribed and assigned statement appeared,
 then no follow-up upper text. Sustained attribution remains unverified; the cause
-is unresolved. [ADR 0030](decisions/0030-speaker-stage-console-diagnostics.md) adds
+is unresolved. [ADR 0030](../decisions/0030-speaker-stage-console-diagnostics.md) adds
 opt-in stage diagnostics and follow-up regression coverage. Published as `f41049c`
 after [run 38281229875](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38281229875)
 passed the full Linux workflow. 212 unit tests and published Chromium/WebKit console
@@ -24,7 +27,7 @@ identity gates or establish human match accuracy. See [trace instructions](speak
 
 This audit preserves the README's complete scope. Implemented code and passing desktop tests do not satisfy physical-device or human-speaker gates. The goal is not complete.
 
-**Guided registration:** [ADR 0029](decisions/0029-guided-longer-voice-registration.md)
+**Guided registration:** [ADR 0029](../decisions/0029-guided-longer-voice-registration.md)
 increases new/update recordings to twenty seconds with a reading passage. Existing
 people can replace their voiceprint while retaining their ID, colour and visibility;
 cancelled/failed attempts preserve the old profile. Checks/build and 205 unit tests
@@ -38,7 +41,7 @@ and simulated-caption smoke checks passed with no page errors or microphone use.
 
 **Earlier retest failed:** live listening is reported perfect, profile eye on, upper
 pane empty after Stop. Status: "Speech received; no saved voice matched yet."
-[ADR 0028](decisions/0028-retain-delayed-voice-evidence.md) fixes reproduced early
+[ADR 0028](../decisions/0028-retain-delayed-voice-evidence.md) fixes reproduced early
 pruning of voice decisions before delayed tokens and adds diagnostic counts to
 separate voice rejection from local word-attribution failure. 201 unit tests and
 local check/build pass; physical resolution is unverified. See current feasibility.
@@ -50,7 +53,7 @@ The user confirms only their own profile is saved. Phone matching remains unreso
 until the new retention logic and diagnostic are tested on that device.
 
 Latest user report: Who said what is empty even after Stop, without an error.
-[ADR 0027](decisions/0027-speaker-visibility-and-provisional-attribution.md) adds
+[ADR 0027](../decisions/0027-speaker-visibility-and-provisional-attribution.md) adds
 per-person upper-pane visibility, fixes browser-final gating of completed speaker
 evidence and admits bounded phrase differences. New Settings diagnostics expose
 the stage awaiting evidence. These address reproduced code paths; the user's
@@ -61,7 +64,7 @@ Published as `e340de4`, [run 38266312236](https://github.com/H-Wilderspin/speech
 activity/persistence/layout and simulated-caption smoke checks passed. Phone retest
 requested; no new physical microphone or identity-accuracy pass is claimed.
 
-Current increment: [ADR 0026](decisions/0026-single-pane-settings-automatic-names.md)
+Current increment: [ADR 0026](../decisions/0026-single-pane-settings-automatic-names.md)
 replaces nested Settings and the names toggle with one full-screen scrolling pane,
 protected colour/delete pills and automatic model preparation for saved profiles.
 Only assigned final speech has names above; live browser words remain label-free
@@ -74,12 +77,12 @@ Chromium/WebKit layout, profile controls and simulated-caption smoke checks pass
 with no microphone and no uncaught page errors. Physical-phone and human-speaker
 acceptance remain pending.
 
-Latest interface increment: [ADR 0025](decisions/0025-dark-two-pane-family-interface.md) adds dark two-pane captions, assigned speech only above, all live words below, persistent high-contrast colours/text preferences, and simplified personal registration. It changes presentation, not recognition accuracy or identity calibration. See the 2026-10-12 feasibility entry for checks.
+Latest interface increment: [ADR 0025](../decisions/0025-dark-two-pane-family-interface.md) adds dark two-pane captions, assigned speech only above, all live words below, persistent high-contrast colours/text preferences, and simplified personal registration. It changes presentation, not recognition accuracy or identity calibration. See the 2026-10-12 feasibility entry for checks.
 
 Published as `f48e18d`, [run 38258052858](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38258052858): all build checks and the full Linux browser suite passed. Published Chromium/WebKit checks passed with simulated recognition and no microphone; phone acceptance remains pending.
 
 Previous recognition increment: the larger local recognizer also failed the user's accuracy
-retest. [ADR 0023](decisions/0023-browser-first-delayed-names.md) restores browser
+retest. [ADR 0023](../decisions/0023-browser-first-delayed-names.md) restores browser
 words and adds optional delayed estimates without replacing text. Existing models
 and voiceprints are reused. This is experimental phrase correspondence, not a
 validated diarization/alignment system; phone accuracy and simultaneous microphone
@@ -107,20 +110,20 @@ sample-clock ASR/reference windows and shows coloured **Name (estimate)** captio
 Browser captions remain anonymous. Generated known/other voices, offline model
 reuse and paced AudioWorklet/Stop tests verify the integration; human calibration,
 overlap handling and physical-device throughput remain unverified. See
-[ADR 0021](decisions/0021-experimental-local-name-suggestions.md) and the latest
-executed checks in [feasibility](feasibility.md). This does not close M3.
+[ADR 0021](../decisions/0021-experimental-local-name-suggestions.md) and the latest
+executed checks in [feasibility](../feasibility.md). This does not close M3.
 
 The experimental integration is published as app commit `096c184`: [run 38131541828](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38131541828)
 passed 165 unit tests and all 50 Linux browser tests. Published Chromium/WebKit
 model preparation, offline reuse and existing browser-result regressions passed.
 These earlier checks do not validate the larger ASR upgrade or substitute for
-physical device or human accuracy acceptance. See [ADR 0022](decisions/0022-upgrade-local-transcription.md)
+physical device or human accuracy acceptance. See [ADR 0022](../decisions/0022-upgrade-local-transcription.md)
 and feasibility for the latest executed checks.
 
 The initial publication attempt selected `labiraus` and was rejected with HTTP
 403. The user subsequently signed in as `H-Wilderspin`; the owner account is now
 available. A further WebKit cache-lifetime regression was fixed before retrying
-publication; see [ADR 0018](decisions/0018-page-owned-public-model-cache.md).
+publication; see [ADR 0018](../decisions/0018-page-owned-public-model-cache.md).
 
 Publication succeeded on 2026-10-11: [run 38125696202](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38125696202)
 passed all 38 Linux browser tests without test skips and deployed code commit
@@ -159,8 +162,8 @@ FR-06/07 are explicitly research-dependent in the specification. The Unknown fal
 
 ## Evidence needed next
 
-The user authorized publication. Initial Pixel 8 storage/comparison observations and spoken stop/repetition fixes are recorded; opening words were reported retained. Both local recognizers subsequently failed the user's transcription-accuracy expectation. The current browser-first/delayed-name path needs a physical retest, especially simultaneous microphone access. Tab/PWA/accessibility results and Android/browser versions remain pending. iPhone remains unavailable; a second participant subsequently joined a test, but no identity-accuracy counts were reported. Follow [manual testing](manual-testing.md). The earlier all-Unknown report identified missing live integration, not a measured false-rejection rate.
+The user authorized publication. Initial Pixel 8 storage/comparison observations and spoken stop/repetition fixes are recorded; opening words were reported retained. Both local recognizers subsequently failed the user's transcription-accuracy expectation. The current browser-first/delayed-name path needs a physical retest, especially simultaneous microphone access. Tab/PWA/accessibility results and Android/browser versions remain pending. iPhone remains unavailable; a second participant subsequently joined a test, but no identity-accuracy counts were reported. Follow [manual testing](../manual-testing.md). The earlier all-Unknown report identified missing live integration, not a measured false-rejection rate.
 
-Use Settings → More → Compare recordings with a willing participant for realistic same/different-person trials. Follow the held-out protocol in [feasibility](feasibility.md); retain anonymous score/timing observations, not personal audio or voiceprints. Synthetic voices cannot replace this evidence. The current upstream-example baseline is expressly uncalibrated and limited to estimated suggestions by the user's choice; future reliable identity work must be based on held-out evidence.
+Use Settings → More → Compare recordings with a willing participant for realistic same/different-person trials. Follow the held-out protocol in [feasibility](../feasibility.md); retain anonymous score/timing observations, not personal audio or voiceprints. Synthetic voices cannot replace this evidence. The current upstream-example baseline is expressly uncalibrated and limited to estimated suggestions by the user's choice; future reliable identity work must be based on held-out evidence.
 
-Authoritative code/tests: [application composition](../src/main.tsx), [browser adapter](../src/transcription/browser.ts), [transcript](../src/features/listening/Transcript.tsx), [speaker services](../src/app/speaker-services.ts), [app browser tests](../tests/app.spec.ts), [speaker browser tests](../tests/speakers.spec.ts), [Pages workflow](../.github/workflows/pages.yml). Detailed measurements and limitations are in [feasibility](feasibility.md).
+Authoritative code/tests: [application composition](../../src/main.tsx), [browser adapter](../../src/transcription/browser.ts), [transcript](../../src/features/listening/Transcript.tsx), speaker services (historical path: `src/app/speaker-services.ts`; no longer tracked), [app browser tests](../../tests/app.spec.ts), speaker browser tests (historical path: `tests/speakers.spec.ts`; no longer tracked), [Pages workflow](../../.github/workflows/pages.yml). Detailed measurements and limitations are in [feasibility](../feasibility.md).

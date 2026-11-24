@@ -1,6 +1,9 @@
 # Local comparative benchmark — 2026-10-13
 
-> Historical research: this feature was removed from the MVP by [ADR 0046](decisions/0046-live-transcription-only-mvp.md). Commands and source paths below refer to earlier Git history.
+> Historical record, archived 2026-11-24. This describes earlier builds and may
+> reference retired code or commands. Use the [current documentation](../README.md).
+
+> Historical research: this feature was removed from the MVP by [ADR 0046](../decisions/0046-live-transcription-only-mvp.md). Commands and source paths below refer to earlier Git history.
 
 **Follow-up completed:** [Community-1, per-turn identity and word alignment](community-benchmark.md)
 reach 120/123 correctly named words and 9/11 complete utterances with zero false
@@ -126,7 +129,7 @@ to Go would not address the measured segmentation and timing failures.
 ## Reproduce
 
 From the repository root, with Node dependencies installed and the existing
-private diarization runtime prepared as described in [research instructions](../research/README.md):
+private diarization runtime prepared as described in research instructions (historical path: `research/README.md`; no longer tracked):
 
 ```powershell
 python -m venv research/private/benchmark-venv

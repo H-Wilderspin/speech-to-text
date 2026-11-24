@@ -39,4 +39,4 @@ attempted; it verifies no phone microphone behaviour. Unit regressions cover
 cancellation during cache lookup and retry while an older asset load is pending.
 
 Related: [ADR 0016](0016-reuse-cached-voice-model.md),
-[model browser regression](../../tests/model-cache.spec.ts).
+model browser regression (historical path: `tests/model-cache.spec.ts`; no longer tracked).

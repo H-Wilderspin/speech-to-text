@@ -1,6 +1,9 @@
 # Task planner (historical)
 
-Removed on 2026-11-24; see [ADR 0060](decisions/0060-remove-task-planner.md).
+> Historical record, archived 2026-11-24. This describes earlier builds and may
+> reference retired code or commands. Use the [current documentation](../README.md).
+
+Removed on 2026-11-24; see [ADR 0060](../decisions/0060-remove-task-planner.md).
 The current app has no task planner and no longer reads, writes or resets task
 data. Existing files and GitHub history are untouched. The instructions below
 describe the retired version and are retained only as a data-format reference.
@@ -100,7 +103,7 @@ completion maps plus `"completionReset": "2026-10-25"` (that week's Sunday).
 The marker prevents clearing ticks made afterwards and must be retained on
 all subsequent writes. Existing version 1 files remain readable; defaults stay
 at version 1. Older app versions reject version 2 rather than dropping the marker:
-use Settings → Update app on those devices. See [ADR 0058](decisions/0058-sunday-task-completion-reset.md).
+use Settings → Update app on those devices. See [ADR 0058](../decisions/0058-sunday-task-completion-reset.md).
 
 Use GitHub history to recover data. As with meals, deletion in the app does not
 erase public commit history. No deployment is required for data changes.

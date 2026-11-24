@@ -25,6 +25,6 @@ Approximately 24 seconds of speech input takes 9–11 seconds on the tested desk
 
 ## Validation
 
-Native and browser results, model/runtime hashes and exact timing are in [feasibility](../feasibility.md). Regression tests cover invalid input/output, overlapping and sparse IDs, allocation cleanup and overlap-duration accounting. Browser tests run inference and check cancellation during native processing, pagehide and a failed model download. Reproduction steps are in [research instructions](../../research/README.md).
+Native and browser results, model/runtime hashes and exact timing are in [feasibility](../feasibility.md). Regression tests cover invalid input/output, overlapping and sparse IDs, allocation cleanup and overlap-duration accounting. Browser tests run inference and check cancellation during native processing, pagehide and a failed model download. Reproduction steps are in research instructions (historical path: `research/README.md`; no longer tracked).
 
 Sources: [pinned public export](https://huggingface.co/csukuangfj/sherpa-onnx-pyannote-segmentation-3-0/tree/9403a6902bb58e3d5ae8c7e77c3422de279db2e0), [included MIT licence](https://huggingface.co/csukuangfj/sherpa-onnx-pyannote-segmentation-3-0/blob/9403a6902bb58e3d5ae8c7e77c3422de279db2e0/LICENSE), [original model card](https://huggingface.co/pyannote/segmentation-3.0), [native API and ABI](https://github.com/k2-fsa/sherpa-onnx/blob/9db1af1871ed78cee9357c23898e5a7d8702d21a/sherpa-onnx/c-api/c-api.h).

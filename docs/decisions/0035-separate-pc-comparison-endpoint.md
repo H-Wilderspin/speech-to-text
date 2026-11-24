@@ -61,7 +61,7 @@ not remove that subscription requirement.
 
 ## Validation
 
-See [service operation and checks](../../service/README.md),
-[packaged model results](../service-benchmark-results.json), and the new client
+See service operation and checks (historical path: `service/README.md`; no longer tracked),
+[packaged model results](../archive/service-benchmark-results.json), and the new client
 queue/lifecycle tests, HTTP-policy tests and comparison browser tests.
 Physical Pixel/iPhone acceptance remains outstanding.

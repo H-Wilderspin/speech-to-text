@@ -1,6 +1,9 @@
 # Community-1, turn identification and word alignment — 2026-10-13
 
-> Historical research: this feature was removed from the MVP by [ADR 0046](decisions/0046-live-transcription-only-mvp.md). Commands and source paths below refer to earlier Git history.
+> Historical record, archived 2026-11-24. This describes earlier builds and may
+> reference retired code or commands. Use the [current documentation](../README.md).
+
+> Historical research: this feature was removed from the MVP by [ADR 0046](../decisions/0046-live-transcription-only-mvp.md). Commands and source paths below refer to earlier Git history.
 
 **The strongest measured candidate is delayed speech-region Whisper, Community-1
 speech turns, identity matching separately for each turn, and forced word alignment.**
@@ -93,7 +96,7 @@ words internally and displaying only confidently assigned words above.
 
 First validate this flow on held-out human enrollment and speech, then add bounded
 queueing, overlapping context, stable payload IDs/revisions and session cancellation
-as proposed in [ADR 0032](decisions/0032-delayed-audio-timeline-service-proposal.md).
+as proposed in [ADR 0032](../decisions/0032-delayed-audio-timeline-service-proposal.md).
 There is no app/backend deployment in this benchmark. GitHub Pages remains the
 frontend host; a future Python service needs separate hosting or a companion PC.
 

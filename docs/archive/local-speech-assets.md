@@ -1,15 +1,18 @@
 # Optional local speech assets
 
-> Historical research: this feature was removed from the MVP by [ADR 0046](decisions/0046-live-transcription-only-mvp.md). Commands and source paths below refer to earlier Git history.
+> Historical record, archived 2026-11-24. This describes earlier builds and may
+> reference retired code or commands. Use the [current documentation](../README.md).
 
-Current product use: [ADR 0023](decisions/0023-browser-first-delayed-names.md)
+> Historical research: this feature was removed from the MVP by [ADR 0046](../decisions/0046-live-transcription-only-mvp.md). Commands and source paths below refer to earlier Git history.
+
+Current product use: [ADR 0023](../decisions/0023-browser-first-delayed-names.md)
 reuses these assets for delayed speaker evidence alongside authoritative browser
 captions. It adds no new model files. Offline model reuse is supported; offline
 browser transcription is not promised.
 
 ## Current ASR upgrade
 
-After the clear-speech accuracy failure, [ADR 0022](decisions/0022-upgrade-local-transcription.md)
+After the clear-speech accuracy failure, [ADR 0022](../decisions/0022-upgrade-local-transcription.md)
 replaces the small ASR weights with English streaming LibriSpeech/GigaSpeech
 Zipformer. The Apache-2.0 export is pinned to
 [revision 9a65b6ea94c311ca770c2bf895b30f456a22d703](https://huggingface.co/csukuangfj/sherpa-onnx-streaming-zipformer-en-2023-06-21/tree/9a65b6ea94c311ca770c2bf895b30f456a22d703).
@@ -54,7 +57,7 @@ Silero's release URL is mutable; the manifest hash identifies this exact artifac
 The ASR local model card was reviewed before promotion. Notices include the ASR
 source/model, the appended-export modification, Silero MIT text and the complete
 existing runtime dependency notices in
-[THIRD-PARTY-NOTICES.txt](../public/local/THIRD-PARTY-NOTICES.txt).
+THIRD-PARTY-NOTICES.txt (historical path: `public/local/THIRD-PARTY-NOTICES.txt`; no longer tracked).
 
 These files total 57,929,595 bytes. They are not shell-precached. An explicit
 Settings preparation downloads only missing/corrupt files into a page-owned
@@ -64,7 +67,7 @@ If no cache is available, explicit online preparation can run in memory. Browser
 eviction requires an explicit repair; cached-only startup never initiates a model
 download. There is no model proxy, key, backend or voice data in these assets.
 
-See [ADR 0021](decisions/0021-experimental-local-name-suggestions.md) for the
+See [ADR 0021](../decisions/0021-experimental-local-name-suggestions.md) for the
 uncalibrated experimental baseline and restrictions. Changing models requires
 new compatibility decisions, hashes, licences and evaluation; saved voiceprints
 must never silently be used with a different embedding model.
