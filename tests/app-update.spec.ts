@@ -1,3 +1,4 @@
+import { toggleCurrentPanel } from './navigation';
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { resolve, extname, sep } from 'node:path';
@@ -45,6 +46,9 @@ async function update(page: Page) {
 
 for (const base of ['/', '/speech-to-text/']) {
   test(`Update app installs a new release at ${base} and preserves saved access`, async ({ page, context }) => {
+    await context.route('https://raw.githubusercontent.com/**', route => route.fulfill({ status: 404, body: '' }));
+    await context.route('https://api.github.com/**', route => route.request().url().includes('/contents/')
+      ? route.fulfill({ status: 404, json: {} }) : route.fulfill({ json: { permissions: { push: true } } }));
     const host = await releaseServer(base);
     try {
       await installed(page, host.url);
@@ -55,6 +59,7 @@ for (const base of ['/', '/speech-to-text/']) {
       }, base);
       const other = await context.newPage(); await other.goto(host.url);
       host.state.release = 2;
+      await page.getByRole('button', { name: 'Meal planner', exact: true }).click();
       await update(page);
       await expect(release(page)).toHaveAttribute('content', '2');
       await expect(release(other)).toHaveAttribute('content', '1');
@@ -65,7 +70,7 @@ for (const base of ['/', '/speech-to-text/']) {
       expect(keys.some(key => key.endsWith(':test-release-1'))).toBe(false);
       // A second press on the same release must also finish and reload.
       await update(page);
-      await expect(page.getByRole('dialog', { name: 'Settings' })).toHaveCount(0);
+      await expect(page.getByRole('region', { name: 'Settings' })).toHaveCount(0);
       await expect(release(page)).toHaveAttribute('content', '2');
       await context.setOffline(true); await page.reload();
       await expect(release(page)).toHaveAttribute('content', '2');
@@ -93,7 +98,7 @@ test('offline and incomplete downloads keep the old app usable and allow retry',
   } finally { await context.setOffline(false); await host.close(); }
 });
 
-test('updates are disabled while listening or a planner is open', async ({ page }) => {
+test('updates require stopped listening but Settings needs no separate planner close', async ({ page }) => {
   await page.addInitScript(() => {
     class Recognition {
       onstart?: () => void;
@@ -109,15 +114,49 @@ test('updates are disabled while listening or a planner is open', async ({ page 
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Update app', exact: true })).toBeDisabled();
   await expect(page.getByText('Stop listening before updating.')).toBeVisible();
-  await page.getByRole('button', { name: 'Back to captions' }).click();
+  await toggleCurrentPanel(page);
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
-  await page.getByRole('button', { name: 'Task planner', exact: true }).click();
-  await page.getByRole('button', { name: 'Horizontal split (stacked)' }).click();
+  await page.getByRole('button', { name: 'Meal planner', exact: true }).click();
+  await page.setViewportSize({ width: 1024, height: 900 });
+  await page.getByRole('button', { name: 'Split view' }).click();
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Update app', exact: true })).toBeDisabled();
-  await expect(page.getByText('Close the planner before updating.')).toBeVisible();
-  await page.getByRole('dialog', { name: 'Settings', exact: true }).getByRole('button', { name: 'Back to captions' }).click();
-  await page.getByRole('dialog', { name: 'Task planner', exact: true }).getByRole('button', { name: 'Close planner' }).click();
-  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(page.locator('#planner-panel')).toBeHidden();
+  await expect(page.getByText('Close the planner before updating.')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Update app', exact: true })).toBeEnabled();
+});
+
+for (const base of ['/', '/speech-to-text/']) test(`an app update preserves an offline meal queue at ${base}`, async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-10-19T12:00:00'));
+  // WebKit worker-controlled fetches can bypass Playwright routing. Intercept
+  // only the page's GitHub transport; the app update still uses real HTTP/SW.
+  await page.addInitScript(() => {
+    const original = window.fetch.bind(window);
+    window.fetch = async (input, init) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+      if (url.startsWith('https://raw.githubusercontent.com/')) return new Response('{}', { status: 404 });
+      if (url.startsWith('https://api.github.com/')) {
+        if (init?.method === 'PUT') return new Response('{}', { status: 503 });
+        return url.includes('/contents/') ? new Response('{}', { status: 404 })
+          : Response.json({ permissions: { push: true } });
+      }
+      return original(input, init);
+    };
+  });
+  const host = await releaseServer(base);
+  try {
+    await installed(page, host.url);
+    await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await page.getByLabel('GitHub token').fill('test-token');
+    await page.getByRole('button', { name: 'Connect GitHub', exact: true }).click();
+    await expect(page.getByText('GitHub connected', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Meal planner', exact: true }).click();
+    await page.getByRole('button', { name: /^Monday 19 Oct, Breakfast:/ }).click();
+    await page.locator('#meal-text').fill('Offline porridge');
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    host.state.release = 2;
+    await update(page);
+    await expect(release(page)).toHaveAttribute('content', '2');
+    await page.getByRole('button', { name: 'Meal planner', exact: true }).click();
+    await expect(page.getByRole('button', { name: /^Monday 19 Oct, Breakfast:/ })).toContainText('Offline porridge');
+  } finally { await host.close(); }
 });

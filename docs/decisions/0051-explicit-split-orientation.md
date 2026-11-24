@@ -1,7 +1,8 @@
 # ADR 0051: Explicit split orientation controls
 
 Date: 2026-10-19
-Status: Accepted; supersedes the layout-selection UI in ADR 0050
+Status: Superseded by [ADR 0061](0061-tablet-side-by-side-toggle.md) on 2026-11-24.
+Original decision retained below.
 
 The all-width availability rule below is superseded by
 [ADR 0054](0054-narrow-viewport-split-controls.md).

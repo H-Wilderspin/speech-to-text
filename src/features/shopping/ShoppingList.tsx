@@ -1,35 +1,37 @@
-import { useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type Ref } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Icon } from '../../shared/Icon';
 import { itemName, type ShoppingChange, type ShoppingItem } from './items';
 import { useShoppingReorder } from './use-shopping-reorder';
-import { useShoppingSync, type ShoppingHandle } from './use-shopping-sync';
+import { useShoppingSync } from './use-shopping-sync';
+import type { PlannerSync } from '../planners/planner-sync';
 
-export function ShoppingList({ token, active, refresh, onBusy, ref }: {
+export function ShoppingList({ client, token, active, refresh, onBusy }: {
   token: string; active: boolean; refresh: number; onBusy: (busy: boolean) => void;
-  ref?: Ref<ShoppingHandle>;
+  client: PlannerSync;
 }) {
-  const [edit, setEdit] = useState<{ id: string; previous?: ShoppingItem } | null>(null);
-  const [text, setText] = useState('');
+  const draft = client.getDraft<{ edit: { id: string; previous?: ShoppingItem }; text: string }>('shopping');
+  const [edit, setEdit] = useState<{ id: string; previous?: ShoppingItem } | null>(draft?.edit ?? null);
+  const [text, setText] = useState(draft?.text ?? '');
+  useEffect(() => { client.setDraft('shopping', edit ? { edit, text } : null); }, [client, edit, text]);
   const input = useRef<HTMLInputElement>(null);
   const focusTarget = useRef('');
   const quickAddAnchor = useRef<{ button: HTMLButtonElement; top: number } | null>(null);
   const reorderingRef = useRef(false);
-  const { items, regularItems, loaded, status, error, saving, dirty, conflict, change, flush, resolveConflict, invalidate, setStatus, clearError } =
-    useShoppingSync({ token, active, refresh, onBusy, reordering: reorderingRef });
-  useImperativeHandle(ref, () => ({ flush }), [flush]);
+  const { items, regularItems, loaded, status, error, saving, dirty, conflicts, remoteItems, change, flush, resolveConflict, invalidate, setStatus, clearError } =
+    useShoppingSync({ client, token, active, refresh, reordering: reorderingRef });
   useLayoutEffect(() => {
     const anchor = quickAddAnchor.current;
     if (!anchor) return;
     quickAddAnchor.current = null;
     // Changing rows above the catalogue must not move the button under the user's
     // finger. Measure after layout so native scroll anchoring is not applied twice.
-    const pane = anchor.button.closest('dialog');
+    const pane = anchor.button.closest('.planner-panel');
     if (pane) pane.scrollTop += anchor.button.getBoundingClientRect().top - anchor.top;
     anchor.button.focus({ preventScroll: true });
   }, [items]);
   useEffect(() => { if (active && edit) input.current?.focus(); }, [active, edit]);
   useEffect(() => {
-    if (active && !edit && !saving && focusTarget.current) {
+    if (active && !edit && focusTarget.current) {
       const target = document.getElementById(focusTarget.current) as HTMLButtonElement | null;
       (target && !target.disabled ? target : document.getElementById('shopping-add'))?.focus();
       focusTarget.current = '';
@@ -44,7 +46,7 @@ export function ShoppingList({ token, active, refresh, onBusy, ref }: {
     focusTarget.current = item ? `shopping-edit-${id}` : 'shopping-add';
     setEdit({ id, previous: item }); setText(item?.text ?? ''); clearError();
   };
-  const disabled = !token || !loaded || saving;
+  const disabled = !token || !loaded;
   const { list, drag, handleProps, rowProps } = useShoppingReorder({ items, disabled: disabled || Boolean(edit), active,
     onBusy: busy => { reorderingRef.current = busy; invalidate(); onBusy(busy); if (!busy && document.hidden) void flush(); },
     onMove: change => { focusTarget.current = `shopping-reorder-${change.id}`; void commit(change); },
@@ -52,20 +54,22 @@ export function ShoppingList({ token, active, refresh, onBusy, ref }: {
   });
   const controlsDisabled = disabled || Boolean(edit) || Boolean(drag);
   const present = new Map(items.map(item => [itemName(item.text), item]));
+  const conflictFor = (key: string) => {
+    if (!conflicts.some(conflict => conflict.key === key)) return null;
+    const yours = items.find(item => item.id === key);
+    const family = remoteItems.find(item => item.id === key);
+    const describe = (item?: ShoppingItem) => item ? `${item.text}${item.checked ? ' (bought)' : ''}` : 'Removed';
+    return <div className="item-conflict" role="group" aria-label={key === '$order' ? 'Shopping order conflict' : `Resolve ${yours?.text ?? family?.text ?? 'item'}`}>
+      <p>Someone else changed {key === '$order' ? 'the order of the list' : 'this item'}.</p>
+      {key === '$order' ? <><p>Yours: {items.map(item => item.text).join(', ')}</p><p>Family: {remoteItems.map(item => item.text).join(', ')}</p></> : <><p>Yours: {describe(yours)}</p><p>Family: {describe(family)}</p></>}
+      <div className="meal-actions"><button onClick={() => resolveConflict(key, true)}>Keep mine</button>
+        <button onClick={() => resolveConflict(key, false)}>Use family change</button></div>
+    </div>;
+  };
   return <>
     <p className="sr-only" role="status">{saving ? 'Saving…' : dirty && !status.startsWith('Moving ') && status !== 'Changes waiting to save' ? `${status} Changes waiting to save.` : status}</p>
     {error && !edit && <p className="notice error" role="alert">{error}</p>}
-    {dirty && error && !conflict && <button disabled={saving || Boolean(drag)} onClick={() => void flush()}>Retry saving</button>}
-    {conflict && <section className="shopping-conflict" aria-label="Resolve shopping changes">
-      <h3>Latest shared list</h3>
-      {conflict.length ? <ol>{conflict.map(item => <li key={item.id}>{item.text}{item.checked ? ' — Bought' : ''}</li>)}</ol> : <p>The shared list is empty.</p>}
-      <p>Your list below has not been saved. Keep your changes, or replace them with this shared list.</p>
-      <div className="meal-actions">
-        <button disabled={saving || Boolean(drag)} onClick={() => resolveConflict(true)}>Keep my changes</button>
-        <button disabled={saving || Boolean(drag)} onClick={() => resolveConflict(false)}>Use shared list</button>
-      </div>
-    </section>}
-    <button id="shopping-add" className="shopping-add" disabled={controlsDisabled} onClick={() => beginEdit()}>Add item</button>
+    {dirty && error && !conflicts.length && <button disabled={saving || Boolean(drag)} onClick={() => void flush()}>Retry saving</button>}
     {loaded && items.length === 0 && <p className="unplanned">Your shopping list is empty.</p>}
     <p id="shopping-reorder-help" className="sr-only">Press Space or Enter to pick up an item. Use the arrow keys, Home or End to move it, then Space or Enter to drop. Escape cancels.</p>
     <ol ref={list} className="shopping-list" aria-label="Shopping items">
@@ -85,7 +89,9 @@ export function ShoppingList({ token, active, refresh, onBusy, ref }: {
             void commit({ type: 'remove', id: item.id, previous: item });
           }}><Icon name="clear" /></button>
         </div>
+        {conflictFor(item.id)}
       </li>)}
+      {conflicts.filter(conflict => !items.some(item => item.id === conflict.key)).map(conflict => <li key={`conflict-${conflict.key}`}>{conflictFor(conflict.key)}</li>)}
     </ol>
     {drag?.pointer && drag.moved && <div className="shopping-drag-preview" aria-hidden="true"
       style={{ left: Math.max(8, Math.min(drag.x + 12, window.innerWidth - 248)), top: Math.max(8, Math.min(drag.y + 12, window.innerHeight - 64)) }}>
@@ -93,15 +99,15 @@ export function ShoppingList({ token, active, refresh, onBusy, ref }: {
     </div>}
     {edit && <form className="meal-editor" aria-label="Edit shopping item" onSubmit={event => {
       event.preventDefault();
-      void commit(edit.previous ? { type: 'edit', id: edit.id, previous: edit.previous.text, text } : { type: 'add', id: edit.id, text }, true);
+      void commit(edit.previous ? { type: 'edit', id: edit.id, previous: edit.previous.text, previousItem: edit.previous, text } : { type: 'add', id: edit.id, text }, true);
     }}>
       {error && <p className="notice error" role="alert">{error}</p>}
       <label htmlFor="shopping-text">Shopping item</label>
-      <input id="shopping-text" ref={input} maxLength={300} value={text} disabled={saving} placeholder="For example, apples — 6" onChange={event => setText(event.target.value)} />
+      <input id="shopping-text" ref={input} maxLength={300} value={text} disabled={!token} placeholder="For example, apples — 6" onChange={event => setText(event.target.value)} />
       <div className="meal-actions">
-        <button type="submit" disabled={saving || !token || !text.trim()}>Save</button>
-        <button type="button" disabled={saving} onClick={() => setEdit(null)}>Cancel</button>
-        {edit.previous && <button type="button" disabled={saving || !token} onClick={() => void commit({ type: 'remove', id: edit.id, previous: edit.previous! }, true)}>Remove item</button>}
+        <button type="submit" disabled={!token || !text.trim()}>Save</button>
+        <button type="button" onClick={() => setEdit(null)}>Cancel</button>
+        {edit.previous && <button type="button" disabled={!token} onClick={() => void commit({ type: 'remove', id: edit.id, previous: edit.previous! }, true)}>Remove item</button>}
       </div>
     </form>}
     <section className="shopping-regular" aria-labelledby="regular-items-title">
@@ -117,6 +123,9 @@ export function ShoppingList({ token, active, refresh, onBusy, ref }: {
           }}>{text}<span style={{ visibility: existing ? 'visible' : 'hidden' }} aria-hidden="true"> — Added</span></button>;
       })}</div>
     </section>
-    {!token && <p>To edit the shopping list, connect GitHub in Settings.</p>}
+    {!token && <p>To edit the shopping list, connect in Settings.</p>}
+    {!edit && <div className="shopping-footer">
+      <button id="shopping-add" className="shopping-add" disabled={controlsDisabled} onClick={() => beginEdit()}>Add item</button>
+    </div>}
   </>;
 }

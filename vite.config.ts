@@ -29,5 +29,5 @@ function offlineShell(): Plugin {
 export default defineConfig({
   base: './',
   plugins: [react(), offlineShell()],
-  test: { include: ['src/**/*.test.ts'], environment: 'node' },
+  test: { include: ['src/**/*.test.ts', 'service/**/*.test.ts'], environment: 'node' },
 });

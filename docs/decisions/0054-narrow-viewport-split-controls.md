@@ -1,7 +1,8 @@
 # ADR 0054: Disable side-by-side split in narrow viewports
 
 Date: 2026-10-19
-Status: Accepted; supersedes ADR 0051's all-width split availability
+Status: Superseded by [ADR 0061](0061-tablet-side-by-side-toggle.md) on 2026-11-24.
+Original decision retained below.
 
 The user requests a disabled vertical split button in tiny viewports. Use 768 CSS
 pixels as the minimum width for side-by-side panes. Below it, the native button

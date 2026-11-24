@@ -1,0 +1,8 @@
+# Copy to .dev.vars for LOCAL development only. Never commit credentials.
+ADMIN_TOKEN="replace-with-at-least-32-random-bytes"
+APP_ORIGIN="http://localhost:5173"
+SYNC_PAUSED="false"
+GITHUB_APP_ID=""
+GITHUB_INSTALLATION_ID=""
+# PKCS8 PRIVATE KEY PEM, JSON-escaped newlines. Use prepare-key.mjs below.
+GITHUB_PRIVATE_KEY=""

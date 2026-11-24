@@ -3,6 +3,8 @@
 Date: 2026-10-19
 Status: Accepted; supersedes shopping save timing in ADRs 0055–0056
 
+Superseded for persistence and save/navigation behaviour by [ADR 0066](0066-local-first-planner-sync.md).
+
 ## Context
 
 The user asks for shopping changes in state, saved to GitHub every 30 seconds or

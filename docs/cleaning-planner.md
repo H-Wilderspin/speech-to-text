@@ -1,4 +1,9 @@
-# Task planner
+# Task planner (historical)
+
+Removed on 2026-11-24; see [ADR 0060](decisions/0060-remove-task-planner.md).
+The current app has no task planner and no longer reads, writes or resets task
+data. Existing files and GitHub history are untouched. The instructions below
+describe the retired version and are retained only as a data-format reference.
 
 Use the checklist beside the cutlery to open a Monday–Sunday task list for
 shopping trips, housework or other activities. Only one

@@ -1,24 +1,44 @@
-import { useEffect, useState, type Ref } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Icon } from '../../shared/Icon';
-import { Modal } from '../../shared/Modal';
 import { addDays, dateKey, monday } from '../meals/calendar';
 import { MealWeek } from '../meals/MealPlanner';
-import { CleaningWeek } from '../cleaning/CleaningWeek';
 import { ShoppingList } from '../shopping/ShoppingList';
-import type { ShoppingHandle } from '../shopping/use-shopping-sync';
+import type { PlannerSync } from './planner-sync';
+import { usePullRefresh } from './use-pull-refresh';
+import { useWeekSwipe } from '../meals/use-week-swipe';
 
-export type PlannerLayout = 'full' | 'vertical' | 'horizontal';
+export type PlannerLayout = 'full' | 'split';
 
-export type PlannerKind = 'meals' | 'cleaning' | 'shopping';
+export type PlannerKind = 'meals' | 'shopping';
 
-export function Planner({ token, onClose, layout, onLayout, verticalSplitAvailable, kind, busy, onBusy, shoppingRef }: {
-  shoppingRef: Ref<ShoppingHandle>;
-  verticalSplitAvailable: boolean;
-  kind: PlannerKind; busy: boolean; onBusy: (busy: boolean) => void; token: string; onClose: () => void; layout: PlannerLayout; onLayout: (value: PlannerLayout) => void;
+export function Planner({ client, token, visible, layout, refresh, kind, busy, onBusy, onRefresh }: {
+  client: PlannerSync;
+  refresh: number;
+  onRefresh: () => void;
+  kind: PlannerKind; busy: boolean; onBusy: (busy: boolean) => void; token: string; visible: boolean; layout: PlannerLayout;
 }) {
   const [today, setToday] = useState(() => new Date());
   const [start, setStart] = useState(() => monday(new Date()));
-  const [refresh, setRefresh] = useState(0);
+  const panel = useRef<HTMLElement>(null);
+  const changeWeek = useCallback((direction: number) => setStart(value => addDays(value, direction * 7)), []);
+  useWeekSwipe(panel, visible && kind === 'meals' && !busy, changeWeek);
+  const pull = usePullRefresh(panel, visible && !busy, onRefresh);
+  const header = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    const element = header.current!;
+    const measure = () => {
+      const height = element.getBoundingClientRect().height;
+      if (height > 0) panel.current?.style.setProperty('--planner-header-height', `${height}px`);
+    };
+    measure();
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', measure);
+      return () => window.removeEventListener('resize', measure);
+    }
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
   useEffect(() => {
     const timer = window.setInterval(() => setToday(new Date()), 60000);
     return () => clearInterval(timer);
@@ -26,25 +46,22 @@ export function Planner({ token, onClose, layout, onLayout, verticalSplitAvailab
   const week = dateKey(start);
   const end = addDays(start, 6);
   const thisWeek = dateKey(monday(today));
-  return <Modal title={kind === 'meals' ? 'Meal planner' : kind === 'cleaning' ? 'Task planner' : 'Shopping list'} id="planner-title" onClose={onClose} busy={busy} inline={layout !== 'full'}
-    headerLeading={<button className="icon-button" aria-label="Refresh" title="Refresh plan" disabled={busy} onClick={() => setRefresh(value => value + 1)}><Icon name="refresh" /></button>}
-    headerAction={<>{(['vertical', 'horizontal'] as const).map(mode => {
-      const label = mode === 'vertical' ? 'Vertical split (side by side)' : 'Horizontal split (stacked)';
-      const tooNarrow = mode === 'vertical' && !verticalSplitAvailable;
-      return <button key={mode} className="icon-button split-button" aria-label={label} aria-pressed={layout === mode}
-        title={tooNarrow ? 'Side-by-side view needs a wider window' : layout === mode ? 'Return to full planner' : label} disabled={busy || tooNarrow}
-        onClick={event => { event.currentTarget.focus(); onLayout(layout === mode ? 'full' : mode); }}><Icon name={`split-${mode}`} /></button>;
-    })}</>}>
-    <div className="meal-content">
-      <nav className="week-navigation" aria-label="Choose week" hidden={kind === 'shopping'}>
-        <button className="icon-button" aria-label="Previous week" disabled={busy} onClick={() => setStart(value => addDays(value, -7))}><Icon name="previous" /></button>
-        <div><p className="week-heading">{start.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}{start.getFullYear() !== end.getFullYear() ? `, ${start.getFullYear()}` : ''} - {end.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}, {end.getFullYear()}</p>
-          {week !== thisWeek && <button className="this-week" disabled={busy} onClick={() => setStart(monday(new Date()))}>This week</button>}</div>
-        <button className="icon-button" aria-label="Next week" disabled={busy} onClick={() => setStart(value => addDays(value, 7))}><Icon name="next" /></button>
-      </nav>
-      <div hidden={kind !== 'meals'}><MealWeek key={week} start={start} today={dateKey(today)} token={token} refresh={refresh} onBusy={onBusy} active={kind === 'meals'} /></div>
-      <div hidden={kind !== 'cleaning'}><CleaningWeek key={week} start={start} today={dateKey(today)} token={token} refresh={refresh} onBusy={onBusy} active={kind === 'cleaning'} /></div>
-      <div hidden={kind !== 'shopping'}><ShoppingList ref={shoppingRef} token={token} refresh={refresh} onBusy={onBusy} active={kind === 'shopping'} /></div>
+  return <section ref={panel} id="planner-panel" className={layout === 'split' ? 'app-panel planner-panel planner-split' : 'app-panel planner-panel'} hidden={!visible} aria-labelledby="planner-title">
+    <header ref={header} className="settings-header meal-header">
+      {kind === 'meals' && <button className="icon-button" aria-label="Previous week" disabled={busy} onClick={() => changeWeek(-1)}><Icon name="previous" /></button>}
+      <div className="planner-heading">
+        <h2 id="planner-title">{kind === 'meals' ? 'Meal planner' : 'Shopping list'}</h2>
+        {kind === 'meals' && <p className="week-heading" aria-live="polite">{start.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}{start.getFullYear() !== end.getFullYear() ? `, ${start.getFullYear()}` : ''} - {end.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}, {end.getFullYear()}</p>}
+      </div>
+      {kind === 'meals' && <button className="icon-button" aria-label="Next week" disabled={busy} onClick={() => changeWeek(1)}><Icon name="next" /></button>}
+    </header>
+    {pull.pulling && <p className="pull-refresh-status" role="status">{pull.ready ? 'Release to sync and refresh' : 'Pull down to sync and refresh'}</p>}
+    <div className={kind === 'shopping' ? 'meal-content shopping-content' : 'meal-content'}>
+      <div className="week-navigation" hidden={kind === 'shopping' || week === thisWeek}>
+        {week !== thisWeek && <button className="this-week" disabled={busy} onClick={() => setStart(monday(new Date()))}>This week</button>}
+      </div>
+      <div hidden={kind !== 'meals'}><MealWeek client={client} key={week} start={start} today={dateKey(today)} token={token} refresh={refresh} active={visible && kind === 'meals'} /></div>
+      <div className="shopping-view" hidden={kind !== 'shopping'}><ShoppingList client={client} token={token} refresh={refresh} onBusy={onBusy} active={visible && kind === 'shopping'} /></div>
     </div>
-  </Modal>;
+  </section>;
 }

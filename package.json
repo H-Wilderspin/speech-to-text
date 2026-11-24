@@ -8,13 +8,19 @@
   },
   "scripts": {
     "dev": "vite --host 0.0.0.0",
+    "service:dev": "wrangler dev --config service/wrangler.jsonc --local",
+    "service:setup": "node --use-system-ca service/setup-github.mjs",
+    "test:setup": "node --test service/setup-github.test.mjs",
+    "service:migrate:local": "wrangler d1 migrations apply DB --local --config service/wrangler.jsonc",
+    "service:build": "wrangler deploy --dry-run --config service/wrangler.jsonc --outdir .wrangler/service-build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:family": "playwright test --config playwright.family.config.ts",
     "build": "npm run typecheck && vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "check": "npm run typecheck && npm run lint && npm test && npm run build"
+    "check": "npm run typecheck && npm run lint && npm test && npm run test:setup && npm run build"
   },
   "dependencies": {
     "react": "^19.2.0",
@@ -34,6 +40,7 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.48.0",
     "vite": "^7.3.1",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "wrangler": "^4.168.0"
   }
 }

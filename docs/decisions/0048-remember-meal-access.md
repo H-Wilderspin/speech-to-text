@@ -1,7 +1,7 @@
 # ADR 0048: Remember meal editing access on a personal device
 
 Date: 2026-10-19
-Status: Accepted; supersedes the token-persistence rule in ADR 0047
+Status: Superseded in persistence choice and renewal flow by [ADR 0063](0063-automatic-token-persistence-and-renewal.md); originally superseded the token-persistence rule in ADR 0047
 
 ## Context
 

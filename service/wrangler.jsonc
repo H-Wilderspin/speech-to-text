@@ -1,0 +1,20 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "speech-to-text-family-sync",
+  "main": "worker.ts",
+  "compatibility_date": "2025-11-01",
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": { "enabled": false },
+  "vars": {
+    "APP_ORIGIN": "https://h-wilderspin.github.io",
+    "SYNC_PAUSED": "false",
+    "DAILY_REQUEST_LIMIT": "5000"
+  },
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "speech-to-text-family-sync",
+    "database_id": "d90fc1a8-ae4a-4e8a-b39f-ce90a02b794f",
+    "migrations_dir": "migrations"
+  }]
+}

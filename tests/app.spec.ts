@@ -1,3 +1,4 @@
+import { toggleCurrentPanel } from './navigation';
 import { expect, test, type Page } from '@playwright/test';
 
 async function mockRecognition(page: Page) {
@@ -44,7 +45,7 @@ for (const availability of ['supported', 'denied', 'missing'] as const) test(`sc
   await expect(page.getByRole('region', { name: 'Live transcript' })).toContainText('Reading without touching the screen.');
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await expect(page.getByText(availability === 'supported' ? 'Keeping screen awake.' : 'Screen may sleep. Check your device’s Auto-Lock settings.')).toBeVisible();
-  await page.getByRole('button', { name: 'Back to captions' }).click();
+  await toggleCurrentPanel(page);
   await page.getByRole('button', { name: 'Clear', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeEnabled();
   await result(page, 'Still listening after Clear.', true);
@@ -73,7 +74,7 @@ test('light live captions remember text preferences', async ({ page }) => {
   await page.reload();
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await expect(page.getByLabel('Speech language')).toHaveValue('en-US');
-  await page.getByRole('button', { name: 'Back to captions' }).click();
+  await toggleCurrentPanel(page);
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   await result(page, 'All speech appears immediately here.', false);
   const live = page.getByRole('region', { name: 'Live transcript', exact: true });
@@ -209,7 +210,7 @@ test('caption formatting follows revisions and language without changing voice c
   await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await page.getByLabel('Speech language').selectOption('es-ES');
-  await page.getByRole('button', { name: 'Back to captions' }).click();
+  await toggleCurrentPanel(page);
   await page.getByRole('button', { name: 'Clear', exact: true }).click();
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   await result(page, 'hola i adiós. qué tal?', true);
@@ -230,28 +231,63 @@ test('permission denial is actionable and a new gesture can recover', async ({ p
   await expect(page.locator('.listening-indicator')).toHaveText('Listening…');
 });
 
+test('Speech to text selects captions from every screen without changing the listening session', async ({ page }) => {
+  await mockRecognition(page);
+  await page.route('https://raw.githubusercontent.com/**', route => route.fulfill({ status: 404, body: '' }));
+  await page.setViewportSize({ width: 1024, height: 800 });
+  await page.goto('/');
+  const captions = page.getByRole('button', { name: 'Speech to text', exact: true });
+  await expect(captions).toHaveAttribute('aria-expanded', 'true');
+  await page.getByRole('button', { name: 'Listen', exact: true }).click();
+  await result(page, 'Keep these captions.', true);
+  for (const screen of ['Meal planner', 'Shopping list', 'Settings']) {
+    await page.getByRole('button', { name: screen, exact: true }).click();
+    await expect(captions).toHaveAttribute('aria-expanded', 'false');
+    if (screen === 'Shopping list') await page.getByRole('button', { name: 'Split view', exact: true }).click();
+    await captions.click();
+    await expect(captions).toBeFocused();
+    await expect(captions).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('.app-panel:visible')).toHaveCount(0);
+    await expect(page.locator('.content-layout')).not.toHaveClass(/with-meals/);
+    await expect(page.locator('.confirmed')).toHaveText('Keep these captions.');
+    await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeEnabled();
+  }
+  for (const width of [390, 320]) {
+    await page.setViewportSize({ width, height: 844 });
+    await expect(captions).toBeInViewport();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    for (const button of await page.getByRole('contentinfo').getByRole('button').all()) {
+      const box = (await button.boundingBox())!;
+      expect(box.width).toBeGreaterThanOrEqual(48);
+      expect(box.height).toBeGreaterThanOrEqual(48);
+    }
+  }
+});
+
 test('bottom icon controls leave the viewport to captions and settings preserve an active session', async ({ page }) => {
   await mockRecognition(page); await page.setViewportSize({ width: 390, height: 844 }); await page.goto('/');
-  await expect(page.getByRole('contentinfo').getByRole('button')).toHaveText(['Listen', '', '', '', '', '']);
-  for (const name of ['Clear', 'Meal planner', 'Task planner', 'Shopping list', 'Settings']) await expect(page.getByRole('contentinfo').getByRole('button', { name, exact: true })).toHaveCount(1);
+  await expect(page.getByRole('contentinfo').getByRole('button')).toHaveCount(6);
+  for (const name of ['Clear', 'Speech to text', 'Meal planner', 'Shopping list', 'Settings']) await expect(page.getByRole('contentinfo').getByRole('button', { name, exact: true })).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Task planner', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Clear', exact: true })).toBeDisabled();
   const transcript = page.getByRole('region', { name: 'Live transcript' });
   const box = await transcript.boundingBox();
-  const controls = await page.getByRole('contentinfo', { name: 'Caption controls' }).boundingBox();
+  const controls = await page.getByRole('contentinfo', { name: 'App controls' }).boundingBox();
   expect(controls!.y + controls!.height).toBe(844);
   expect(box!.y + box!.height).toBeLessThanOrEqual(controls!.y);
-  expect(box!.height).toBeGreaterThan(650);
+  // The phone footer wraps Listen above the five 48px navigation controls.
+  expect(box!.height).toBeGreaterThan(600);
   expect(box!.y + box!.height).toBeLessThanOrEqual(844);
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await page.getByLabel('Speech language').selectOption('en-US');
-  await page.getByRole('button', { name: 'Back to captions' }).click();
+  await toggleCurrentPanel(page);
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   await result(page, 'The captions fill this page.', true);
-  await expect(page.getByRole('contentinfo').getByRole('button')).toHaveText(['Stop', '', '', '', '', '']);
+  await expect(page.getByRole('contentinfo').getByRole('button')).toHaveCount(6);
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await expect(page.getByLabel('Speech language')).toBeDisabled();
   await page.getByRole('button', { name: 'Larger text' }).click();
-  await page.keyboard.press('Escape');
+  await toggleCurrentPanel(page);
   await expect(page.getByRole('button', { name: 'Settings', exact: true })).toBeFocused();
   await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeEnabled();
   await expect(page.locator('.confirmed')).toHaveText('The captions fill this page.');
@@ -261,7 +297,7 @@ test('bottom icon controls leave the viewport to captions and settings preserve 
   await page.screenshot({ path: `test-results/clean-page-${test.info().project.name}.png` });
 });
 
-test('Poppins settings centre, preview size and dismiss only outside the panel', async ({ page }) => {
+test('Poppins settings keep the footer visible and only toggle through its icon', async ({ page }) => {
   await mockRecognition(page); await page.setViewportSize({ width: 1440, height: 900 }); await page.goto('/');
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   await result(page, 'A clear live sentence.', true);
@@ -271,11 +307,16 @@ test('Poppins settings centre, preview size and dismiss only outside the panel',
   await page.evaluate(() => document.fonts.ready);
   expect(await page.evaluate(() => document.fonts.check('400 32px Poppins') && document.fonts.check('600 14px Poppins'))).toBe(true);
   await expect(page.locator('body')).toHaveCSS('font-family', 'Poppins, sans-serif');
-  const dialog = page.getByRole('dialog');
-  expect(await dialog.boundingBox()).toEqual({ x: 220, y: 0, width: 1000, height: 900 });
+  const dialog = page.locator('.app-panel:visible');
+  const footer = (await page.getByRole('contentinfo').boundingBox())!;
+  const box = (await dialog.boundingBox())!;
+  expect(box.x).toBe(220); expect(box.width).toBe(1000);
+  expect(box.y + box.height).toBeLessThanOrEqual(footer.y);
+  await expect(page.getByRole('button', { name: /Back to captions|Close planner/ })).toHaveCount(0);
+  await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.locator('.settings-content > section').first()).toHaveAttribute('aria-label', 'App updates');
   await expect(page.getByRole('region', { name: 'Caption preferences' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Text size', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Caption text size', exact: true })).toHaveCount(0);
   await expect(page.locator('#text-size-label')).toHaveCSS('text-transform', 'uppercase');
   await expect(page.locator('#text-size-label')).toHaveCSS('letter-spacing', '2.8px');
   await expect(page.locator('.size-preview')).toHaveCSS('font-size', '32px');
@@ -289,11 +330,13 @@ test('Poppins settings centre, preview size and dismiss only outside the panel',
   expect(controls[0]!.y).toBe(controls[1]!.y);
   expect(controls[1]!.x).toBeGreaterThan(controls[0]!.x + controls[0]!.width);
   await page.screenshot({ path: `test-results/settings-desktop-${test.info().project.name}.png` });
-  // An inside click or a drag out of the panel must not dismiss it.
+  // Content clicks, outside clicks and Escape do not navigate.
   await page.locator('#settings-title').click(); await expect(dialog).toBeVisible();
   await page.mouse.move(600, 40); await page.mouse.down(); await page.mouse.move(40, 40); await page.mouse.up();
   await expect(dialog).toBeVisible();
-  await page.mouse.click(40, 150); await expect(dialog).toHaveCount(0);
+  await page.mouse.click(40, 150); await page.keyboard.press('Escape');
+  await expect(dialog).toBeVisible();
+  await toggleCurrentPanel(page); await expect(dialog).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Settings', exact: true })).toBeFocused();
   await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeEnabled();
   await expect(text).toHaveText('A clear live sentence.');
@@ -410,17 +453,17 @@ test('Android keeps a deliberately repeated sentence from a later native session
   await expect(page.locator('.confirmed')).toHaveText(['Yes, very very good.', 'Yes, very very good.']);
 });
 
-test('unsupported capability preserves readable UI and accessible settings dialog', async ({ page }) => {
+test('unsupported capability preserves readable UI and accessible settings screen', async ({ page }) => {
   await page.addInitScript(() => Object.assign(window, { SpeechRecognition: undefined, webkitSpeechRecognition: undefined }));
   await page.goto('/');
   await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeDisabled();
   await expect(page.getByRole('alert')).toContainText('does not offer');
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
 
-  await expect(page.getByRole('dialog')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Back to captions' })).toBeFocused();
-  await page.keyboard.press('Escape');
-  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.locator('.app-panel:visible')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Settings', exact: true })).toHaveAttribute('aria-expanded', 'true');
+  await toggleCurrentPanel(page);
+  await expect(page.locator('.app-panel:visible')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Settings', exact: true })).toBeFocused();
 });
 
@@ -437,7 +480,7 @@ test('320px and larger text do not create horizontal overflow', async ({ page })
   await mockRecognition(page); await page.setViewportSize({ width: 320, height: 740 }); await page.goto('/');
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   for (let i = 0; i < 6; i++) await page.getByRole('button', { name: 'Larger text' }).click();
-  await page.getByRole('button', { name: 'Back to captions' }).click();
+  await toggleCurrentPanel(page);
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   await result(page, 'LongUnbrokenWord'.repeat(20), true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
@@ -533,8 +576,7 @@ test('reading earlier speech preserves scroll and returning to bottom resumes fo
     ] });
   });
   const region = page.getByRole('region', { name: 'Live transcript', exact: true });
-  await region.evaluate((element) => { element.scrollTop = 0; element.dispatchEvent(new Event('scroll')); });
-  await expect(page.getByRole('contentinfo').getByRole('button')).toHaveCount(6);
+  await region.evaluate((element) => { element.scrollTop = 120; element.dispatchEvent(new Event('scroll')); });
   await page.evaluate(() => {
     const host = window as Window & { testRecognition?: { onresult: (event: unknown) => void } };
     host.testRecognition?.onresult({ results: [
@@ -543,7 +585,65 @@ test('reading earlier speech preserves scroll and returning to bottom resumes fo
       { 0: { transcript: 'Another thought.', confidence: .9 }, length: 1, isFinal: true },
     ] });
   });
-  expect(await region.evaluate((element) => element.scrollTop)).toBe(0);
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(region).toBeHidden();
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  expect(await region.evaluate((element) => element.scrollTop)).toBe(120);
   await region.evaluate((element) => { element.scrollTop = element.scrollHeight; element.dispatchEvent(new Event('scroll')); });
   expect(await region.evaluate((element) => element.scrollHeight - element.clientHeight - element.scrollTop)).toBeLessThan(2);
+});
+
+test('Settings splits beside captions and its active footer icon returns to captions', async ({ page }) => {
+  await mockRecognition(page);
+  await page.route('https://raw.githubusercontent.com/**', route => route.fulfill({ status: 404, body: '' }));
+  await page.setViewportSize({ width: 1024, height: 800 });
+  await page.goto('/');
+  const settings = page.getByRole('button', { name: 'Settings', exact: true });
+  const split = page.getByRole('button', { name: 'Split view', exact: true });
+  const panel = page.getByRole('region', { name: 'Settings', exact: true });
+  const captions = page.getByRole('region', { name: 'Live transcript' });
+  await page.getByRole('button', { name: 'Listen', exact: true }).click();
+  await result(page, 'Keep listening in Settings.', true);
+  await settings.click();
+  await expect(captions).toBeHidden();
+  await expect(split).toBeEnabled();
+  await page.getByLabel('GitHub token').fill('unfinished-token-draft');
+  await split.click();
+  for (const width of [1024, 768, 390, 1024]) {
+    await page.setViewportSize({ width, height: 800 });
+    await expect(page.getByLabel('GitHub token')).toHaveValue('unfinished-token-draft');
+    await expect(panel).toBeVisible();
+    if (width >= 768) {
+      await expect(captions).toBeVisible();
+      await expect(split).toHaveAttribute('aria-pressed', 'true');
+      const left = (await page.locator('#captions').boundingBox())!;
+      const right = (await panel.boundingBox())!;
+      expect(left.x + left.width).toBeLessThanOrEqual(right.x);
+      expect(Math.abs(left.y - right.y)).toBeLessThan(2);
+      await expect(page.locator('.caption-preferences')).toHaveCSS('flex-direction', 'column');
+    } else {
+      await expect(captions).toBeHidden();
+      await expect(split).toHaveCount(0);
+    }
+    expect(await panel.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+  await page.getByRole('button', { name: 'Larger text', exact: true }).click();
+  await expect(captions).toHaveCSS('font-size', '36px');
+  await page.screenshot({ path: `test-results/settings-split-${test.info().project.name}.png` });
+  await split.click();
+  await expect(captions).toBeHidden();
+  await expect(page.getByLabel('GitHub token')).toHaveValue('unfinished-token-draft');
+  await split.click();
+  await page.getByRole('button', { name: 'Shopping list', exact: true }).click();
+  await settings.click();
+  await expect(page.locator('.planner-panel')).toBeHidden();
+  await settings.click();
+  await expect(page.locator('.app-panel:visible')).toHaveCount(0);
+  await expect(captions).toBeVisible();
+  await expect(page.locator('.confirmed')).toHaveText('Keep listening in Settings.');
+  await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Speech to text', exact: true })).toHaveAttribute('aria-expanded', 'true');
+  await expect(settings).toBeFocused();
+  await expect(split).toBeDisabled();
 });

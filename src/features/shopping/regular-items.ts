@@ -4,6 +4,6 @@ export const regularItems: readonly string[] = [
   'Raspberries', 'Strawberries', 'Blueberries', 'Blackberries',
   'Whipping cream', 'Double cream', 'Whole milk', 'Semi skimmed milk',
   'Cheddar cheese', 'Parmesan', 'Soured cream',
-  'Apples', 'Pears', 'Cucumber', 'Little gem lettuce', 'Cherry tomatoes', 'Avocado',
-  'Curly kale', 'Sweetheart cabbage', 'Carrots', 'Coffee',
+  'Apples', 'Pears', 'Cucumber', 'Romaine lettuce', 'Cherry tomatoes', 'Avocado',
+  'Covolo Nero', 'Sweetheart cabbage', 'Carrots', 'Coffee',
 ];

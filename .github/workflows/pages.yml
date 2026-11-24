@@ -34,6 +34,15 @@ jobs:
         run: npx playwright install --with-deps chromium webkit
       - name: Test production app at root and project paths
         run: npm run test:e2e -- --workers=1 --max-failures=1
+      - name: Test paired family connection at root and project paths
+        run: npm run test:family -- --max-failures=1
+      - name: Check Worker bundle without deployment
+        run: npm run service:build
+      - name: Build configured family connection for publication
+        if: github.event_name != 'pull_request' && vars.VITE_SYNC_SERVICE_URL != ''
+        env:
+          VITE_SYNC_SERVICE_URL: ${{ vars.VITE_SYNC_SERVICE_URL }}
+        run: npm run build
       - name: Upload static site
         if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5

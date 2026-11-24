@@ -1,7 +1,8 @@
 # ADR 0052: Shared cleaning checklists in the planner pane
 
 Date: 2026-10-19
-Status: Accepted; extends ADRs 0047–0051
+Status: Superseded by [ADR 0060](0060-remove-task-planner.md) on 2026-11-24.
+Original decision retained below.
 
 ## Context
 

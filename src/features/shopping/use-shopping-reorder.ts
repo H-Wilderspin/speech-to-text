@@ -19,7 +19,7 @@ export function useShoppingReorder({ items, disabled, active, onBusy, onMove, an
 
   const begin = (item: ShoppingItem, handle: HTMLButtonElement, pointer?: DragStart) => {
     if (disabled || !active || session.current || items.length < 2 || !list.current) return;
-    const pane = list.current.closest('dialog')!;
+    const pane = list.current.closest('.planner-panel')!;
     const order = items.map(item => item.id);
     const otherIds = order.filter(id => id !== item.id);
     const originalIndex = order.indexOf(item.id);

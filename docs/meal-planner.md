@@ -1,25 +1,49 @@
 # Shared meal planner
 
+The optional [family connection service](hosted-editing.md) lets devices pair once
+instead of entering GitHub tokens. Its Worker and database are deployed and live
+reads/saves are verified. Existing token instructions below apply until
+the service URL is enabled. Completed local edits survive switching connections.
+
 Open the cutlery button next to Clear. The planner shows one Monday–Sunday week
 with Breakfast, Lunch and Dinner. Today has a green border and a Today marker.
 Use the arrows to change weeks. Readers need no login. The plan refreshes every
-minute while open; the refresh icon next to Back on the left of the title bar
-also checks for family updates. A GitHub cache may
-briefly delay another device seeing a recent edit. Internet access is required.
+minute while visible; the global footer's Refresh icon checks both meals and
+shopping for family updates, including the hidden app. Only changed data is
+replaced, preserving drafts. Week arrows sit beside the Meal planner title, with
+the date stacked beneath the title inside the same header. A GitHub cache may
+briefly delay another device seeing a recent edit. Internet access is required to share changes; previously loaded plans are cached locally.
 Returning to the tab refreshes the plan. This week returns to the current week,
 including if the planner was left open across Monday.
 
-Use the two split icons at the top right to keep the plan visible during a
-conversation. **Vertical split** puts captions and meals side by side;
-**Horizontal split** puts captions above meals. The selected icon is highlighted.
-Scroll either pane separately; Listen/Stop, Clear and Settings remain available.
-Close (×) hides the planner in either split mode; full planner mode uses a Back
-arrow. Press the active split again to use the full planner.
-In split view, tapping the cutlery again also closes meals; the task icon switches
-to tasks. Reopening keeps the split direction. Closing discards unsaved drafts.
-Vertical split is disabled below 768px. An existing vertical split displays
-stacked panes while narrow, and returns to side by side when widened unless you
-choose another layout. Horizontal split and full planner remain available.
+On phones and tablets, swipe left across the header or meal cards to go forward
+one week, or right to go back. This works in full and split views, including when
+scrolled down. Each week's unfinished editor text is retained for the page session.
+Short or vertical gestures, pinch gestures and swipes within editor controls do
+not change weeks. The arrow buttons remain available for keyboard/pointer access.
+
+On touch screens, pull down from the header while scrolled to the top. Release
+when prompted to sync completed edits and refresh both planners, just like the
+footer Refresh button. This keeps editor text and captions in place without a
+page reload. Short pulls cancel; gestures on controls do not trigger refresh.
+The footer Refresh icon appears only at 1024px and wider with a mouse/trackpad
+primary pointer. Phones and touch tablets use the pull gesture.
+
+Breakfast, Lunch and Dinner headings stay visible beneath the title/date while
+scrolling. On narrow screens with stacked meals, each label stays with its card.
+Meal text starts at the top; Weekly default appears as a tag at the bottom.
+
+Use the **Split view** toggle in the footer, just left of Settings, to keep captions visible on the
+left and meals on the right. It is available at 768px and wider, including laptops
+and desktops. Turn it off to use the full planner. No top/bottom layout is offered.
+Each pane scrolls independently. The global footer remains visible in full and
+split views. Use the speech-bubble Speech to text icon to return directly to full
+captions. Tapping the active cutlery icon again also returns to captions; the cart switches to shopping with the
+same split preference. Settings uses that full/split layout too; tap Settings
+again to return to captions, or select Meals to return to the retained draft. No Back/Close buttons or Escape/outside
+dismissal are used. Reopening keeps the split preference.
+Below 768px the toggle is hidden and the planner is full screen. Widening restores
+the preferred split without losing the selected week or editor draft. Editor drafts survive screen/week switches for this page session but clear on reload.
 Switching layouts preserves the selected week and unsaved meal; the choice is kept
 for this page session only. Opening the planner never starts the microphone.
 
@@ -35,14 +59,14 @@ For the repository owner:
 2. Sign in to GitHub as `H-Wilderspin`. Choose **Only select repositories** and
    select **speech-to-text-meals**. Give Contents **Read and write** permission
    and an expiry. Do not select the app repository or all repositories.
-3. Generate the token and paste it into **GitHub token** in Settings. On a
-   personal phone/tablet, tick **Remember on this device**, then **Connect GitHub**.
+3. Generate the token and paste it into **GitHub token** in Settings, then tap
+   **Connect GitHub**. Successful connections are saved automatically on this device.
    Do not send the token in chat or commit it to Git.
 4. Tap a meal slot, type its description, and Save. Tap an existing meal to change
    it or use Remove meal. Cancel leaves the saved plan unchanged.
 
-Connection, Remember and Disconnect controls are all in **Settings → Planner editing**.
-The planner contains the calendar and meal editor. With Remember selected,
+Connection, Change token and Disconnect controls are all in **Settings → Planner editing**.
+The planner contains the calendar and meal editor. After a successful connection,
 reopening the app restores editing access without
 entering the token again. Set this up separately in the browser or installed app
 they use on each phone/tablet. Use a normal browsing session: private browsing,
@@ -50,8 +74,7 @@ clearing site data, or token expiry/revocation can require setup again. The owne
 token creation link currently suggests a 90-day expiry, so choose an appropriate
 expiry during setup and plan for renewal.
 
-Without Remember, the token stays only in memory until reload. **Disconnect
-GitHub** opens a confirmation with **Keep connected** selected by default.
+**Disconnect GitHub** opens a confirmation with **Keep connected** selected by default.
 Keep connected or Escape cancels without changing access. Confirm **Disconnect**
 to remove access from memory and this app's saved token in that browser,
 and disconnect its other open tabs. It does not revoke the token in GitHub or
@@ -64,9 +87,22 @@ encrypted password vault. Prefer a token restricted to the meal repository.
 Reading the plan always needs no token, so devices used only to view meals need
 no editor setup.
 
-A failed save retains the typed text; it is not queued for later upload.
-Conflicting edits to the same meal need review before retrying. If access
-expires, open **Settings → Planner editing**, disconnect, then connect a replacement token.
+Save applies the meal immediately and keeps the completed action on this device.
+It saves to GitHub in the background after about two seconds of inactivity, with
+a ten-second maximum batching window. Keep editing or switch screens while it
+saves. Failed/offline saves remain queued across normal reloads. Refresh overlays
+pending local changes on the latest family data; it never replaces your newer edit
+with an older save response. Different meal cells merge automatically. Competing
+changes to the same dated cell or weekly default show Yours/Family and the choices
+Keep mine / Use family change beside that cell. Other cells keep saving.
+
+If access expires, open Settings and enter a replacement token, then tap
+**Save new token**. The app verifies it before replacing the old connection;
+no disconnect step is needed. Pending changes resume after access is restored.
+To replace a token early, use **Change token**. Disconnect removes access but
+retains cached/pending planner data. Clearing browser site data can remove it.
+If device storage fails, keep the app open until GitHub saves succeed.
+See [ADR 0066](decisions/0066-local-first-planner-sync.md).
 
 ## Weekly defaults and one-off changes
 
@@ -144,4 +180,4 @@ format with live data; older clients cannot read that format.
 
 No Pages deployment is needed for data edits. The app reads GitHub directly.
 If GitHub is unavailable, an already displayed plan remains visible with an
-error; a new visit cannot load an offline copy. Caption Clear is independent.
+error; a new visit restores previously cached plans and completed pending edits. Caption Clear is independent.

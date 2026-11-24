@@ -1,5 +1,112 @@
 # Troubleshooting
 
+## 2026-11-24 - Concurrent browser suites delete each other's trace files
+
+- **Context:** Main and family Playwright configurations run simultaneously on
+  Windows. Their preview servers/builds used separate ports/directories.
+- **Symptoms:** A passing app-update flow failed during context cleanup with
+  `ENOENT` for trace files under `test-results/.playwright-artifacts-0`.
+- **Cause:** Both configurations used Playwright's default output directory;
+  starting the second suite cleaned artifacts belonging to the first.
+- **Fix:** Set the family configuration's `outputDir` to the ignored
+  `.wrangler/family-test-results`. Keep app previews and traces separate.
+- **Verification:** All eight family checks passed concurrently with the main
+  suite (190 passed, four expected WebKit native-touch skips); the previously
+  affected app-update test passed with its trace intact.
+- **Prevention:** Separate output directories whenever independent test
+  configurations can run together; separate server ports alone are insufficient.
+
+## 2026-11-24 - Worker GitHub requests fail before reaching GitHub
+
+- **Context:** First hosted GitHub App reads; pairing/D1 worked and the same App
+  credentials successfully obtained installation tokens and files from Node.
+- **Root cause:** Workers rejects `redirect: 'error'` when constructing fetch
+  requests. Node's fetch mock did not model that runtime restriction. Sanitized
+  live diagnostics isolated the failure to the installation-token request.
+- **Fix:** Use `redirect: 'manual'` for both GitHub calls and reject non-OK
+  responses. Redirects are not followed and credentials stay at the fixed host.
+  Diagnostic logs contain only a fixed stage/status, never tokens or bodies.
+- **Verification:** 160 unit tests, two setup tests, typecheck/lint/build passed.
+  Deployed reads and conditional saves for meals and shopping succeeded; stale
+  revisions were rejected and both unchanged-value commits were verified.
+- **Prevention:** The fetch mock rejects Workers' unsupported mode; a regression
+  covers redirects during token creation and Contents requests. A hosted smoke
+  check is required as well as mocked tests before enabling family access.
+- **Source:** https://developers.cloudflare.com/workers/runtime-apis/request/
+
+## 2026-11-24 - New family Worker HTTPS handshake temporarily fails
+
+- **Context:** First deployment to a newly registered workers.dev subdomain,
+  Windows Node 22.20.0 and Wrangler 4.168.0.
+- **Symptoms:** Node reports `ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE`; Windows
+  curl reports `SEC_E_ILLEGAL_MESSAGE`. DNS resolves the Worker address.
+- **Checks:** Cloudflare API confirms the account subdomain and Worker route are
+  enabled; deployments list confirms code and subsequent secrets publication.
+  Using the Windows trust store does not fix this handshake error.
+- **Outcome:** HTTPS succeeded after a short wait without changing TLS settings.
+  Initial edge certificate/routing propagation is the likely cause, not proven.
+  Owner status returned HTTP 200 and the paused public API returned 503 with
+  Retry-After. Subsequent pairing, GitHub access and pause/resume checks passed.
+- **Prevention:** Keep syncing paused until the new endpoint is reachable. Do
+  not bypass TLS validation. See [hosted editing](hosted-editing.md).
+
+## 2026-11-24 — No Private keys section on the GitHub App settings page
+
+- **Context:** User supplied the actual GitHub.com App settings page, containing
+  About, Basic information, OAuth, Webhook and IP allow list, without Private keys.
+- **Cause:** Earlier guidance followed GitHub quickstart instructions that still
+  describe the older layout. GitHub's dedicated key-management documentation
+  now specifies a separate sidebar **Credentials → Key pairs → New key** flow.
+- **Correction:** Use that sidebar flow to download the PEM key. Do not redirect
+  the user repeatedly to the same main settings page or assume a permission issue.
+- **Verification:** The user downloaded the PEM key. A signed App request
+  confirmed App ID 5907057 and its owner; `service:setup -- --finish` verified
+  installation with Contents write access to only `speech-to-text-meals`.
+- **Source:** https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps
+
+## 2026-11-24 — Cloudflare login fails after browser authorization
+
+- **Context:** Windows, Node 22.20.0, Wrangler 4.168.0, hosted family editing setup.
+- **Symptoms:** Wrangler could not exchange authorization with
+  `https://dash.cloudflare.com/oauth2/token`; `UNABLE_TO_GET_ISSUER_CERT_LOCALLY`.
+  Local Worker startup also warned about fetching Request.cf metadata.
+- **Cause:** Node's default certificate roots did not validate this connection;
+  the Windows system trust store did. This is not evidence of an account or plan error.
+- **Fix:** Add `--use-system-ca` to the command's `NODE_OPTIONS`, preserving its
+  prior value and restoring it afterwards. Keep TLS verification enabled.
+- **Verification:** Node fetch to the same Cloudflare host succeeded with the
+  system trust store (HTTP 404 on the unauthenticated GET, rather than a TLS error).
+  The subsequent browser authorization and Wrangler token exchange succeeded.
+- **Prevention:** Reuse this process-scoped setting for Wrangler on this machine;
+  never commit certificates, tokens or private keys. See ADR 0071.
+
+## 2026-10-19 - Unresolved: iPad meal editing during listening
+
+- **Report:** user cannot reliably edit meals while Listen is active, and speech
+  sometimes appears in the focused input. Device/iPadOS version and Safari versus
+  Home Screen mode are not yet confirmed; no physical reproduction available.
+- **Code findings:** MealPlanner.tsx disables slots for missing token, initial
+  load or saving, not recognition state. Its controlled textarea changes through
+  input events; recognition results feed caption state only. Editor focus is
+  requested from an effect after mounting. The recognizer restarts after native
+  end while listening remains requested; a conflict with OS dictation is possible
+  but has not been demonstrated.
+- **Hypotheses:** keyboard Dictation/Voice Control inserting text independently;
+  iPad keyboard focus or viewport behaviour; native speech-service contention.
+  WebKit's [focus discussion](https://bugs.webkit.org/show_bug.cgi?id=195884)
+  documents software-keyboard restrictions outside user gestures, but does not
+  prove the cause here. Apple's [Voice Control guide](https://support.apple.com/en-ie/guide/ipad/ipad4b6c9ee4/ipados)
+  documents dictation into active text fields.
+- **Next checks:** distinguish disabled meal tiles, editor visibility, keyboard
+  appearance and actual typing. Compare Listen off/on, directly tapping the text
+  field, Safari/Home Screen, and Voice Control/keyboard dictation inactive. Do not
+  record entered text, audio or tokens in diagnostics. Existing browser tests use
+  mocked recognition and cannot establish real iPad microphone/keyboard behaviour.
+- **Options, not implemented:** improve gesture-linked editor focus/visibility;
+  add pause-while-editing with explicit resume after confirmed recognition stop;
+  investigate a separate recognition provider only if simultaneous editing and
+  captions remain unreliable. Pausing this app cannot stop OS Voice Control.
+
 ## 2026-10-19 - Shopping edits jump despite local state updates
 
 - **Context:** batched shopping state, production preview on Windows.
@@ -687,3 +794,33 @@
 - **Cause:** silence was observed in this generated cross-context test path. An idling source graph with no connection to its own output destination was the working hypothesis; physical microphone behaviour was not implicated or tested by this result.
 - **Solution:** also connect the generated signal through a zero-gain node to the source context's destination, keeping the source graph rendering without playing a tone. Closing the synthetic track still closes that context. Do not reduce the app's quality threshold or skip the comparison.
 - **Verification:** local checks and both affected Chromium tests passed (Windows WebKit audio remains unavailable). The subsequent full Linux [run](https://github.com/H-Wilderspin/speech-to-text/actions/runs/38051991375) passed all 32 browser checks in 51.6 seconds and deployed successfully. This verifies the observed test correction, not universal WebKit audio reliability.
+
+## 2026-11-24 - Moving a newly added shopping item was ignored
+
+- **Context:** Local-first planner implementation, Windows Playwright Chromium/WebKit.
+- **Symptoms:** Add multiple items before the first batch saves, then move one.
+  The list returned to insertion order; moves of existing remote rows still worked.
+- **Root cause:** Lost-response detection replayed a move against the remote base
+  without its pending add. Moving an absent row was correctly a no-op for family
+  deletions, but was incorrectly interpreted as an already-saved operation.
+- **Solution:** Mark moves as dependent on the rest of the batch; replay them in
+  sequence after adds instead of independently acknowledging them. Anchor end moves
+  beside a surviving neighbour to retain unrelated family additions.
+- **Verification:** The focused sync unit regression and shopping/local-sync browser
+  suite passed (68 passed, two Chromium-only touch tests skipped under WebKit).
+- **Prevention:** Keep the add-then-move regression in sync-document.test.ts and
+  CRUD/order/batching browser tests. ADR 0066 records the sync design.
+
+## 2026-11-24 - WebKit app-update tests bypassed the GitHub route fixture
+
+- **Context:** Windows Playwright WebKit with a real controlling service worker;
+  the new offline-queue update test used context.route for GitHub responses.
+- **Symptoms:** Connecting a dummy token received a real GitHub 401 instead of the
+  mocked repository-permissions response. Chromium passed the same test.
+- **Root cause:** Worker-controlled fetches bypassed the Playwright route fixture.
+- **Solution:** For this update-recovery fixture, replace only the page's GitHub
+  fetch calls with local Response objects through addInitScript. Asset fetching
+  and service-worker installation/activation still use the real local HTTP server.
+- **Verification:** All 12 app-update tests passed in Chromium/WebKit; root and
+  project-path queued meals survived the installed release change. Typecheck/lint
+  passed. No production transport change was needed.

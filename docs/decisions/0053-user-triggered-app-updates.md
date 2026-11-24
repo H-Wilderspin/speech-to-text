@@ -3,6 +3,9 @@
 Date: 2026-10-19
 Status: Accepted
 
+[ADR 0065](0065-update-directly-from-settings.md) replaces the planner-open guard
+with a shopping-save check, allowing updates directly from Settings.
+
 ## Context
 
 Family members struggle with clearing browser caches and hard refreshes on Apple

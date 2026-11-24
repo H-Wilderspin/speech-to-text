@@ -2,16 +2,16 @@ import { useLayoutEffect, useMemo, useRef } from 'react';
 import { formatCaptionSegments } from './caption-format';
 import type { TranscriptSegment } from '../../transcription/types';
 
-export function Transcript({ segments, textSize, language = 'en-GB' }: {
-  segments: readonly TranscriptSegment[]; textSize: number; language?: string;
+export function Transcript({ segments, textSize, language = 'en-GB', visible = true }: {
+  segments: readonly TranscriptSegment[]; textSize: number; language?: string; visible?: boolean;
 }) {
   const viewport = useRef<HTMLDivElement>(null);
   const following = useRef(true);
   useLayoutEffect(() => {
     if (segments.length === 0) following.current = true;
     const element = viewport.current;
-    if (element && following.current) element.scrollTop = element.scrollHeight;
-  }, [segments, textSize]);
+    if (element && visible && following.current) element.scrollTop = element.scrollHeight;
+  }, [segments, textSize, visible]);
 
   const formatted = useMemo(() => formatCaptionSegments(segments, language), [segments, language]);
   return <section className="transcript-area" aria-label="Live captions">
@@ -19,7 +19,7 @@ export function Transcript({ segments, textSize, language = 'en-GB' }: {
     <div className="transcript" ref={viewport} role="region" aria-label="Live transcript" tabIndex={0}
       style={{ fontSize: `${textSize / 16}rem` }} onScroll={() => {
         const element = viewport.current;
-        if (element) following.current = element.scrollHeight - element.scrollTop - element.clientHeight < 64;
+        if (element && visible) following.current = element.scrollHeight - element.scrollTop - element.clientHeight < 64;
       }}>
       {formatted.length === 0 ? <div className="empty-state"><p>Tap Listen to start.</p></div>
         : <div className="transcript-text">{formatted.map((segment) =>

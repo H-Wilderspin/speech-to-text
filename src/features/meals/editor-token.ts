@@ -14,15 +14,21 @@ export function readMealAccess(): MealAccess {
 
 // Call only after verifying a new token. Never save credentials as a side effect
 // of mounting, rendering or restoring a tab's state.
-export function changeMealAccess(token: string, remember = false): MealAccess {
-  const remembered = Boolean(token) && remember;
+export function changeMealAccess(token: string): MealAccess {
+  const remembered = Boolean(token);
   try {
     if (remembered) localStorage.setItem(editorTokenKey(), token);
     else localStorage.removeItem(editorTokenKey());
     return { token, remembered, notice: '' };
   } catch {
+    if (remembered) {
+      // A rejected replacement write must not silently restore the old token
+      // when the page reloads. Removal can still work when storage is full.
+      try { localStorage.removeItem(editorTokenKey()); }
+      catch { /* The notice below also covers browsers that block all storage. */ }
+    }
     return { token, remembered: false, notice: remembered
       ? 'Connected for this session only. This browser could not remember access.'
-      : 'Saved access could not be removed. Clear this site’s browser data or revoke the saved token in GitHub before reopening the app.' };
+      : 'Saved access could not be removed. Ask the person who set up the app to revoke this connection before reopening it.' };
   }
 }

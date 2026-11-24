@@ -1,8 +1,11 @@
+import { DeviceAccessError, isDeviceToken, serviceRequest } from './family-service';
 export const repository = 'H-Wilderspin/speech-to-text-meals';
 export const repositoryUrl = `https://github.com/${repository}`;
 const api = `https://api.github.com/repos/${repository}/contents/`;
 const raw = `https://raw.githubusercontent.com/${repository}/main/`;
 const headers = { Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
+
+export class GitHubAccessError extends DeviceAccessError {}
 
 async function request(url: string, init?: RequestInit): Promise<Response> {
   let response: Response;
@@ -11,7 +14,11 @@ async function request(url: string, init?: RequestInit): Promise<Response> {
   } catch {
     throw new Error('Could not reach GitHub. Check your connection and try again.');
   }
-  if (response.status === 401) throw new Error('GitHub access expired or is invalid. In Settings, use Disconnect GitHub, then connect a new token.');
+  if (response.status === 401) throw new GitHubAccessError('GitHub access expired or is invalid. Open Settings and enter a new token.');
+  if (response.status === 403 && response.headers.get('x-ratelimit-remaining') !== '0' && !response.headers.has('retry-after')) {
+    const message = await response.clone().text();
+    if (!/rate limit/i.test(message)) throw new GitHubAccessError('GitHub denied access for this token. Open Settings and enter a new token with editing access.');
+  }
   if (response.status === 403 || response.status === 429) throw new Error('GitHub denied this request. Check write access, or wait if its request limit was reached.');
   return response;
 }
@@ -19,6 +26,12 @@ async function request(url: string, init?: RequestInit): Promise<Response> {
 // Public readers never send credentials; authenticated reads return the SHA
 // needed for conditional writes. Only explicit data paths from adapters are used.
 export async function readJsonFile(path: string, token = ''): Promise<{ value?: unknown; sha?: string }> {
+  if (isDeviceToken(token)) {
+    const response = await serviceRequest(`/files?path=${encodeURIComponent(path)}`, token);
+    if (response.status === 404) return {};
+    if (!response.ok) throw new Error('Could not load the latest family changes.');
+    return response.json();
+  }
   const response = await request(token ? `${api}${path}?ref=main` : `${raw}${path}?updated=${Date.now()}`,
     token ? { headers: { ...headers, Authorization: `Bearer ${token}` } } : undefined);
   if (response.status === 404) return {};
@@ -31,6 +44,9 @@ export async function readJsonFile(path: string, token = ''): Promise<{ value?: 
 }
 
 export async function writeJsonFile(path: string, value: unknown, sha: string | undefined, token: string, message: string): Promise<Response> {
+  if (isDeviceToken(token)) return serviceRequest(`/files?path=${encodeURIComponent(path)}`, token, {
+    method: 'PUT', body: JSON.stringify({ value, sha }),
+  });
   if (!token) throw new Error('Connect GitHub in Settings to edit.');
   const bytes = new TextEncoder().encode(JSON.stringify(value, null, 2) + '\n');
   const content = btoa(Array.from(bytes, byte => String.fromCharCode(byte)).join(''));
@@ -40,9 +56,15 @@ export async function writeJsonFile(path: string, value: unknown, sha: string | 
 }
 
 export async function checkEditor(token: string): Promise<string> {
+  if (isDeviceToken(token)) {
+    const response = await serviceRequest('/session', token);
+    if (!response.ok) throw new Error('Could not check the family connection.');
+    return token;
+  }
   const response = await request(`https://api.github.com/repos/${repository}`, { headers: { ...headers, Authorization: `Bearer ${token}` } });
-  if (!response.ok) throw new Error('This GitHub account cannot access the planner repository.');
+  if (response.status === 404) throw new GitHubAccessError('This token cannot access the planner repository. Enter a new token with editing access.');
+  if (!response.ok) throw new Error('Could not check GitHub access. Try again.');
   const data = await response.json() as { permissions?: { push?: boolean } };
-  if (!data.permissions?.push) throw new Error('This GitHub account needs write access to the planner repository.');
+  if (!data.permissions?.push) throw new GitHubAccessError('This token needs write access to the planner repository. Enter a new token with editing access.');
   return token;
 }

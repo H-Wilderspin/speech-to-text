@@ -1,5 +1,326 @@
 # Feasibility evidence
 
+## 2026-11-24 - Settings split and footer toggle
+
+- Settings now uses the shared split preference: captions left, Settings right at
+  768px and wider; phone widths retain full Settings and preserve the preference.
+  Its active footer icon returns to full captions. Pane-width styling stacks
+  preferences inside narrow splits. See ADR 0067.
+- Typecheck, lint, 168 unit tests and production build passed. Eighteen targeted
+  Chromium/WebKit browser cases passed across the initial run and focused rerun.
+  The new test initially compared the inner transcript below its Live heading with
+  the Settings pane top; measuring the outer caption pane corrected that assertion.
+  Coverage includes token input across resizing/layout switches, live text-size
+  changes, navigation focus, preserved meal/shopping drafts and connection guards.
+- Visually inspected the 1024px split screenshot. Production JS 297.85 kB /
+  93.26 kB gzip; CSS 17.81 kB / 4.28 kB gzip. Speech was simulated. No physical
+  device test or deployment; manual touch/keyboard checks remain in manual-testing.md.
+
+## 2026-11-24 - Durable local-first planner sync
+
+- **Decision:** ADR 0066 replaces memory-only shopping batches and synchronous meal
+  saves. Completed actions update immediately, persist in a scoped IndexedDB journal
+  and sync after two seconds of inactivity with a ten-second maximum batch window.
+  Edits/navigation remain usable during writes. Cache-plus-acknowledgement transactions
+  remove only submitted operation IDs; newer edits remain overlaid.
+- **Recovery:** Offline reload, multiple tabs, lost responses, failed storage,
+  conditional-write races, token replacement and per-item/cell conflict choices have
+  focused coverage. An item deleted while its editor is open can be explicitly
+  restored without losing the typed text. Unrelated operations keep saving.
+- **Checks:** Typecheck, lint, all 168 unit tests and production build passed.
+  Production JS is 297.84 kB / 93.26 kB gzip; CSS 17.49 kB / 4.25 kB gzip.
+  The full browser run passed 170 tests, skipped two existing Chromium-only touch
+  cases under WebKit and exposed two WebKit service-worker routing fixture failures.
+  After correcting only that fixture, all 12 app-update tests passed on rerun:
+  all 172 applicable browser cases are covered by passing runs. Root and project
+  paths both restore queued meals through a real local service-worker update.
+  Typecheck and lint also passed after the test-only correction.
+- **Visual evidence:** Inspected the shopping conflict screenshots at desktop and
+  390px WebKit viewports. Yours/Family text and both large choices fit without
+  horizontal overflow. The global footer and sticky Add item remain accessible.
+- **Limits:** Windows Playwright Chromium/WebKit with mocked GitHub responses and
+  simulated speech, plus real local service-worker installation/update. No physical
+  phone/tablet or live GitHub write was tested; no deployment. Browser data clearing,
+  eviction or private-session closure can remove pending local changes. Unapplied
+  editor text is session-only. Physical tests are listed in manual-testing.md.
+
+## 2026-11-24 - Update directly from Settings
+
+- Removed the hidden-planner update guard and Close the planner message. Settings
+  now permits updates after arriving from either planner. Listening/connection
+  guards remain; an explicit pre-update shopping flush prevents reload if pending
+  changes cannot save. Retained editor drafts still survive ordinary Settings
+  visits; the update help explains that a reload clears unapplied drafts.
+  See [ADR 0065](decisions/0065-update-directly-from-settings.md).
+- `npm run check` passed typecheck, lint, 155 unit tests and build. App-update and
+  shopping browser suites: 62 passed, two existing native-touch WebKit skips.
+  Chromium and mobile WebKit installed real locally served releases from Settings
+  after opening Meals, at root and project paths. Mocked 401/403 shopping failures
+  prevented updates and retained the pending batch through token replacement.
+  Offline/retry behavior and saved access still passed. No physical-device test
+  or deployment.
+
+## 2026-11-24 - Explicit Speech to text footer destination
+
+- Added a speech-bubble footer icon that selects full captions from any screen,
+  using the existing shopping flush/navigation guard. Captions, listening and
+  split preference survive; navigation does not start recording. The icon is
+  highlighted only for the captions-only screen. Existing app toggles remain.
+- Footer rows wrap below 432px, with six icon columns at 352px+ and three below,
+  retaining 48px targets. Inspected local Chromium screenshots at 390px and 320px.
+  Updated prior footer-count and caption-height assertions for the extra control.
+- `npm run check` passed typecheck, lint, 155 unit tests and build. Full browser
+  suite: 154 passed and two existing native-touch WebKit skips in 1.8 minutes.
+  New coverage checks direct navigation from all screens, full/split return,
+  continuous simulated listening, retained text, focus, narrow touch targets and
+  saving pending shopping changes before selecting captions. No physical-device
+  test or deployment; recognition in these checks is mocked.
+
+## 2026-11-24 - Sticky shopping Add item footer
+
+- Moved Add item below the shopping content into a sticky panel footer. A flex
+  layout fills short lists down to the panel bottom. The button stays above the
+  global navigation in full and split views and hides while editing; Save/Cancel
+  restores it and existing focus behavior. Rows/catalogue buttons reserve scroll
+  space above the footer, and list data, batching and drag behavior are unchanged.
+- Typecheck, lint, 155 unit tests and build passed. Shopping browser suite:
+  52 passed, two existing native-touch WebKit skips. After the final scroll-margin
+  adjustment, all six targeted footer/catalogue/drag checks passed in Chromium
+  and mobile WebKit. Coverage includes empty and 25-row lists, top/middle/bottom
+  scrolling, 1280px full, 1024px split, 390px phone, and adding from the footer.
+  Inspected the phone screenshot. No physical-device test or deployment.
+
+## 2026-11-24 - Flush weekly-default strip
+
+- Weekly default now fills the card width and meets its bottom border without
+  an outside gap. Text padding belongs to the content; the blue strip has matching
+  inner bottom corner radii. No overflow container was added, preserving sticky
+  meal labels. Updated the existing geometry check to assert 1px border-only gaps.
+- Typecheck, lint, 155 unit tests and build passed; the focused layout regression
+  passed in Chromium and mobile WebKit. Inspected a local 390px screenshot with
+  mocked data. No deployment or physical-device testing.
+
+## 2026-11-24 - Sticky meal headings and bottom-aligned default tags
+
+- Breakfast/Lunch/Dinner column headings stick below the title/date. Below the
+  stacked-card breakpoint each card's label sticks within its text instead.
+  ResizeObserver measures the header to accommodate wrapping and text size;
+  browsers without it use initial measurement and window resize events. Hidden
+  headers do not overwrite the last useful height. Meal cards place text at the
+  top and a tinted Weekly default tag at the bottom using flex space-between.
+- `npm run check` passed typecheck, lint, 155 unit tests and production build.
+  All 36 meal browser checks passed in Windows Chromium/mobile WebKit, including
+  scroll geometry in full and split layouts, enlarged header text, narrow stacked
+  cards and tag alignment with mixed meal lengths. Inspected Chromium screenshots
+  at 1280px and 390px using mocked data. No physical-device test or deployment.
+
+## 2026-11-24 - Date stacked inside the meal header
+
+- Moved the date into the sticky header, centered beneath Meal planner between
+  the week arrows. The date uses the smaller text role; This week remains below
+  when relevant. Updated the follow-up in ADR 0064 and current user guidance.
+- `npm run check` passed typecheck, lint, 155 unit tests and build. All 34 meal
+  browser tests passed in Chromium/mobile WebKit, including date/title geometry,
+  week changes, narrow screens and split resizing. Inspected local Chromium
+  screenshots at 320px and 768px split. No physical-device tests or deployment.
+
+## 2026-11-24 - Meal header and shared footer refresh
+
+- Moved Refresh and Split view into the global footer, with Split view immediately
+  left of Settings at 768px+. The meal header holds the week arrows beside its
+  title; the selected dates appear below. Shopping has a title-only header.
+  See [ADR 0064](decisions/0064-footer-refresh-and-planner-header.md).
+- Explicit Refresh checks the selected week's meals, weekly defaults, shopping
+  list and regular-items catalogue, including the hidden app. Unchanged arrays
+  and records retain their references. Drafts and scroll containers stay mounted;
+  shopping saves pending changes before replacing data. Hidden automatic polling
+  remains paused. Refresh needs an open planner; Split view needs a visible one.
+- `npm run check` passed typecheck, lint, 155 unit tests and production build.
+  Full Chromium/mobile-WebKit run: 146 passed, two existing Chromium-only touch
+  cases skipped in WebKit, 3.2 minutes. New coverage checks header/date geometry,
+  footer placement, shared refresh reads, updates to hidden shopping, retained
+  meal/shopping drafts and unchanged row/scroll preservation without data writes.
+- Local Chromium previews inspected at 320px, 390px and 768px split. The narrowest
+  footer wraps Listen onto its own row and retains 48px icons. Browser checks
+  also cover desktop and 767/768px behavior. Tests use mocked recognition/GitHub;
+  physical devices and assistive technology remain untested. Local only, not
+  deployed; preview remains http://127.0.0.1:5173/.
+
+## 2026-11-24 - Automatic saved access and direct token replacement
+
+- Removed Remember on this device. Successful connections automatically persist
+  in the existing app-scoped key. Settings checks saved access and asks for a
+  replacement when it is rejected; Save new token validates and swaps the
+  connection without a manual Disconnect or confirmation. Change token supports
+  early renewal. Failed validation retains previous access and editor input.
+  See [ADR 0063](decisions/0063-automatic-token-persistence-and-renewal.md).
+- Authentication failures now allow Settings recovery while an unsaved shopping
+  batch stays mounted. Returning after renewal flushes it with the replacement.
+  Rate limits/network failures retain the existing retry path. Blocked storage
+  allows session editing with a notice; replacement-storage failure attempts to
+  remove the previous token rather than restoring it on next reload.
+- Final `npm run check` passed typecheck, lint, 155 unit tests and production
+  build. Full Chromium/mobile-WebKit suite: 144 passed, two existing Chromium-only
+  native-touch cases skipped in WebKit, 3.1 minutes. Coverage includes automatic
+  reload/reopen persistence, namespace isolation, explicit Disconnect, invalid
+  submissions, expired access detected directly in Settings, retained meal drafts,
+  and pending shopping batches recovered from 401/403 failures.
+- Inspected the local 390px Chromium replacement form with simulated expired
+  access. Browser tests use mocked GitHub/recognition; no real credentials or
+  shared data writes were used. Physical elderly-user, keyboard and assistive
+  technology acceptance remains manual. Local only; not deployed.
+
+## 2026-11-24 - Global footer and main-screen navigation
+
+- Replaced planner/Settings modals with labelled main-content regions above the
+  persistent footer. App icons switch screens; active Meals/Shopping icons return
+  to captions, while Settings toggles back to the prior view. Removed Back/Close
+  controls and Escape/outside dismissal. Tablet split rules remain unchanged.
+  See [ADR 0062](decisions/0062-global-footer-navigation.md).
+- Preserved caption sessions and reading position while hidden, planner drafts
+  through app/Settings switches, save-before-navigation and busy controls. Hidden
+  polling pauses. Shopping drag scrolling and catalogue anchoring now use the
+  planner region instead of a dialog ancestor.
+- `npm run check` passed typecheck, lint, 148 unit tests and production build.
+  All 136 applicable browser cases passed across Chromium/mobile-WebKit runs;
+  the two existing Chromium-only native-touch cases were skipped in WebKit.
+  The first full run stopped after 120 passes on a new test incorrectly expecting
+  Split view at phone width. The assertion now follows the 768px rule; the eight
+  focused cases passed in both engines and the remaining WebKit suites passed
+  (23 passed, two skipped). Final typecheck/lint passed after test edits.
+- Coverage includes full/split draft switches through Settings, all footer routes
+  with successful and failed shopping saves, continued captions, preserved nonzero
+  transcript scroll position, app updates and drag cancellation. Windows local
+  Chromium screenshots inspected at 390px, 768px split and 1440px Settings.
+- GitHub and recognition are mocked in browser tests. Physical device keyboards,
+  microphone behaviour and assistive technology were not tested. No new storage
+  or dependencies. Local preview remains at http://127.0.0.1:5173/; not deployed.
+
+## 2026-11-24 - Single side-by-side toggle on tablet-sized screens
+
+- Removed stacked layout and the two orientation buttons. One Split view toggle
+  appears at 768px and wider, including laptops/desktops per user clarification.
+  Captions stay left and the selected app stays right. Off, or a narrower viewport,
+  displays the full planner; resizing preserves drafts, week and split preference.
+  See [ADR 0061](decisions/0061-tablet-side-by-side-toggle.md).
+- Typecheck, lint, 148 unit tests and production build passed. All 136 applicable
+  Chromium/mobile-WebKit browser cases passed across runs, with the two existing
+  Chromium-only touch cases skipped in WebKit. Initial WebKit geometry assertion
+  was corrected to compare panes rather than transcript content below a browser
+  support notice; corrected coverage passed in both engines.
+- Regression checks cover one right-side toggle, no toggle below the 767/768px
+  boundary, caption-left geometry, explicit off, drafts and week during resizing,
+  switching meals/shopping, save protection and app updates. Local Chromium
+  screenshots at 768px and 390px were inspected; no uncaught page errors.
+- No physical-device or assistive-technology claims. Local only; not deployed.
+
+## 2026-11-24 - Task planner removed locally
+
+- User-requested scope reduction: removed task navigation, UI, styles, recurrence,
+  completion/reset logic, GitHub adapter and dedicated tests. Meals and shopping
+  retain the shared pane, drafts, access and save protections. Shared task files
+  were not modified. [ADR 0060](decisions/0060-remove-task-planner.md) supersedes
+  task work in the earlier usability plan and ADRs 0052/0058.
+- Typecheck, lint, all 148 remaining unit tests and production build passed.
+  Full Chromium/mobile-WebKit suite: 136 passed, two existing Chromium-only touch
+  checks skipped in WebKit, 3.0 minutes. Recognition and GitHub writes are mocked;
+  these results do not establish physical microphone or Safari touch behaviour.
+- Local Chromium rendered the five-control toolbar at 390px with no uncaught
+  page errors; screenshot inspected. JavaScript is 287.75 kB (90.35 kB gzip),
+  CSS 16.11 kB (3.98 kB gzip). Production assets contain no task-planner code paths
+  or labels. Development server remains at http://127.0.0.1:5173/.
+- Local change only: not published. Existing PWA clients need the normal app
+  update after a future deployment. No physical-device checks were performed.
+
+## 2026-11-23 - Whole-app usability review and proposed plan
+
+- **Scope:** repository, deployment and user experience review only. The user
+  requested equal attention to captions, meals, tasks, shopping and Settings.
+  No application changes, deployment or shared planner writes were performed.
+- **Baseline:** local HEAD `2409bba`; the latest GitHub Pages deployment is
+  `a8f13884cab6e186238a2bb42b29206296dc7545`, with successful
+  [Actions run 39274353281](https://github.com/H-Wilderspin/speech-to-text/actions/runs/39274353281).
+  The intervening commit changes deployment documentation only. The live HTML
+  returned HTTP 200, and served JavaScript/CSS matched the local production
+  build byte-for-byte. Deployment remains static GitHub Pages through Actions;
+  shared planners use the separate GitHub data repository.
+- **Checks:** `npm run check` passed typecheck, lint, all 165 unit tests and
+  production build. Live Windows Chromium 156.0.8078.4 rendered captions,
+  Settings and all three planner panes without uncaught page errors. At widths
+  320, 768 and 1024px the caption view had no document horizontal overflow.
+  At 390px the caption toolbar buttons were at least 48px in both dimensions.
+  An offline reload rendered the shell. This does not demonstrate offline speech.
+  All 58 existing caption/app-update browser tests passed in local Chromium and
+  mobile WebKit (52.2 seconds), including root/project paths, offline reload,
+  permission recovery, interruption, focus and text scaling. The initial sandbox
+  run could not start Vite because of the previously documented configuration-read
+  restriction; the same command passed outside the sandbox. The full planner,
+  shopping and upgrade browser suites were not rerun for this review.
+- **Limits:** live Windows WebKit navigation failed with a certificate error;
+  certificate validation was not bypassed. No physical microphone, iPad keyboard,
+  installed phone PWA, VoiceOver or TalkBack verification was performed. Public
+  planner navigation was read-only; authenticated editing was not exercised live.
+  Existing local changes in troubleshooting.md and package-lock.json were preserved.
+
+### Observations
+
+- The initial caption screen offers little guidance beyond “Tap Listen to start”.
+  Transcript.tsx uses the same empty message irrespective of recognition phase,
+  so it persists during startup/listening until text arrives. Provider disclosure
+  is in assistive text and Settings/About rather than visible startup guidance.
+- Navigation has accessible names and large targets, but five of six caption
+  toolbar buttons have no visible text. The toolbar wraps at 320px. Split buttons
+  likewise depend on symbols and tooltips; this is a discoverability concern,
+  not evidence that their existing accessible names are missing.
+- Each planner already explains how to enable editing, but that explanation is
+  at the bottom, after the calendar/list/catalogue. Users encounter disabled
+  editing controls before reaching the explanation. Meal/task loading and normal
+  save announcements are assistive-only.
+- Settings leads with Update app, ahead of text size and language. The expanded
+  GitHub access form makes the phone screen lengthy. Technical access setup is
+  a substantial usability constraint of the current static architecture.
+- Shopping deliberately batches saves and omits a visible save/drag status row.
+  Existing regression coverage protects focus, scroll position, conflicts and
+  failed saves. Any proposed feedback change must respect the explicit compact
+  design decisions, rather than restoring previously removed rows or drag grips.
+- The reported iPad editing/listening problem remains unresolved. Code review
+  and simulated recognition cannot establish its device-specific cause.
+
+### Proposed implementation order
+
+1. **Shared navigation and layout:** prototype a compact, understandable treatment
+   of captions/planner navigation and split controls across phone and tablet.
+   Evaluate concise visible labels without sacrificing caption space or 48px
+   targets. Retain the light palette, Poppins, bottom controls and draft preservation.
+   Document any intentional revision of the prior icon-only design decision.
+2. **Captions:** make empty guidance phase-aware, show a brief provider/privacy
+   explanation before starting, and make permission/reconnection recovery clear.
+   Preserve session resets, voice commands, reading position and explicit restart
+   after interruption; never persist captions or introduce automatic recording.
+3. **Meals and tasks:** put read-only/access guidance before disabled controls,
+   provide a direct route to Settings, and simplify wording for one-date versus
+   weekly edits. Keep drafts while navigating to access setup. Verify editors
+   remain visible with large text, split views and the software keyboard.
+4. **Shopping:** clarify Add/Added/Bought and failure recovery using the existing
+   controls and error areas. Preserve 30-second batching, flush-before-close,
+   conflict protection, stable scrolling and touch/keyboard reordering. Do not
+   add a persistent status row, drag grip or destructive-action confirmation by
+   default: these would revise explicit previous product choices.
+5. **Settings and release:** put reading preferences first, group planner access
+   into a clearly named section, and place updates/About after everyday settings.
+   Keep Remember opt-in and the protected Disconnect flow. Run checks and focused
+   browser regressions for each increment, then the full browser suite at root
+   and project paths before any publication. Verify successful deployment, live
+   assets and the existing-PWA update flow when a release is requested.
+
+**Acceptance:** an unfamiliar user can identify each feature, understand whether
+listening is active, see why editing is unavailable and recover from a failed
+save without losing a draft. No overflow at 320px or enlarged text; controls stay
+reachable in both splits; keyboard focus and announcements remain meaningful.
+Actual iPad listening/editing and mobile assistive technology require physical
+device checks before claiming those experiences fixed. This plan proposes no
+new backend, authentication provider, dependency or speech engine.
+
 ## 2026-10-19 - Shopping and planner improvements deployed
 
 - Published release `a8f13884cab6e186238a2bb42b29206296dc7545` to

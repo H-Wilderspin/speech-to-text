@@ -1,88 +1,44 @@
 import { useEffect, useRef, useState } from 'react';
-import { dateKey, defaultMealKey, mealKey, mealSlots, resolvedMeal, weekdayNames, weekDays, type MealPlan, type MealValue } from './calendar';
-import { PlanConflict, readDefaults, readPlan, saveDefault, saveMeal } from './github-plan';
+import { dateKey, defaultMealKey, mealKey, mealSlots, resolvedMeal, weekdayNames, weekDays, type MealValue } from './calendar';
+import type { PlannerSync } from '../planners/planner-sync';
+import { useSyncDocument } from '../planners/use-sync-document';
 const dayLabel = (date: Date) => date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' });
-const errorMessage = (error: unknown) => error instanceof Error ? error.message : 'Something went wrong. Try again.';
+type MealEditor = { key: string; defaultKey: string; label: string; repeatLabel: string; previous: MealValue; defaultPrevious: MealValue; text: string };
+type Draft = { edit: MealEditor | null; scope: 'date' | 'default'; text: string };
 
-export function MealWeek({ start, today, token, refresh, onBusy, active }: {
-  active: boolean; start: Date; today: string; token: string; refresh: number; onBusy: (busy: boolean) => void;
+export function MealWeek({ client, start, today, token, refresh, active }: {
+  client: PlannerSync; active: boolean; start: Date; today: string; token: string; refresh: number;
 }) {
   const week = dateKey(start);
-  const [plan, setPlan] = useState<MealPlan>({});
-  const [defaults, setDefaults] = useState<MealPlan>({});
-  const [loaded, setLoaded] = useState(false);
-  const [status, setStatus] = useState('Loading plan…');
-  const [error, setError] = useState('');
-  const [edit, setEdit] = useState<{
-    key: string; defaultKey: string; label: string; repeatLabel: string;
-    previous: MealValue; defaultPrevious: MealValue; text: string;
-  } | null>(null);
-  const [scope, setScope] = useState<'date' | 'default'>('date');
-  const [text, setText] = useState('');
-  const [saving, setSaving] = useState(false);
+  const weekStore = client.meals(week);
+  const defaultStore = client.meals();
+  const weekly = useSyncDocument(client, weekStore, active, refresh);
+  const recurring = useSyncDocument(client, defaultStore, active, refresh);
+  const plan = weekly.value.meals;
+  const defaults = recurring.value.meals;
+  const loaded = weekly.loaded && recurring.loaded;
+  const savedDraft = client.getDraft<Draft>(week);
+  const [edit, setEdit] = useState<MealEditor | null>(savedDraft?.edit ?? null);
+  const [scope, setScope] = useState<'date' | 'default'>(savedDraft?.scope ?? 'date');
+  const [text, setText] = useState(savedDraft?.text ?? '');
+  const error = weekly.error || recurring.error;
+  const saving = weekly.saving || recurring.saving;
+  const status = saving ? 'Saving meal changes' : weekly.pending || recurring.pending ? 'Meal changes waiting to sync' : loaded ? 'Plan updated' : 'Loading meal plan';
   const selected = useRef<HTMLButtonElement | null>(null);
   const editor = useRef<HTMLTextAreaElement>(null);
-  const generation = useRef(0);
-  const savingRef = useRef(false);
-
-  useEffect(() => {
-    if (!active) return;
-    let disposed = false;
-    const load = async () => {
-      if (document.hidden || savingRef.current) return;
-      const current = ++generation.current;
-      try {
-        const [next, nextDefaults] = await Promise.all([readPlan(week, token), readDefaults(token)]);
-        if (disposed || current !== generation.current) return;
-        setPlan(next); setDefaults(nextDefaults); setLoaded(true); setError('');
-        setStatus('Plan updated');
-      } catch (error) {
-        if (!disposed && current === generation.current) {
-          setStatus('Could not refresh plan'); setError(errorMessage(error));
-        }
-      }
-    };
-    void load();
-    const interval = window.setInterval(() => void load(), 60000);
-    const focus = () => void load();
-    window.addEventListener('focus', focus);
-    document.addEventListener('visibilitychange', focus);
-    return () => {
-      disposed = true; clearInterval(interval); window.removeEventListener('focus', focus);
-      document.removeEventListener('visibilitychange', focus);
-    };
-  }, [week, refresh, token, active]);
-
+  useEffect(() => { client.setDraft(week, edit ? { edit, scope, text } : null); }, [client, week, edit, scope, text]);
   useEffect(() => { if (active && edit) editor.current?.focus(); }, [edit, active]);
   useEffect(() => {
-    if (active && !edit && !saving && selected.current && !selected.current.disabled) {
-      selected.current.focus(); selected.current = null;
-    }
-  }, [edit, saving, active]);
+    if (active && !edit && selected.current && !selected.current.disabled) { selected.current.focus(); selected.current = null; }
+  }, [edit, active]);
   const closeEditor = () => setEdit(null);
-  const save = async (value: string | null) => {
-    if (!edit || savingRef.current) return;
-    generation.current += 1;
-    savingRef.current = true;
-    setSaving(true); onBusy(true); setError('');
-    try {
-      if (scope === 'default') {
-        const next = await saveDefault(edit.defaultKey, edit.defaultPrevious, value ?? '', token);
-        setDefaults(next); setStatus(value ? 'Weekly default saved' : 'Weekly default removed');
-      } else {
-        const next = await saveMeal(week, edit.key, edit.previous, value, token);
-        setPlan(next); setStatus(value === null ? 'Meal skipped for this date' : value ? 'Meal saved' : 'Weekly default restored');
-      }
-      closeEditor();
-    } catch (error) {
-      if (error instanceof PlanConflict) {
-        if (error.scope === 'defaults') setDefaults(error.latest); else setPlan(error.latest);
-      }
-      setError(errorMessage(error));
-    }
-    finally { savingRef.current = false; setSaving(false); onBusy(false); }
+  const save = (value: string | null) => {
+    if (!edit) return;
+    const store = scope === 'default' ? defaultStore : weekStore;
+    const next = value === null && scope === 'date' ? null : value?.trim() || undefined;
+    if (store.change({ key: scope === 'default' ? edit.defaultKey : edit.key,
+      previous: scope === 'default' ? edit.defaultPrevious : edit.previous, value: next })) closeEditor();
   };
-
   return <>
     <p className="sr-only" role="status">{saving ? 'Saving…' : status}</p>
     {error && !edit && <p className="notice error" role="alert">{error}</p>}
@@ -94,37 +50,46 @@ export function MealWeek({ start, today, token, refresh, onBusy, active }: {
           const key = mealKey(date, slot);
           const meal = resolvedMeal(plan, defaults, date, slot);
           const defaultKey = defaultMealKey(date, slot);
-          return <button className="meal-slot" key={slot} disabled={!token || !loaded || saving} aria-label={`${dayLabel(date)}, ${slot}: ${meal.text || 'Not planned'}${meal.recurring ? ', weekly default' : ''}`}
+          return <div className="meal-cell" key={slot}><button className="meal-slot" disabled={!token || !loaded} aria-label={`${dayLabel(date)}, ${slot}: ${meal.text || 'Not planned'}${meal.recurring ? ', weekly default' : ''}`}
             onClick={event => {
               selected.current = event.currentTarget;
               setEdit({ key, defaultKey, label: `${dayLabel(date)} · ${slot}`, repeatLabel: `Every ${weekdayNames[date.getDay()]} ${slot.toLowerCase()}`,
                 previous: plan[key], defaultPrevious: defaults[defaultKey], text: meal.text });
-              setScope('date'); setText(meal.text); setError('');
+              setScope('date'); setText(meal.text);
             }}>
-            <span className="meal-slot-label field-label">{slot}</span><span>{meal.text || <span className="unplanned">{token ? 'Add meal' : '—'}</span>}</span>
+            <span className="meal-slot-content"><span className="meal-slot-label field-label">{slot}</span><span className="meal-slot-text">{meal.text || <span className="unplanned">{token ? 'Add meal' : '—'}</span>}</span></span>
             {meal.recurring && <span className="meal-default-marker">Weekly default</span>}
-          </button>;
+          </button>
+          {([{ store: weekStore, state: weekly, key, label: slot }, { store: defaultStore, state: recurring, key: defaultKey, label: `${slot} weekly default` }]).map(conflict =>
+            conflict.state.conflicts.some(item => item.key === conflict.key) && <div className="item-conflict" key={conflict.key} role="group" aria-label={`Resolve ${dayLabel(date)} ${conflict.label}`}>
+              <p>Someone else changed {conflict.label.toLowerCase()}.</p>
+              <p>Yours: {conflict.state.value.meals[conflict.key] ?? (conflict.state.value.meals[conflict.key] === null ? 'Skipped' : 'Not set')}</p>
+              <p>Family: {conflict.store.getRemote().meals[conflict.key] ?? (conflict.store.getRemote().meals[conflict.key] === null ? 'Skipped' : 'Not set')}</p>
+              <div className="meal-actions"><button onClick={() => conflict.store.resolve(conflict.key, true)}>Keep mine</button>
+                <button onClick={() => conflict.store.resolve(conflict.key, false)}>Use family change</button></div>
+            </div>)}
+          </div>;
         })}
       </section>)}
     </div>
     {edit && <form className="meal-editor" aria-label="Edit meal" onSubmit={event => { event.preventDefault(); void save(text); }}>
       {error && <p className="notice error" role="alert">{error}</p>}
       <label htmlFor="meal-text">{edit.label}</label>
-      <textarea ref={editor} id="meal-text" rows={2} maxLength={300} value={text} disabled={saving} onChange={event => setText(event.target.value)} />
+      <textarea ref={editor} id="meal-text" rows={2} maxLength={300} value={text} disabled={!token} onChange={event => setText(event.target.value)} />
       <label className="meal-repeat" htmlFor="meal-scope">Apply to</label>
-      <select id="meal-scope" value={scope} disabled={saving} onChange={event => setScope(event.target.value as 'date' | 'default')}>
+      <select id="meal-scope" value={scope} disabled={!token} onChange={event => setScope(event.target.value as 'date' | 'default')}>
         <option value="date">This date only</option><option value="default">{edit.repeatLabel}</option>
       </select>
       {scope === 'default' && <p>Used every week unless that date has its own meal or is skipped.
         {edit.previous !== undefined && ' This date has its own entry and will stay unchanged.'}</p>}
       <div className="meal-actions">
-        <button type="submit" disabled={saving || !text.trim()}>Save</button>
-        <button type="button" disabled={saving} onClick={closeEditor}>Cancel</button>
-        {scope === 'date' && edit.text && <button type="button" disabled={saving} onClick={() => void save(null)}>{edit.defaultPrevious ? 'Skip this meal' : 'Remove meal'}</button>}
-        {scope === 'date' && edit.previous !== undefined && <button type="button" disabled={saving} onClick={() => void save('')}>Use weekly default</button>}
-        {scope === 'default' && edit.defaultPrevious && <button type="button" disabled={saving} onClick={() => void save('')}>Remove weekly default</button>}
+        <button type="submit" disabled={!token || !text.trim()}>Save</button>
+        <button type="button" onClick={closeEditor}>Cancel</button>
+        {scope === 'date' && edit.text && <button type="button" disabled={!token} onClick={() => void save(null)}>{edit.defaultPrevious ? 'Skip this meal' : 'Remove meal'}</button>}
+        {scope === 'date' && edit.previous !== undefined && <button type="button" disabled={!token} onClick={() => void save('')}>Use weekly default</button>}
+        {scope === 'default' && edit.defaultPrevious && <button type="button" disabled={!token} onClick={() => void save('')}>Remove weekly default</button>}
       </div>
     </form>}
-    {!token && <p>To edit meals, connect GitHub in Settings.</p>}
+    {!token && <p>To edit meals, connect in Settings.</p>}
   </>;
 }

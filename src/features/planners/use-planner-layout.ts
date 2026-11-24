@@ -2,7 +2,7 @@ import { useState, useSyncExternalStore } from 'react';
 import type { PlannerLayout } from './Planner';
 
 const wideViewport = '(min-width: 768px)';
-const canSplitVertically = () => window.matchMedia(wideViewport).matches;
+const canSplit = () => window.matchMedia(wideViewport).matches;
 const subscribe = (changed: () => void) => {
   const query = window.matchMedia(wideViewport);
   query.addEventListener('change', changed);
@@ -11,8 +11,8 @@ const subscribe = (changed: () => void) => {
 
 export function usePlannerLayout() {
   const [preferredLayout, setLayout] = useState<PlannerLayout>('full');
-  const verticalSplitAvailable = useSyncExternalStore(subscribe, canSplitVertically);
+  const splitAvailable = useSyncExternalStore(subscribe, canSplit);
   // Keep the preference across resizes without remounting either planner.
-  const layout = preferredLayout === 'vertical' && !verticalSplitAvailable ? 'horizontal' : preferredLayout;
-  return { layout, setLayout, verticalSplitAvailable };
+  const layout = splitAvailable ? preferredLayout : 'full';
+  return { layout, setLayout, splitAvailable };
 }

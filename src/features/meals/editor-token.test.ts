@@ -15,27 +15,31 @@ beforeEach(() => {
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 
 describe('remembered meal access', () => {
-  it('saves only when requested and restores the connection', () => {
-    expect(changeMealAccess('test-token')).toMatchObject({ token: 'test-token', remembered: false });
-    expect(readMealAccess().token).toBe('');
-    expect(changeMealAccess('test-token', true).remembered).toBe(true);
+  it('automatically saves verified access and restores the connection', () => {
+    expect(changeMealAccess('test-token').remembered).toBe(true);
     expect(readMealAccess()).toEqual({ token: 'test-token', remembered: true, notice: '' });
   });
   it('disconnects only this app and keeps reading preferences and sibling tokens', () => {
     values.set('speech-to-text-meal-editor:/other/', 'other-token');
     values.set('speech-to-text-display:/speech-to-text/', 'preferences');
-    changeMealAccess('test-token', true);
+    changeMealAccess('test-token');
     expect(editorTokenKey()).toBe('speech-to-text-meal-editor:/speech-to-text/');
     expect(changeMealAccess('')).toEqual({ token: '', remembered: false, notice: '' });
     expect(values.has(editorTokenKey())).toBe(false);
     expect(values.size).toBe(2);
   });
-  it('does not reuse another app path and removes saved access when choosing session only', () => {
-    changeMealAccess('test-token', true);
+  it('does not reuse another app path and replaces saved access', () => {
+    changeMealAccess('test-token');
     vi.stubGlobal('document', { baseURI: 'https://example.test/other/' });
     expect(readMealAccess().token).toBe('');
     vi.stubGlobal('document', { baseURI: 'https://example.test/speech-to-text/' });
-    changeMealAccess('session-token', false);
+    changeMealAccess('replacement-token');
+    expect(readMealAccess().token).toBe('replacement-token');
+  });
+  it('removes the previous token when a replacement cannot be stored', () => {
+    changeMealAccess('previous-token');
+    vi.spyOn(localStorage, 'setItem').mockImplementation(() => { throw new Error('full'); });
+    expect(changeMealAccess('replacement-token').remembered).toBe(false);
     expect(readMealAccess().token).toBe('');
   });
   it('continues for this session and explains when storage is unavailable', () => {
@@ -45,7 +49,7 @@ describe('remembered meal access', () => {
       removeItem: () => { throw new Error('blocked'); },
     });
     expect(readMealAccess()).toEqual({ token: '', remembered: false, notice: '' });
-    const connected = changeMealAccess('test-token', true);
+    const connected = changeMealAccess('test-token');
     expect(connected).toMatchObject({ token: 'test-token', remembered: false });
     expect(connected.notice).toContain('could not remember');
     const disconnected = changeMealAccess('');

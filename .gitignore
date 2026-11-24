@@ -1,4 +1,10 @@
 node_modules/
+**/.wrangler/
+**/.dev.vars
+**/.dev.vars.*
+!**/.dev.vars.example
+service/*.pem
+service/secrets*.json
 dist/
 test-results/
 playwright-report/

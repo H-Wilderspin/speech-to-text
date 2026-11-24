@@ -1,7 +1,8 @@
 # ADR 0058: Reset task completion ticks once on Sunday
 
 Date: 2026-10-19
-Status: Accepted; extends task completion handling in ADR 0052
+Status: Superseded by [ADR 0060](0060-remove-task-planner.md) on 2026-11-24.
+Original decision retained below.
 
 ## Context
 

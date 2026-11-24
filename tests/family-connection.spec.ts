@@ -1,0 +1,92 @@
+import { expect, test, type Page } from '@playwright/test';
+
+async function fixture(page: Page) {
+  const state = { paused: false, revoked: false, badCode: false, writes: 0, requests: 0, items: [] as { id: string; text: string; checked: boolean }[] };
+  await page.route('https://raw.githubusercontent.com/**', route => route.fulfill({ json: { version: 1, items: [], meals: {} } }));
+  await page.route('https://family.example/**', async route => {
+    state.requests++;
+    const request = route.request();
+    const url = new URL(request.url());
+    if (url.pathname === '/pair') {
+      if (state.badCode) return route.fulfill({ status: 400, json: { error: 'This code has expired. Ask for a new code.' } });
+      state.revoked = false;
+      return route.fulfill({ json: { connected: true } });
+    }
+    if (state.revoked) return route.fulfill({ status: 401, json: { error: 'This device is no longer connected. Ask for a new pairing code in Settings.' } });
+    if (state.paused) return route.fulfill({ status: 503, headers: { 'Retry-After': '3600' }, json: { error: 'Family syncing is resting. Your changes stay on this device.' } });
+    if (url.pathname === '/session') return route.fulfill({ json: { connected: true } });
+    if (url.searchParams.get('path') === 'shopping/list.json') {
+      if (request.method() === 'PUT') { state.items = request.postDataJSON().value.items; state.writes++; }
+      return route.fulfill({ json: { sha: 'revision', value: { version: 1, items: state.items } } });
+    }
+    return route.fulfill({ json: { sha: 'revision', value: { version: 1, meals: {}, items: [] } } });
+  });
+  return state;
+}
+async function pair(page: Page) {
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByLabel('Pairing code').fill('AAAA-BBBB-CCCC-DDDD-EEEE');
+  await page.getByRole('button', { name: 'Connect this device' }).click();
+  await expect(page.getByText('This device is connected.', { exact: true })).toBeVisible();
+}
+
+for (const path of ['/', '/speech-to-text/']) {
+  test(`pairing is remembered and never asks for a GitHub token at ${path}`, async ({ page }) => {
+    const state = await fixture(page);
+    await page.goto(path === '/' ? path : `http://127.0.0.1:4181${path}`);
+    await pair(page);
+    await expect(page.getByLabel('GitHub token', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('checkbox', { name: /remember/i })).toHaveCount(0);
+    await page.reload();
+    await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await expect(page.getByText('This device is connected.', { exact: true })).toBeVisible();
+    state.paused = true;
+    await page.getByRole('button', { name: 'Speech to text', exact: true }).click();
+    await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await expect(page.getByRole('alert')).toContainText('syncing is resting');
+    await expect(page.getByLabel('Pairing code')).toHaveCount(0);
+  });
+}
+
+test('local edits survive a quota pause and reload, then share after recovery', async ({ page }) => {
+  const state = await fixture(page);
+  await page.goto('/'); await pair(page);
+  await page.getByRole('button', { name: 'Shopping list', exact: true }).click();
+  await page.getByRole('button', { name: 'Add item', exact: true }).click();
+  await page.getByLabel('Shopping item', { exact: true }).fill('Romaine lettuce');
+  state.paused = true;
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.getByText('Romaine lettuce', { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole('alert')).toContainText('syncing is resting', { timeout: 10000 });
+  expect(state.writes).toBe(0);
+  await page.reload();
+  await page.getByRole('button', { name: 'Shopping list', exact: true }).click();
+  await expect(page.getByText('Romaine lettuce', { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole('alert')).toContainText('syncing is resting', { timeout: 10000 });
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(page.getByLabel('Pairing code')).toHaveCount(0);
+  state.paused = false;
+  // A reopen after recovery also retries the retained journal; no re-pair required.
+  await page.reload();
+  await expect.poll(() => state.items.some(item => item.text === 'Romaine lettuce'), { timeout: 10000 }).toBe(true);
+  expect(state.writes).toBe(1);
+});
+
+test('revoked access offers a replacement code and preserves the connection on a bad replacement', async ({ page }) => {
+  const state = await fixture(page);
+  await page.goto('/'); await pair(page);
+  state.revoked = true;
+  await page.getByRole('button', { name: 'Speech to text', exact: true }).click();
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(page.getByLabel('Pairing code')).toBeVisible();
+  state.badCode = true;
+  await page.getByLabel('Pairing code').fill('1111-2222-3333-4444-5555');
+  await page.getByRole('button', { name: 'Connect this device' }).click();
+  await expect(page.getByRole('alert')).toContainText('expired');
+  const saved = await page.evaluate(() => localStorage.getItem('speech-to-text-meal-editor:/'));
+  expect(saved).toMatch(/^device_/);
+  state.badCode = false;
+  await page.getByRole('button', { name: 'Connect this device' }).click();
+  await expect(page.getByText('This device is connected.', { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem('speech-to-text-meal-editor:/'))).not.toBe(saved);
+});

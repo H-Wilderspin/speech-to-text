@@ -1,12 +1,28 @@
 # Shared shopping list
 
-The shopping-cart icon opens the list in the existing planner pane. Full view,
-vertical/horizontal splits, Close and Refresh behave like meals/tasks. The other
-planners are hidden; captions remain available in split view. Tap the active cart
-icon again to return to captions. Switching panes retains editor drafts. Closing
-discards text still in the editor that has not been applied with Save; changes
-already applied to the list are flushed to GitHub first. There is no week selection.
+On touch screens, pull down from the header while the list is at the top, then
+release when prompted to sync and refresh both planners. This uses the same
+action as footer Refresh, preserving pending edits and editor text without a
+page reload. Pulling a shopping row keeps its existing scrolling/dragging behaviour.
+The footer Refresh icon is desktop-only: at least 1024px wide with a hover-capable
+fine primary pointer. Phones and touch tablets use pull-to-refresh.
 
+The shopping-cart icon opens the list in the existing planner pane. Full view,
+the tablet-sized footer Split view toggle and shared footer Refresh behave like meals.
+Refresh checks both apps and their defaults/catalogue, updating changed data while
+preserving drafts. Shopping's header contains only its title. The meal
+planner is hidden; captions remain available in split view. Use the speech-bubble
+Speech to text icon to return directly to full captions. Tapping the active cart
+icon again also returns to captions. The global footer stays visible in every view;
+switching to meals or Settings retains editor drafts. Completed changes are kept on the device and save in the background, including
+while another screen is visible. Unapplied editor text stays for the page session
+but clears on reload. There is no week selection. Split view is available at 768px and wider: captions
+are always on the left and shopping on the right. On narrower screens the toggle
+is hidden and shopping uses the full view, preserving drafts and the split preference.
+
+Add item stays in a sticky footer at the bottom of the shopping panel in full and
+split views, including when the list is short. It hides while the item editor is
+open and returns after Save or Cancel. The app navigation footer remains below it.
 Use Add item for custom items, the pencil to edit, the bin to delete directly,
 and the checkbox to mark bought. Drag anywhere on the row text or background
 with a mouse. On touch screens, hold the row briefly (350ms), then drag; an
@@ -18,7 +34,7 @@ Home/End to position, then Space/Enter to drop. Escape cancels without closing
 the planner. Pointer cancellation, leaving the page or resizing cancels too.
 Dropping outside the list does not change its order. A completed move updates the
 list immediately, as do adds, edits, bought ticks and deletions. Changes collect
-in memory until the next save. Quantities can be part of the text. Grey
+in the device journal until a successful GitHub save. Quantities can be part of the text. Grey
 Regular items buttons toggle the supplied household essentials: tap to add, then
 tap the Added tile to remove the matching item, including bought items. Name
 matching ignores case and repeated whitespace; quantity variants remain separate.
@@ -31,7 +47,7 @@ visible. There is no drag-hint paragraph or save-status row above the list.
 
 ## Data and access
 
-Reuse the existing Settings → Planner editing connection and optional remembered
+Reuse the existing Settings → Planner editing connection and automatically remembered
 token. Anonymous readers can view the public list. Files live in
 `H-Wilderspin/speech-to-text-meals`; all data and commit history are public, as with
 the other planners. Missing files are normal; the first save creates the list.
@@ -49,9 +65,10 @@ No changes to existing meal/task files are needed.
 ```
 
 IDs must be unique, 1–64 letters/digits/hyphens. Item text must be nonblank and at
-most 300 characters. New items use UUIDs. Unsupported/malformed files block edits
-instead of being replaced. Pending changes live in page memory; no shopping data
-is stored on disk. Existing preferences and the optional token remain persisted.
+most 300 characters. New items use UUIDs. Unsupported/malformed remote files are
+never overwritten. A cached valid list remains editable; those edits wait until
+the shared file is repaired. Documents and pending actions are stored in IndexedDB,
+scoped to this app path. Tokens remain in the existing separate access storage.
 
 The bundled `src/features/shopping/regular-items.ts` contains the 24 items supplied
 by the user. To replace that catalogue without an app release, create
@@ -68,35 +85,38 @@ provide a catalogue editor.
 
 ## Saving, refresh and conflicts
 
-The list updates immediately in React state. Dirty state saves in one batch every
-30 seconds, before closing or switching planners, and before manual Refresh.
-Clean and net-zero changes do not write. The editor's Save button applies its text
-to the local list; screen-reader status announces pending changes and GitHub saves.
-Edits/navigation briefly disable during the network save; Stop remains available.
-Failed saves keep local changes and the pane open. Retry saving or the next timer
-attempt can recover. Only one save can run at a time; drag gestures defer it.
+The list updates immediately. Completed actions are kept in an IndexedDB journal,
+then save in a batch after two seconds without another edit, or ten seconds of
+continuous editing. Clean and net-zero changes do not write. Save in the item
+editor applies text locally and closes the editor; network work never disables
+editing or ordinary navigation. Footer Refresh and navigation start an earlier
+save. Failed saves retain the queue and retry with increasing delays, up to a
+minute. Retry saving and reconnecting can retry sooner.
 
-Both files load with cache bypass on opening, focus/visibility return and every
-60 seconds while active and clean. Hidden panes stop polling. Pending edits and
-drag gestures block refresh replacement. This is polling, not instantaneous push.
+The list loads on opening, returning to the tab and every minute while visible.
+The catalogue reloads every five minutes; on failure the current catalogue stays,
+or the bundled catalogue is used on a new offline visit. Hidden panes do not poll,
+but pending writes continue. Refresh merges family changes under local operations
+and preserves active editor text. Drag gestures defer refresh and save publication.
 
-Before saving, compare the last shared snapshot, the current local list and fresh
-GitHub data. Apply only net local changes so intermediate edits/ticks do not need
-separate writes. Merge independent fields and additions. Conflicting edits,
-deletions of changed items and incompatible ordering retain the local list and
-show the latest shared list for review. **Keep my changes** applies local changes
-to that reviewed version while preserving unrelated remote changes; **Use shared
-list** discards local changes. A new concurrent conflict still requires review.
-Conditional SHA writes retry up to three times; retrying an already-written batch
-does not duplicate it. Same-name concurrent additions are deduplicated.
+Each batch reads the latest GitHub file and uses its SHA for a conditional write.
+Independent items and fields merge: a rename and someone else's bought tick can
+both survive. A conflict stays beside only the affected item with Yours/Family,
+Keep mine and Use family change. Deleting an edited item and incompatible list
+ordering require review. Moves retain family additions and do not resurrect deleted
+items. Other items keep saving. A newer family change during conflict resolution
+can require another choice; nothing silently overwrites it. Concurrent identical
+adds are deduplicated; explicitly keeping a conflicting rename may retain two
+separate items with the same name.
 
-Closing via Back, Close, Escape, outside click or the active cart icon waits for
-the save. Leaving for another planner also flushes first. Layout switches alone
-keep pending state. Page visibility loss attempts a save; beforeunload requests
-the browser's unsaved-changes prompt while dirty and starts a best-effort flush.
-Mobile browsers may omit these events and can terminate requests. Close the pane
-and finish saving before quitting. Forced exit/reload can lose unsaved in-memory
-changes; there is no durable offline queue or guaranteed unload-time GitHub write.
+Normal reloads and app updates restore completed pending actions. View navigation
+also retains unapplied drafts for the current session. If browser storage fails,
+a warning asks you to keep the app open until GitHub saves succeed; navigation to
+Settings still works to fix access. Page exit is guarded only for changes not yet
+kept locally. Clearing/evicting site data or closing a private session can remove
+pending changes. There is no guaranteed unload-time network request.
 
-Automated coverage: `src/features/shopping/*.test.ts` and `tests/shopping.spec.ts`.
-Physical iPad/phone touch and screen-reader checks remain in the manual matrix.
+See [ADR 0066](decisions/0066-local-first-planner-sync.md). Automated coverage:
+`src/features/planners/sync-document.test.ts`, shopping unit tests,
+`tests/local-sync.spec.ts` and `tests/shopping.spec.ts`. Physical iPad/phone touch
+and screen-reader checks remain in the manual matrix.
