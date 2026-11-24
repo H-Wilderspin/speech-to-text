@@ -1,6 +1,7 @@
 import { githubFile } from './github-app';
 import { allowedPath, jsonBody, validateDocument } from './validation';
 import { HttpError, paused, type Env } from './types';
+import { admitPairing, pairingCode } from './pairing';
 
 export const hash = async (text: string) => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))),
   byte => byte.toString(16).padStart(2, '0')).join('');
@@ -38,12 +39,19 @@ async function admin(request: Request, env: Env, path: string): Promise<Response
     const count = await env.DB.prepare('SELECT COUNT(*) AS total FROM devices').first<{ total: number }>();
     const invites = await env.DB.prepare('SELECT COUNT(*) AS total FROM invites').first<{ total: number }>();
     if ((count?.total ?? 0) + (invites?.total ?? 0) >= 100) throw new HttpError(409, 'Remove an old device or wait for invitations to expire.');
-    // 80 random bits, grouped for copy/paste or dictation. Never logged or stored in plaintext.
-    const code = random().slice(0, 20).toUpperCase().match(/.{4}/g)!.join('-');
     const expires = now + 24 * 60 * 60000;
-    await env.DB.prepare('INSERT INTO invites (code_hash, label, expires_at) VALUES (?, ?, ?)')
-      .bind(await hash(code.replaceAll('-', '')), body.label.trim(), expires).run();
-    return json({ code, expires });
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const code = pairingCode();
+      // Limit valid targets as well as guesses. Conditional insertion also protects
+      // against simultaneous owner requests and does not replace colliding codes.
+      const inserted = await env.DB.prepare(`INSERT INTO invites (code_hash, label, expires_at)
+        SELECT ?, ?, ? WHERE (SELECT COUNT(*) FROM invites WHERE claimed_hash IS NULL AND expires_at > ?) < 5
+          AND (SELECT COUNT(*) FROM devices) + (SELECT COUNT(*) FROM invites) < 100
+        ON CONFLICT(code_hash) DO NOTHING RETURNING code_hash`)
+        .bind(await hash(code), body.label.trim(), expires, now).first();
+      if (inserted) return json({ code, expires });
+    }
+    throw new HttpError(409, 'Could not create a code. Use an existing code or wait for unused codes to expire (up to five at once).');
   }
   throw new HttpError(404, 'Unknown owner action.');
 }
@@ -70,9 +78,11 @@ async function admit(env: Env) {
 }
 
 async function pair(request: Request, env: Env) {
+  await admitPairing(env);
   const body = await jsonBody(request, 1024);
   const code = typeof body.code === 'string' ? body.code.toUpperCase().replace(/[\s-]/g, '') : '';
-  if (!/^[A-F0-9]{20}$/.test(code) || typeof body.token !== 'string' || !/^device_[a-f0-9]{64}$/.test(body.token)) {
+  // Existing long invitations remain usable until their original expiry.
+  if (!/^(?:[0-9]{6}|[A-F0-9]{20})$/.test(code) || typeof body.token !== 'string' || !/^device_[a-f0-9]{64}$/.test(body.token)) {
     throw new HttpError(400, 'Check the pairing code and try again.');
   }
   const codeHash = await hash(code);

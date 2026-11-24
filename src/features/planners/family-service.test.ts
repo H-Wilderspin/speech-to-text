@@ -58,6 +58,31 @@ it('distinguishes revoked devices from owner/provider failure, including HTML qu
   await expect(serviceRequest('/session', 'device_secret')).rejects.toBeInstanceOf(SyncPausedError);
 });
 
+it('backs off pairing alone on 429 without blocking an existing device from syncing', async () => {
+  vi.useFakeTimers();
+  const fetch = vi.fn().mockResolvedValueOnce(Response.json({ error: 'Wait before pairing again.' }, { status: 429, headers: { 'Retry-After': '900' } }))
+    .mockResolvedValue(Response.json({ connected: true }));
+  vi.stubGlobal('fetch', fetch);
+  const { serviceRequest, pairDevice } = await import('./family-service');
+  await expect(pairDevice('001234', 'device_candidate')).rejects.toThrow('Wait before pairing');
+  await expect(pairDevice('005678', 'device_candidate')).rejects.toThrow('Wait before pairing');
+  expect(fetch).toHaveBeenCalledTimes(1);
+  expect((await serviceRequest('/session', 'device_existing')).ok).toBe(true);
+  await vi.advanceTimersByTimeAsync(900000);
+  expect(await pairDevice('001234', 'device_candidate')).toBe('device_candidate');
+  expect(fetch).toHaveBeenCalledTimes(3);
+});
+
+it('rejects incomplete codes locally and preserves leading zeros when pasted with spaces', async () => {
+  const fetch = vi.fn().mockResolvedValue(Response.json({ connected: true }));
+  vi.stubGlobal('fetch', fetch);
+  const { pairDevice } = await import('./family-service');
+  await expect(pairDevice('12345', 'device_candidate')).rejects.toThrow('six-digit');
+  expect(fetch).not.toHaveBeenCalled();
+  await pairDevice('001 234', 'device_candidate');
+  expect(JSON.parse(fetch.mock.calls[0]![1].body).code).toBe('001234');
+});
+
 it('never sends a device credential to GitHub when service configuration is missing', async () => {
   vi.stubEnv('VITE_SYNC_SERVICE_URL', '');
   const fetch = vi.fn(); vi.stubGlobal('fetch', fetch);

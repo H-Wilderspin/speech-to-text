@@ -3,6 +3,7 @@ Date: 2026-11-24
 Status: Accepted (Worker, D1 and frontend deployed and verified)
 
 Invitation duration superseded by [ADR 0072](0072-day-long-pairing-codes.md).
+Invitation format and guessing protection superseded by [ADR 0074](0074-six-digit-pairing-codes.md).
 
 ## Context
 The user approved replacing routine GitHub token entry for grandparents with a

@@ -7,8 +7,11 @@ export class SyncPausedError extends Error {
 }
 let pausedUntil = 0;
 let pauseMessage = '';
+let pairingRetryAt = 0;
+let pairingMessage = '';
 
 export async function serviceRequest(path: string, token = '', init?: RequestInit): Promise<Response> {
+  if (path === '/pair' && Date.now() < pairingRetryAt) throw new Error(pairingMessage);
   if (Date.now() < pausedUntil) throw new SyncPausedError(pauseMessage, pausedUntil);
   if (!familyServiceUrl) throw new Error('The family connection is not configured. Ask the person who set up the app for help.');
   // A relative address is only supplied by Vite's opt-in development proxy.
@@ -32,6 +35,11 @@ export async function serviceRequest(path: string, token = '', init?: RequestIni
   if (response.status === 429 || response.status >= 500) {
     const retry = response.headers.get('retry-after');
     const seconds = retry && /^\d+$/.test(retry) ? Number(retry) : retry ? (Date.parse(retry) - Date.now()) / 1000 : 900;
+    if (path === '/pair' && response.status === 429) {
+      pairingRetryAt = Date.now() + Math.max(1, Math.min(86430, Number.isFinite(seconds) ? seconds : 900)) * 1000;
+      pairingMessage = message;
+      throw new Error(message);
+    }
     pausedUntil = Date.now() + Math.max(60, Math.min(86430, Number.isFinite(seconds) ? seconds : 900)) * 1000;
     pauseMessage = message;
     throw new SyncPausedError(message, pausedUntil);
@@ -43,6 +51,8 @@ export function newDeviceToken(): string {
   return 'device_' + Array.from(crypto.getRandomValues(new Uint8Array(32)), byte => byte.toString(16).padStart(2, '0')).join('');
 }
 export async function pairDevice(code: string, token: string): Promise<string> {
+  code = code.toUpperCase().replace(/[\s-]/g, '');
+  if (!/^(?:[0-9]{6}|[A-F0-9]{20})$/.test(code)) throw new Error('Enter the six-digit pairing code.');
   const response = await serviceRequest('/pair', '', { method: 'POST', body: JSON.stringify({ code, token }) });
   if (!response.ok) throw new Error('Could not connect this device. Check the pairing code.');
   return token;

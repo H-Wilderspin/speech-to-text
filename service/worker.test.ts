@@ -1,8 +1,9 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { generateKeyPairSync, verify } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import worker from './worker';
+import worker, { hash } from './worker';
+import * as pairing from './pairing';
 import type { Database, Env, Statement } from './types';
 
 const keys = generateKeyPairSync('rsa', { modulusLength: 2048 });
@@ -32,7 +33,9 @@ async function call(path: string, method = 'GET', body?: unknown, access = token
 async function invite() {
   const response = await call('/admin/invites', 'POST', { label: 'Granddad tablet' }, env.ADMIN_TOKEN);
   expect(response.status).toBe(200);
-  return (await response.json() as { code: string }).code;
+  const code = (await response.json() as { code: string }).code;
+  expect(code).toMatch(/^[0-9]{6}$/);
+  return code;
 }
 async function connect() {
   const code = await invite();
@@ -41,7 +44,9 @@ async function connect() {
 }
 beforeEach(() => {
   sqlite = new DatabaseSync(':memory:');
-  sqlite.exec(readFileSync(new URL('./migrations/0001_devices.sql', import.meta.url), 'utf8'));
+  for (const file of readdirSync(new URL('./migrations/', import.meta.url)).filter(file => file.endsWith('.sql')).sort()) {
+    sqlite.exec(readFileSync(new URL(`./migrations/${file}`, import.meta.url), 'utf8'));
+  }
   const db: Database = { prepare: statement, async batch(statements) {
     sqlite.exec('BEGIN');
     try { const results = []; for (const query of statements) results.push(await query.run()); sqlite.exec('COMMIT'); return results; }
@@ -58,9 +63,33 @@ beforeEach(() => {
   });
   vi.stubGlobal('fetch', fetchMock);
 });
-afterEach(() => { sqlite.close(); vi.unstubAllGlobals(); vi.useRealTimers(); });
+afterEach(() => { sqlite.close(); vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.useRealTimers(); });
 
 describe('family device boundary', () => {
+  it('keeps leading zeros, tolerates dictated spacing, and retries code collisions without replacing invitations', async () => {
+    vi.spyOn(pairing, 'pairingCode').mockReturnValueOnce('001234').mockReturnValueOnce('001234').mockReturnValueOnce('005678');
+    expect(await invite()).toBe('001234');
+    expect(await invite()).toBe('005678');
+    expect(sqlite.prepare('SELECT COUNT(*) AS total FROM invites').get()?.total).toBe(2);
+    expect((await call('/pair', 'POST', { code: '001 234', token })).status).toBe(200);
+    expect((await call('/pair', 'POST', { code: '005-678', token: otherToken })).status).toBe(200);
+  });
+  it('keeps older long invitations usable without changing existing device access', async () => {
+    const code = 'AAAA-BBBB-CCCC-DDDD-EEEE';
+    sqlite.prepare('INSERT INTO invites (code_hash, label, expires_at) VALUES (?, ?, ?)')
+      .run(await hash(code.replaceAll('-', '')), 'Existing invitation', Date.now() + 86400000);
+    expect((await call('/pair', 'POST', { code, token })).status).toBe(200);
+    expect((await call('/session')).status).toBe(200);
+  });
+  it('limits unused invitations atomically without invalidating existing ones', async () => {
+    const responses = await Promise.all(Array.from({ length: 12 }, () => call('/admin/invites', 'POST', { label: 'Tablet' }, env.ADMIN_TOKEN)));
+    expect(responses.filter(response => response.status === 200)).toHaveLength(5);
+    expect(responses.filter(response => response.status === 409)).toHaveLength(7);
+    expect(sqlite.prepare('SELECT COUNT(*) AS total FROM invites').get()?.total).toBe(5);
+    const code = (await responses.find(response => response.status === 200)!.json() as { code: string }).code;
+    expect((await call('/pair', 'POST', { code, token })).status).toBe(200);
+    await invite(); // a consumed invitation frees an unused-code slot
+  });
   it('pairs once, recovers a lost response and stores only hashes', async () => {
     const code = await connect();
     expect((await call('/pair', 'POST', { code, token })).status).toBe(200);
@@ -126,6 +155,46 @@ describe('family device boundary', () => {
     expect((await call(file, 'PUT', { sha: 'invalid', value: { version: 1, items: [] } })).status).toBe(400);
     expect((await call(file, 'PUT', { value: 'x'.repeat(262144) })).status).toBe(413);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('short-code guessing protection', () => {
+  it('counts concurrent malformed attempts globally and recovers at the exact short-window boundary', async () => {
+    vi.useFakeTimers();
+    const start = Date.now();
+    const code = await invite();
+    const responses = await Promise.all(Array.from({ length: 12 }, (_, index) => call('/pair', 'POST', { code: 'bad', token: `different-${index}` })));
+    expect(responses.filter(response => response.status === 400)).toHaveLength(5);
+    expect(responses.filter(response => response.status === 429)).toHaveLength(7);
+    expect(responses.find(response => response.status === 429)!.headers.get('Retry-After')).toBe('900');
+    vi.setSystemTime(start + 900000 - 1);
+    expect((await call('/pair', 'POST', { code, token })).status).toBe(429);
+    vi.setSystemTime(start + 900000);
+    expect((await call('/pair', 'POST', { code, token })).status).toBe(200);
+  });
+  it('enforces the 24-hour budget across short-window resets without stopping connected devices', async () => {
+    vi.useFakeTimers();
+    await connect();
+    const start = Date.now() + 86400000;
+    for (let window = 0; window < 4; window++) {
+      vi.setSystemTime(start + window * 900000);
+      for (let guess = 0; guess < 5; guess++) expect((await call('/pair', 'POST', { code: 'bad', token })).status).toBe(400);
+    }
+    vi.setSystemTime(start + 3600000);
+    const code = await invite(); // owner code generation must not reset the budget
+    expect((await call('/pair', 'POST', { code, token: otherToken })).status).toBe(429);
+    expect(sqlite.prepare('SELECT long_attempts FROM pairing_guard').get()?.long_attempts).toBe(20);
+    expect((await call('/session')).status).toBe(200);
+    vi.setSystemTime(start + 86400000 - 1);
+    expect((await call('/pair', 'POST', { code, token: otherToken })).status).toBe(429);
+    vi.setSystemTime(start + 86400000);
+    expect((await call('/pair', 'POST', { code, token: otherToken })).status).toBe(200);
+  });
+  it('fails closed if the pairing limiter is unavailable, while existing sessions still work', async () => {
+    await connect();
+    sqlite.exec('DROP TABLE pairing_guard');
+    expect((await call('/pair', 'POST', { code: '123456', token: otherToken })).status).toBe(503);
+    expect((await call('/session')).status).toBe(200);
   });
 });
 

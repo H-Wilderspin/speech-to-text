@@ -19,6 +19,7 @@ every feature described is still present. Start with the [current guides](../REA
 | GitHub App setup helper | [0072 CLI setup](0072-cli-github-app-registration.md) |
 | 24-hour invitation codes | [0072 code lifetime](0072-day-long-pairing-codes.md) |
 | Editing interruption and visible-app wake lock | [0073](0073-editing-and-visible-screen-awake.md) |
+| Six-digit pairing and guessing limits | [0074](0074-six-digit-pairing-codes.md) |
 
 Earlier records remain at their original paths. In particular, the former
 speaker pipeline, task planner, top/bottom split, modal navigation, 30-second

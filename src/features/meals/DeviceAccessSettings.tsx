@@ -47,13 +47,13 @@ export function DeviceAccessSettings({ access, needsToken, onAccessError, onToke
       <p>Connect this device once to edit meals and shopping.</p>
       <ol id="family-code-help">
         <li>Ask the family member who looks after the app for a pairing code.</li>
-        <li>Type or paste the code below.</li>
+        <li>Type or paste the six-digit code below.</li>
         <li>Tap <strong>Connect this device</strong>. We will remember the connection.</li>
       </ol>
       <p>Each code works for one device and lasts 24 hours. Once connected, this device stays connected. Ask for a new code if it has expired or already been used.</p>
       <label htmlFor="family-code">Pairing code</label>
       <input id="family-code" ref={input} value={code} onChange={event => { setCode(event.target.value); candidate.current = ''; }}
-        aria-describedby="family-code-help" autoComplete="off" autoCapitalize="characters" spellCheck={false} maxLength={40} required disabled={connecting} />
+        aria-describedby="family-code-help" inputMode="numeric" autoComplete="one-time-code" autoCapitalize="none" spellCheck={false} maxLength={40} required disabled={connecting} />
       <button disabled={connecting || !code.trim()}>{connecting ? 'Connecting…' : 'Connect this device'}</button>
     </form>}
   </section>;

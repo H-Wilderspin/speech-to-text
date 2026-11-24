@@ -23,10 +23,16 @@ node --use-system-ca --env-file=service/.admin.local service/admin.mjs pause
 node --use-system-ca --env-file=service/.admin.local service/admin.mjs resume
 ```
 
-Each code connects one device and expires 24 hours after creation. Enter it in
+New codes contain six digits, connect one device and expire 24 hours after creation. Enter one in
 **Settings ? Family connection ? Connect this device**. Access is remembered
 without routine expiry; grandparents do not need GitHub accounts.
 If the form closes before pairing succeeds, generate a fresh code.
+
+Keep leading zeros. Up to five unused codes can exist at once. Pairing allows
+five submissions per 15-minute window and twenty per 24-hour window across the
+service, including successful attempts. If limited, wait as instructed; generating
+another code does not reset the limit. Connected devices keep syncing. Old long
+codes remain valid until their original expiry. See [ADR 0074](decisions/0074-six-digit-pairing-codes.md).
 
 Revocation applies on the device's next request. Clearing browser data removes
 pairing and unsynced edits. D1 stores credential hashes, not plaintext credentials.

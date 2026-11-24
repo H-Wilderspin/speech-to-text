@@ -1,13 +1,16 @@
 import { expect, test, type Page } from '@playwright/test';
 
 async function fixture(page: Page) {
-  const state = { paused: false, revoked: false, badCode: false, writes: 0, requests: 0, items: [] as { id: string; text: string; checked: boolean }[] };
+  const state = { paused: false, revoked: false, badCode: false, limited: false, pairingRequests: 0, writes: 0, requests: 0, items: [] as { id: string; text: string; checked: boolean }[] };
   await page.route('https://raw.githubusercontent.com/**', route => route.fulfill({ json: { version: 1, items: [], meals: {} } }));
   await page.route('https://family.example/**', async route => {
     state.requests++;
     const request = route.request();
     const url = new URL(request.url());
     if (url.pathname === '/pair') {
+      state.pairingRequests++;
+      expect(request.postDataJSON().code).toMatch(/^(?:[0-9]{6}|[A-F0-9]{20})$/);
+      if (state.limited) return route.fulfill({ status: 429, headers: { 'Retry-After': '900' }, json: { error: 'Too many pairing attempts. Please try again in 15 minutes.' } });
       if (state.badCode) return route.fulfill({ status: 400, json: { error: 'This code has expired. Ask for a new code.' } });
       state.revoked = false;
       return route.fulfill({ json: { connected: true } });
@@ -25,7 +28,9 @@ async function fixture(page: Page) {
 }
 async function pair(page: Page) {
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
-  await page.getByLabel('Pairing code').fill('AAAA-BBBB-CCCC-DDDD-EEEE');
+  await expect(page.getByLabel('Pairing code')).toHaveAttribute('inputmode', 'numeric');
+  await expect(page.getByLabel('Pairing code')).toHaveAttribute('autocomplete', 'one-time-code');
+  await page.getByLabel('Pairing code').fill('001234');
   await page.getByRole('button', { name: 'Connect this device' }).click();
   await expect(page.getByText('This device is connected.', { exact: true })).toBeVisible();
 }
@@ -80,7 +85,7 @@ test('revoked access offers a replacement code and preserves the connection on a
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await expect(page.getByLabel('Pairing code')).toBeVisible();
   state.badCode = true;
-  await page.getByLabel('Pairing code').fill('1111-2222-3333-4444-5555');
+  await page.getByLabel('Pairing code').fill('005678');
   await page.getByRole('button', { name: 'Connect this device' }).click();
   await expect(page.getByRole('alert')).toContainText('expired');
   const saved = await page.evaluate(() => localStorage.getItem('speech-to-text-meal-editor:/'));
@@ -89,4 +94,31 @@ test('revoked access offers a replacement code and preserves the connection on a
   await page.getByRole('button', { name: 'Connect this device' }).click();
   await expect(page.getByText('This device is connected.', { exact: true })).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('speech-to-text-meal-editor:/'))).not.toBe(saved);
+});
+
+test('incomplete codes stay local and repeated pairing attempts respect the retry delay', async ({ page }) => {
+  const state = await fixture(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByLabel('Pairing code').fill('12345');
+  await page.getByRole('button', { name: 'Connect this device' }).click();
+  await expect(page.getByRole('alert')).toContainText('six-digit');
+  expect(state.pairingRequests).toBe(0);
+  state.limited = true;
+  await page.getByLabel('Pairing code').fill('001 234');
+  await page.getByRole('button', { name: 'Connect this device' }).click();
+  await expect(page.getByRole('alert')).toContainText('15 minutes');
+  await page.getByRole('button', { name: 'Connect this device' }).click();
+  await expect(page.getByRole('alert')).toContainText('15 minutes');
+  expect(state.pairingRequests).toBe(1);
+  await page.getByRole('button', { name: 'Speech to text', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Speech to text', exact: true })).toHaveAttribute('aria-expanded', 'true');
+});
+
+test('previous long invitations can still be pasted', async ({ page }) => {
+  await fixture(page); await page.goto('/');
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByLabel('Pairing code').fill('AAAA-BBBB-CCCC-DDDD-EEEE');
+  await page.getByRole('button', { name: 'Connect this device' }).click();
+  await expect(page.getByText('This device is connected.', { exact: true })).toBeVisible();
 });
