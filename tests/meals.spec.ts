@@ -62,6 +62,44 @@ async function connect(page: Page) {
 const breakfast = (page: Page) => page.getByRole('button', { name: /^Monday 19 Oct, Breakfast:/ });
 const split = (page: Page) => page.getByRole('button', { name: 'Split view', exact: true });
 
+test('meal Save and Cancel remain reachable when the keyboard reduces phone height', async ({ page, context }) => {
+  const state = await fixture(context);
+  state.meals[key] = 'Toast';
+  state.defaults['monday/breakfast'] = 'Cereal';
+  await page.setViewportSize({ width: 390, height: 844 });
+  await open(page);
+  await connect(page);
+  await breakfast(page).click();
+  await page.locator('#meal-text').fill('Eggs');
+  await expect(page.locator('meta[name=viewport]')).toHaveAttribute('content', /interactive-widget=resizes-content/);
+  // Models Chrome's resized layout viewport, not a physical Android keyboard.
+  for (const width of [390, 320]) {
+    await page.setViewportSize({ width, height: 400 });
+    for (const name of ['Save', 'Cancel']) {
+      const button = page.getByRole('button', { name, exact: true });
+      await expect.poll(() => button.evaluate(element => {
+        const box = element.getBoundingClientRect();
+        const header = document.querySelector('.meal-header')!.getBoundingClientRect();
+        const footer = document.querySelector('.toolbar')!.getBoundingClientRect();
+        const hit = document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2);
+        return { belowHeader: box.top >= header.bottom, aboveFooter: box.bottom <= footer.top,
+          touchTarget: box.height >= 48, reachable: element.contains(hit), top: box.top, bottom: box.bottom,
+          headerBottom: header.bottom, footerTop: footer.top };
+      })).toMatchObject({ belowHeader: true, aboveFooter: true, touchTarget: true, reachable: true });
+    }
+  }
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await expect(page.getByRole('form', { name: 'Edit meal' })).toHaveCount(0);
+  expect(state.meals[key]).toBe('Toast');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await breakfast(page).click();
+  await page.locator('#meal-text').fill('Eggs');
+  await page.setViewportSize({ width: 390, height: 400 });
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(breakfast(page)).toContainText('Eggs');
+  await expect(page.getByRole('form', { name: 'Edit meal' })).toHaveCount(0);
+});
+
 test('meal headings stay below the header while scrolling and default tags sit at card bottoms', async ({ page, context }) => {
   const state = await fixture(context);
   state.defaults['monday/breakfast'] = 'Toast';

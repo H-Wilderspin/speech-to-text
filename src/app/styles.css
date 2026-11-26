@@ -49,7 +49,7 @@ button:disabled { opacity: .5; cursor: default; }
 .content-layout { overflow: hidden; }
 .caption-panel { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; }
 .pull-refresh-status { position: sticky; top: var(--planner-header-height, 80px); z-index: 3; margin: 0; padding: .6rem; text-align: center; background: var(--accent-soft); color: var(--accent); }
-.planner-panel { container: meal-planner / inline-size; }
+.planner-panel { container: meal-planner / size; }
 .planner-split { border-left: 1px solid var(--line); }
 .planner-split .meal-editor { position: static; }
 .toolbar { flex-shrink: 0; display: grid; grid-template-columns: minmax(72px, 1fr) repeat(5, 48px); gap: .5rem; padding: .75rem 0; border-top: 1px solid var(--line); }
@@ -172,8 +172,12 @@ dialog::backdrop { background: #000000b3; }
 .meal-editor textarea { resize: vertical; }
 .meal-repeat { margin-top: .5rem; }
 .meal-editor select { width: 100%; }
+.meal-editor.meal-editor-with-actions { display: flex; flex-direction: column; max-height: calc(100cqh - var(--planner-header-height, 80px) - 1rem); padding: 0; margin: 0; z-index: 2; }
+.meal-editor-fields { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: .75rem; }
+.meal-editor .meal-editor-primary { flex-shrink: 0; margin: 0; padding: .5rem .75rem; border-top: 1px solid var(--line); }
 .meal-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .5rem; }
 .meal-actions button { flex: 1 1 auto; width: auto; }
+.meal-editor-primary button { flex: 1 1 0; min-width: 0; overflow-wrap: anywhere; }
 .meal-access { margin-top: 1rem; }
 .meal-access select { width: 100%; min-width: 0; max-width: 100%; min-height: 48px; font-size: var(--text-medium); padding: .5rem; background: #fff; color: var(--ink); border: 1px solid var(--control-border); border-radius: var(--radius); }
 .app-update { display: flex; align-items: center; justify-content: center; gap: .5rem; width: 100%; }

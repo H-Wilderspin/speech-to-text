@@ -73,22 +73,26 @@ export function MealWeek({ client, start, today, token, refresh, active, onEdit 
         })}
       </section>)}
     </div>
-    {edit && <form className="meal-editor" aria-label="Edit meal" onSubmit={event => { event.preventDefault(); void save(text); }}>
-      {error && <p className="notice error" role="alert">{error}</p>}
-      <label htmlFor="meal-text">{edit.label}</label>
-      <textarea ref={editor} id="meal-text" rows={2} maxLength={300} value={text} disabled={!token} onChange={event => setText(event.target.value)} />
-      <label className="meal-repeat" htmlFor="meal-scope">Apply to</label>
-      <select id="meal-scope" value={scope} disabled={!token} onChange={event => setScope(event.target.value as 'date' | 'default')}>
-        <option value="date">This date only</option><option value="default">{edit.repeatLabel}</option>
-      </select>
-      {scope === 'default' && <p>Used every week unless that date has its own meal or is skipped.
-        {edit.previous !== undefined && ' This date has its own entry and will stay unchanged.'}</p>}
-      <div className="meal-actions">
+    {edit && <form className="meal-editor meal-editor-with-actions" aria-label="Edit meal" onSubmit={event => { event.preventDefault(); void save(text); }}>
+      <div className="meal-editor-fields">
+        {error && <p className="notice error" role="alert">{error}</p>}
+        <label htmlFor="meal-text">{edit.label}</label>
+        <textarea ref={editor} id="meal-text" rows={2} maxLength={300} value={text} disabled={!token} onChange={event => setText(event.target.value)} />
+        <label className="meal-repeat" htmlFor="meal-scope">Apply to</label>
+        <select id="meal-scope" value={scope} disabled={!token} onChange={event => setScope(event.target.value as 'date' | 'default')}>
+          <option value="date">This date only</option><option value="default">{edit.repeatLabel}</option>
+        </select>
+        {scope === 'default' && <p>Used every week unless that date has its own meal or is skipped.
+          {edit.previous !== undefined && ' This date has its own entry and will stay unchanged.'}</p>}
+        <div className="meal-actions">
+          {scope === 'date' && edit.text && <button type="button" disabled={!token} onClick={() => void save(null)}>{edit.defaultPrevious ? 'Skip this meal' : 'Remove meal'}</button>}
+          {scope === 'date' && edit.previous !== undefined && <button type="button" disabled={!token} onClick={() => void save('')}>Use weekly default</button>}
+          {scope === 'default' && edit.defaultPrevious && <button type="button" disabled={!token} onClick={() => void save('')}>Remove weekly default</button>}
+        </div>
+      </div>
+      <div className="meal-actions meal-editor-primary">
         <button type="submit" disabled={!token || !text.trim()}>Save</button>
         <button type="button" onClick={closeEditor}>Cancel</button>
-        {scope === 'date' && edit.text && <button type="button" disabled={!token} onClick={() => void save(null)}>{edit.defaultPrevious ? 'Skip this meal' : 'Remove meal'}</button>}
-        {scope === 'date' && edit.previous !== undefined && <button type="button" disabled={!token} onClick={() => void save('')}>Use weekly default</button>}
-        {scope === 'default' && edit.defaultPrevious && <button type="button" disabled={!token} onClick={() => void save('')}>Remove weekly default</button>}
       </div>
     </form>}
     {!token && <p>To edit meals, connect in Settings.</p>}

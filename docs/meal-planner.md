@@ -14,6 +14,8 @@ Builds without a service URL retain [legacy token access](hosted-editing.md#lega
 
 Tap a meal to edit it. Opening the editor stops listening; Save or Cancel does
 not restart it. Save applies the change locally and queues a background save.
+Save and Cancel stay in a separate row while the editor's fields scroll when
+space is limited. Android Chrome resizes the page above the on-screen keyboard.
 Draft text and its date/default scope survive screen switches, reloads and reopening
 on this device. Opening meals recovers the most recent draft's week. Save submits
 the draft; Cancel clears it. Newer family edits still go through conflict review.
