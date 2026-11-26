@@ -38,6 +38,8 @@ jobs:
         run: npm run test:family -- --max-failures=1
       - name: Check Worker bundle without deployment
         run: npm run service:build
+      - name: Test mobile owner pairing page
+        run: npm run test:owner
       - name: Build configured family connection for publication
         if: github.event_name != 'pull_request' && vars.VITE_SYNC_SERVICE_URL != ''
         env:

@@ -33,6 +33,9 @@ export async function serviceRequest(path: string, token = '', init?: RequestIni
   } catch { /* Provider quota responses may be HTML rather than our JSON. */ }
   if (response.status === 401) throw new DeviceAccessError(message);
   if (response.status === 429 || response.status >= 500) {
+    // Email delivery/capability failures must not pause an already connected
+    // device's planner saves, nor prevent use of an existing manual code.
+    if (path === '/pair/email' || path === '/pair/options') throw new Error(message);
     const retry = response.headers.get('retry-after');
     const seconds = retry && /^\d+$/.test(retry) ? Number(retry) : retry ? (Date.parse(retry) - Date.now()) / 1000 : 900;
     if (path === '/pair' && response.status === 429) {
@@ -56,4 +59,25 @@ export async function pairDevice(code: string, token: string): Promise<string> {
   const response = await serviceRequest('/pair', '', { method: 'POST', body: JSON.stringify({ code, token }) });
   if (!response.ok) throw new Error('Could not connect this device. Check the pairing code.');
   return token;
+}
+
+export async function pairingEmailAddresses(): Promise<string[]> {
+  try {
+    const response = await serviceRequest('/pair/options');
+    if (!response.ok) return [];
+    const result = await response.json() as { emailEnabled?: unknown; emails?: unknown };
+    if (result.emailEnabled !== true || !Array.isArray(result.emails) || result.emails.length > 20
+      || !result.emails.every(email => typeof email === 'string' && email.length > 0 && email.length <= 254)) return [];
+    return [...new Set(result.emails as string[])];
+  } catch { return []; }
+}
+
+export async function requestPairingEmail(email: string): Promise<{ message: string; retryAfter: number }> {
+  const response = await serviceRequest('/pair/email', '', { method: 'POST', body: JSON.stringify({ email: email.trim() }) });
+  if (!response.ok) throw new Error('Email codes are not available. Ask the family administrator for a pairing code.');
+  const result = await response.json() as { message?: unknown; retryAfter?: unknown };
+  if (typeof result.message !== 'string' || typeof result.retryAfter !== 'number' || !Number.isFinite(result.retryAfter)) {
+    throw new Error('Could not confirm the code request. Check your inbox before trying again.');
+  }
+  return { message: result.message, retryAfter: Math.max(60, Math.min(86400, result.retryAfter)) };
 }

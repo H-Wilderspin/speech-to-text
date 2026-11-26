@@ -18,6 +18,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:family": "playwright test --config playwright.family.config.ts",
+    "test:owner": "playwright test --config playwright.owner.config.ts",
     "build": "npm run typecheck && vite build",
     "preview": "vite preview --host 0.0.0.0",
     "check": "npm run typecheck && npm run lint && npm test && npm run test:setup && npm run build"

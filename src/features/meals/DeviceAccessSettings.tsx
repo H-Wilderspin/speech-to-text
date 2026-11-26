@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { MealAccess } from './editor-token';
 import { checkEditor } from '../planners/github';
 import { DeviceAccessError, isDeviceToken, newDeviceToken, pairDevice } from '../planners/family-service';
+import { EmailCodeRequest } from './EmailCodeRequest';
 
 export function DeviceAccessSettings({ access, needsToken, onAccessError, onToken, onBusy }: {
   access: MealAccess; needsToken: boolean; onAccessError: (token: string) => void;
@@ -9,6 +10,7 @@ export function DeviceAccessSettings({ access, needsToken, onAccessError, onToke
 }) {
   const [code, setCode] = useState('');
   const [connecting, setConnecting] = useState(false);
+  const [requestingEmail, setRequestingEmail] = useState(false);
   const [error, setError] = useState('');
   // Keep the same secret across retries so a lost pairing response is recoverable.
   const candidate = useRef('');
@@ -31,12 +33,15 @@ export function DeviceAccessSettings({ access, needsToken, onAccessError, onToke
     <h3 id="meal-access-title">Family connection</h3>
     {access.notice && <p role="status">{access.notice}</p>}
     {error && <p className="notice error" role="alert">{error}</p>}
+    {(!paired || needsToken) && <EmailCodeRequest disabled={connecting} onBusy={value => { setRequestingEmail(value); onBusy(value); }} />}
     {paired && !needsToken ? <>
       <p role="status">This device is connected.</p>
       <p>{access.remembered ? 'You can edit meals and shopping whenever you open the app.' : 'Connected for this session. This browser could not remember access.'}</p>
       <p>Changes are kept on this device and shared with your family when connected.</p>
     </> : <form onSubmit={async event => {
-      event.preventDefault(); setConnecting(true); onBusy(true); setError('');
+      event.preventDefault();
+      if (connecting || requestingEmail) return;
+      setConnecting(true); onBusy(true); setError('');
       candidate.current ||= newDeviceToken();
       try { onToken(await pairDevice(code.trim(), candidate.current)); setCode(''); candidate.current = ''; }
       catch (error) { setError(error instanceof Error ? error.message : 'Could not connect. Try again.'); }
@@ -46,15 +51,15 @@ export function DeviceAccessSettings({ access, needsToken, onAccessError, onToke
       {access.token && !paired && <p>You can now use a family pairing code instead of a GitHub token. Connecting keeps your meals, shopping and saved changes.</p>}
       <p>Connect this device once to edit meals and shopping.</p>
       <ol id="family-code-help">
-        <li>Ask the family member who looks after the app for a pairing code.</li>
+        <li>Use your emailed code, or ask the family member who looks after the app for a pairing code.</li>
         <li>Type or paste the six-digit code below.</li>
         <li>Tap <strong>Connect this device</strong>. We will remember the connection.</li>
       </ol>
       <p>Each code works for one device and lasts 24 hours. Once connected, this device stays connected. Ask for a new code if it has expired or already been used.</p>
       <label htmlFor="family-code">Pairing code</label>
       <input id="family-code" ref={input} value={code} onChange={event => { setCode(event.target.value); candidate.current = ''; }}
-        aria-describedby="family-code-help" inputMode="numeric" autoComplete="one-time-code" autoCapitalize="none" spellCheck={false} maxLength={40} required disabled={connecting} />
-      <button disabled={connecting || !code.trim()}>{connecting ? 'Connecting…' : 'Connect this device'}</button>
+        aria-describedby="family-code-help" inputMode="numeric" autoComplete="one-time-code" autoCapitalize="none" spellCheck={false} maxLength={40} required disabled={connecting || requestingEmail} />
+      <button disabled={connecting || requestingEmail || !code.trim()}>{connecting ? 'Connecting…' : 'Connect this device'}</button>
     </form>}
   </section>;
 }

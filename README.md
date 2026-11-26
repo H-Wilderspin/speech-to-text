@@ -23,6 +23,8 @@ through a GitHub App. Meals and shopping data live in a separate public reposito
 - **Settings ? Family connection:** enter a six-digit code from the family administrator
   once per device. Unused codes last 24 hours; connected devices have no routine
   expiry. Viewing public meals and shopping needs no code.
+  When email pairing is configured, approved family addresses can request a code
+  in Settings; emailed codes last 24 hours. See [email setup](docs/hosted-editing.md#email-codes-in-the-app).
 - **Settings ? Update app** installs the latest release. Stop listening first.
   Connection, reading preferences and planner drafts remain; current captions clear.
 

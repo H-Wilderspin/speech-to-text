@@ -37,7 +37,7 @@ export default defineConfig(({ command, mode }) => {
     // Only device endpoints are proxied; owner credentials stay outside Vite.
     define: proxy ? { 'import.meta.env.VITE_SYNC_SERVICE_URL': JSON.stringify('/family-sync') } : {},
     server: proxy ? { proxy: {
-      '^/family-sync/(session|pair|files)(\\?|$)': {
+      '^/family-sync/(session|pair(?:/options|/email)?|files)(\\?|$)': {
         target: service, changeOrigin: true,
         headers: { Origin: 'https://h-wilderspin.github.io' },
         rewrite: path => path.replace(/^\/family-sync/, ''),

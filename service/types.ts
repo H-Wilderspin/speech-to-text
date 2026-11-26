@@ -18,6 +18,9 @@ export interface Env {
   GITHUB_PRIVATE_KEY: string;
   SYNC_PAUSED?: string;
   DAILY_REQUEST_LIMIT?: string;
+  PAIRING_EMAIL_ALLOWLIST?: string;
+  PAIRING_EMAIL_FROM?: string;
+  BREVO_API_KEY?: string;
 }
 export class HttpError extends Error {
   constructor(readonly status: number, message: string, readonly retryAfter?: number) { super(message); }

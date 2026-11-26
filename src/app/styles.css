@@ -175,6 +175,7 @@ dialog::backdrop { background: #000000b3; }
 .meal-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .5rem; }
 .meal-actions button { flex: 1 1 auto; width: auto; }
 .meal-access { margin-top: 1rem; }
+.meal-access select { width: 100%; min-width: 0; max-width: 100%; min-height: 48px; font-size: var(--text-medium); padding: .5rem; background: #fff; color: var(--ink); border: 1px solid var(--control-border); border-radius: var(--radius); }
 .app-update { display: flex; align-items: center; justify-content: center; gap: .5rem; width: 100%; }
 .settings-fields { border: 0; padding: 0; margin: 0; min-width: 0; }
 .shopping-list { list-style: none; padding: 0; margin: .75rem 0; }

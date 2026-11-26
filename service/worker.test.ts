@@ -65,6 +65,82 @@ beforeEach(() => {
 });
 afterEach(() => { sqlite.close(); vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.useRealTimers(); });
 
+describe('mobile owner page', () => {
+  const ownerRequest = (path: string, method = 'GET', cookie = '', origin = 'https://sync.example', access = '', body?: unknown) => worker.fetch(new Request(`https://sync.example${path}`, {
+    method, headers: { Cookie: cookie, Origin: origin, Authorization: `Bearer ${access}`, 'Content-Type': 'application/json' },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  }), env);
+  async function login() {
+    const response = await ownerRequest('/admin/session', 'POST', '', undefined, env.ADMIN_TOKEN);
+    expect(response.status).toBe(204);
+    const cookie = response.headers.get('Set-Cookie')!;
+    expect(cookie).toContain('HttpOnly; Secure; SameSite=Strict; Max-Age=43200');
+    expect(cookie).not.toContain(env.ADMIN_TOKEN);
+    return cookie.split(';')[0]!;
+  }
+  it('serves a non-cacheable, framed-out page without credentials or database access even while paused', async () => {
+    env.SYNC_PAUSED = 'true';
+    sqlite.exec('DROP TABLE guard');
+    for (const path of ['/admin', '/admin/']) {
+      const response = await worker.fetch(new Request(`https://sync.example${path}`), env);
+      expect(response.status).toBe(200);
+      expect(response.headers.get('Cache-Control')).toBe('no-store');
+      expect(response.headers.get('Content-Security-Policy')).toContain("frame-ancestors 'none'");
+      expect(response.headers.get('Content-Security-Policy')).toContain("form-action 'none'");
+      const html = await response.text();
+      expect(html).toContain('Create pairing code');
+      expect(html).not.toContain('__NONCE__');
+      expect(html).not.toContain(env.ADMIN_TOKEN);
+    }
+  });
+  it('requires owner access, limits browser sessions to invitations, and preserves code constraints', async () => {
+    expect((await ownerRequest('/admin/session', 'POST', '', undefined, token)).status).toBe(401);
+    expect((await ownerRequest('/admin/session')).status).toBe(401);
+    const cookie = await login();
+    expect((await ownerRequest('/admin/session', 'GET', cookie)).status).toBe(200);
+    for (const path of ['/admin/status', '/admin/devices', '/session']) {
+      expect((await ownerRequest(path, 'GET', cookie, env.APP_ORIGIN)).status).toBe(401);
+    }
+    expect((await ownerRequest('/admin/pause', 'POST', cookie, undefined, '', { paused: true })).status).toBe(401);
+    expect((await ownerRequest('/admin/invites', 'POST', cookie, undefined, '', { label: ' ' })).status).toBe(400);
+    vi.spyOn(pairing, 'pairingCode').mockReturnValueOnce('001234');
+    const response = await ownerRequest('/admin/invites', 'POST', cookie, undefined, '', { label: 'Phone' });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ code: '001234' });
+    for (let i = 0; i < 4; i++) await invite();
+    expect((await ownerRequest('/admin/invites', 'POST', cookie, undefined, '', { label: 'Extra' })).status).toBe(409);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+  it('rejects cross-origin or origin-less cookie mutations and cross-origin logins', async () => {
+    const cookie = await login();
+    for (const origin of ['', env.APP_ORIGIN, 'https://evil.example']) {
+      expect((await ownerRequest('/admin/session', 'POST', '', origin, env.ADMIN_TOKEN)).status).toBe(403);
+      expect((await ownerRequest('/admin/invites', 'POST', cookie, origin, '', { label: 'Phone' })).status).toBe(403);
+      expect((await ownerRequest('/admin/session', 'DELETE', cookie, origin)).status).toBe(403);
+    }
+    expect(sqlite.prepare('SELECT COUNT(*) AS total FROM invites').get()?.total).toBe(0);
+    // CLI calls still work without an Origin header or cookies.
+    expect((await call('/admin/invites', 'POST', { label: 'CLI' }, env.ADMIN_TOKEN, '')).status).toBe(200);
+  });
+  it('rejects tampering, expires sessions, and invalidates sessions when the owner key rotates', async () => {
+    vi.useFakeTimers();
+    const start = Date.now();
+    const cookie = await login();
+    const tampered = cookie.slice(0, -1) + (cookie.endsWith('0') ? '1' : '0');
+    expect((await ownerRequest('/admin/session', 'GET', tampered)).status).toBe(401);
+    vi.setSystemTime(start + 12 * 60 * 60000 - 1);
+    expect((await ownerRequest('/admin/session', 'GET', cookie)).status).toBe(200);
+    vi.setSystemTime(start + 12 * 60 * 60000);
+    expect((await ownerRequest('/admin/session', 'GET', cookie)).status).toBe(401);
+    vi.setSystemTime(start);
+    env.ADMIN_TOKEN = 'rotated-'.repeat(12);
+    expect((await ownerRequest('/admin/session', 'GET', cookie)).status).toBe(401);
+    const logout = await ownerRequest('/admin/session', 'DELETE', cookie);
+    expect(logout.status).toBe(204);
+    expect(logout.headers.get('Set-Cookie')).toContain('Max-Age=0');
+  });
+});
+
 describe('family device boundary', () => {
   it('keeps leading zeros, tolerates dictated spacing, and retries code collisions without replacing invitations', async () => {
     vi.spyOn(pairing, 'pairingCode').mockReturnValueOnce('001234').mockReturnValueOnce('001234').mockReturnValueOnce('005678');
@@ -155,6 +231,142 @@ describe('family device boundary', () => {
     expect((await call(file, 'PUT', { sha: 'invalid', value: { version: 1, items: [] } })).status).toBe(400);
     expect((await call(file, 'PUT', { value: 'x'.repeat(262144) })).status).toBe(413);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('email pairing', () => {
+  const address = 'dad@example.test';
+  beforeEach(() => {
+    env.PAIRING_EMAIL_ALLOWLIST = JSON.stringify([address, 'mum@example.test']);
+    env.PAIRING_EMAIL_FROM = 'owner@example.test';
+    env.BREVO_API_KEY = 'test-email-api-secret';
+    fetchMock.mockImplementation(async () => Response.json({ messageId: 'test-message' }, { status: 201 }));
+  });
+  const requestCode = (email = address) => call('/pair/email', 'POST', { email }, '');
+  function sentCode(index = 0) {
+    return JSON.parse(fetchMock.mock.calls[index]![1]!.body as string).textContent.match(/code is (\d{6})/)[1] as string;
+  }
+  it('lists only approved addresses, fails closed on incomplete configuration and rejects invalid requests', async () => {
+    const options = await call('/pair/options', 'GET', undefined, '');
+    expect(options.headers.get('Cache-Control')).toBe('no-store');
+    expect(await options.json()).toEqual({ emailEnabled: true, emails: [address, 'mum@example.test'] });
+    expect((await requestCode('bad-address')).status).toBe(400);
+    expect((await requestCode('x'.repeat(2000))).status).toBe(413);
+    expect((await call('/pair/email', 'POST', { email: address }, '', 'https://evil.example')).status).toBe(403);
+    for (const value of ['[]', 'not-json', JSON.stringify([address, 123]), JSON.stringify([address, 'bad'])]) {
+      env.PAIRING_EMAIL_ALLOWLIST = value;
+      expect(await (await call('/pair/options', 'GET', undefined, '')).json()).toEqual({ emailEnabled: false, emails: [] });
+      expect((await requestCode()).status).toBe(503);
+    }
+    env.PAIRING_EMAIL_ALLOWLIST = JSON.stringify([address]);
+    delete env.BREVO_API_KEY;
+    expect((await requestCode()).status).toBe(503);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+  it('sends only to an exact approved address, keeps codes private and remembers access after OTP expiry', async () => {
+    vi.useFakeTimers();
+    const start = Date.now();
+    vi.spyOn(pairing, 'pairingCode').mockReturnValueOnce('001234');
+    const unknown = await requestCode('stranger@example.test');
+    const response = await requestCode('  DAD@EXAMPLE.TEST  ');
+    expect(response.status).toBe(202);
+    expect(await response.json()).toEqual(await unknown.json());
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toBe('https://api.brevo.com/v3/smtp/email');
+    expect(init?.redirect).toBe('manual');
+    expect(init?.headers).toMatchObject({ 'api-key': env.BREVO_API_KEY });
+    const mail = JSON.parse(init!.body as string);
+    expect(mail.to).toEqual([{ email: address }]);
+    expect(mail.sender).toEqual({ email: env.PAIRING_EMAIL_FROM, name: 'Speech to Text' });
+    expect(sentCode()).toBe('001234');
+    expect(mail.textContent).toContain('24 hours');
+    expect(mail.htmlContent).toContain('001234');
+    expect(mail.htmlContent).toContain('24 hours');
+    expect(mail.textContent).not.toContain(env.ADMIN_TOKEN);
+    const stored = JSON.stringify(sqlite.prepare('SELECT * FROM invites').all()) + JSON.stringify(sqlite.prepare('SELECT * FROM email_pairing_requests').all());
+    expect(stored).not.toContain(address);
+    expect(stored).not.toContain('001234');
+    expect(sqlite.prepare('SELECT expires_at FROM invites').get()?.expires_at).toBe(start + 86400000);
+    vi.setSystemTime(start + 86400000 - 1);
+    expect((await call('/pair', 'POST', { code: sentCode(), token })).status).toBe(200);
+    expect((await call('/pair', 'POST', { code: sentCode(), token })).status).toBe(200);
+    expect((await call('/pair', 'POST', { code: sentCode(), token: otherToken })).status).toBe(400);
+    vi.setSystemTime(start + 2 * 86400000);
+    expect((await call('/session')).status).toBe(200);
+  });
+  it('rejects an emailed code exactly at 24 hours and when its address is removed', async () => {
+    vi.useFakeTimers();
+    const start = Date.now();
+    await requestCode();
+    vi.setSystemTime(start + 86400000);
+    expect((await call('/pair', 'POST', { code: sentCode(), token })).status).toBe(400);
+    await requestCode('mum@example.test');
+    env.PAIRING_EMAIL_ALLOWLIST = JSON.stringify([address]);
+    expect((await call('/pair', 'POST', { code: sentCode(1), token })).status).toBe(400);
+    expect(sqlite.prepare('SELECT COUNT(*) AS total FROM devices').get()?.total).toBe(0);
+  });
+  it('limits simultaneous resends, replaces only that recipient’s unused code and preserves manual codes', async () => {
+    vi.useFakeTimers();
+    const start = Date.now();
+    const manual = await invite();
+    const responses = await Promise.all(Array.from({ length: 10 }, () => requestCode()));
+    expect(responses.every(response => response.status === 202)).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    vi.setSystemTime(start + 60000);
+    await requestCode();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect((await call('/pair', 'POST', { code: sentCode(0), token })).status).toBe(400);
+    expect((await call('/pair', 'POST', { code: sentCode(1), token })).status).toBe(200);
+    expect((await call('/pair', 'POST', { code: manual, token: otherToken })).status).toBe(200);
+    expect(sqlite.prepare('SELECT requests FROM email_pairing_requests').get()?.requests).toBe(2);
+  });
+  it('limits each recipient to five requests per UTC day, including rejected email sends', async () => {
+    vi.useFakeTimers();
+    const start = Date.parse('2026-11-26T12:00:00Z');
+    fetchMock.mockResolvedValue(new Response(null, { status: 503 }));
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    for (let index = 0; index < 8; index++) {
+      vi.setSystemTime(start + index * 60000);
+      expect((await requestCode()).status).toBe(202);
+    }
+    expect(fetchMock).toHaveBeenCalledTimes(5);
+    expect(warning.mock.calls.every(args => args.length === 1 && args[0] === 'Pairing email could not be sent.')).toBe(true);
+    expect(sqlite.prepare('SELECT COUNT(*) AS total FROM invites').get()?.total).toBe(0);
+    vi.setSystemTime(Date.parse('2026-11-27T00:00:00Z'));
+    await requestCode();
+    expect(fetchMock).toHaveBeenCalledTimes(6);
+  });
+  it('enforces the shared daily send budget without exposing address membership or weakening guessing limits', async () => {
+    vi.useFakeTimers();
+    const start = Date.parse('2026-11-26T12:00:00Z');
+    const addresses = Array.from({ length: 5 }, (_, index) => `person${index}@example.test`);
+    env.PAIRING_EMAIL_ALLOWLIST = JSON.stringify(addresses);
+    for (let index = 0; index < 20; index++) {
+      vi.setSystemTime(start + index * 60000);
+      await requestCode(addresses[index % 4]);
+      sqlite.exec('UPDATE invites SET expires_at = 0');
+    }
+    expect(fetchMock).toHaveBeenCalledTimes(20);
+    const limited = await requestCode(addresses[4]);
+    const unknown = await requestCode('unknown@example.test');
+    expect(await limited.json()).toEqual(await unknown.json());
+    expect(fetchMock).toHaveBeenCalledTimes(20);
+    expect(sqlite.prepare('SELECT requests FROM email_pairing_guard').get()?.requests).toBe(20);
+    for (let index = 0; index < 5; index++) await call('/pair', 'POST', { code: 'bad', token });
+    await requestCode(addresses[4]);
+    expect((await call('/pair', 'POST', { code: '123456', token })).status).toBe(429);
+  });
+  it('does not follow email redirects, disclose provider failures, or delete existing manual invitations', async () => {
+    const manual = await invite();
+    fetchMock.mockResolvedValue(new Response('secret provider details', { status: 302, headers: { Location: 'https://evil.example' } }));
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const response = await requestCode();
+    expect(response.status).toBe(202);
+    expect(await response.text()).not.toContain('secret');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(sqlite.prepare('SELECT COUNT(*) AS total FROM invites').get()?.total).toBe(1);
+    expect((await call('/pair', 'POST', { code: manual, token })).status).toBe(200);
   });
 });
 

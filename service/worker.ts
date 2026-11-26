@@ -1,19 +1,38 @@
 import { githubFile } from './github-app';
 import { allowedPath, jsonBody, validateDocument } from './validation';
 import { HttpError, paused, type Env } from './types';
-import { admitPairing, pairingCode } from './pairing';
+import { admitPairing } from './pairing';
+import { hash } from './crypto';
+import { createInvitation } from './invitations';
+import { emailPairingOptions, emailStillAllowed, requestEmailCode } from './email-pairing';
+import { ownerPage } from './owner-page';
+import { clearOwnerSession, hasOwnerSession, newOwnerSession, requireOwnerOrigin } from './owner-session';
 
-export const hash = async (text: string) => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))),
-  byte => byte.toString(16).padStart(2, '0')).join('');
+export { hash } from './crypto';
 const random = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), byte => byte.toString(16).padStart(2, '0')).join('');
 const bearer = (request: Request) => request.headers.get('authorization')?.match(/^Bearer (\S{1,256})$/)?.[1] ?? '';
 const json = (value: unknown, status = 200) => Response.json(value, { status });
 
 async function admin(request: Request, env: Env, path: string): Promise<Response> {
+  if (path === '/admin/session' && request.method === 'DELETE') {
+    requireOwnerOrigin(request);
+    return new Response(null, { status: 204, headers: { 'Set-Cookie': clearOwnerSession() } });
+  }
+  // Browser sessions can only check their login and issue invitations. Other
+  // owner actions continue to require the existing CLI bearer credential.
+  const sessionAction = (path === '/admin/session' && request.method === 'GET')
+    || (path === '/admin/invites' && request.method === 'POST');
+  const session = sessionAction && await hasOwnerSession(request, env);
+  if (session && request.method === 'POST') requireOwnerOrigin(request);
   // Hash both operands before comparison; owner credentials must have at least 256 bits of randomness.
-  if (!env.ADMIN_TOKEN || env.ADMIN_TOKEN.length < 32 || await hash(bearer(request)) !== await hash(env.ADMIN_TOKEN)) {
+  if (!session && (!env.ADMIN_TOKEN || env.ADMIN_TOKEN.length < 32 || await hash(bearer(request)) !== await hash(env.ADMIN_TOKEN))) {
     throw new HttpError(401, 'Owner access required.');
   }
+  if (path === '/admin/session' && request.method === 'POST') {
+    requireOwnerOrigin(request);
+    return new Response(null, { status: 204, headers: { 'Set-Cookie': await newOwnerSession(request, env) } });
+  }
+  if (path === '/admin/session' && request.method === 'GET') return json({ signedIn: true });
   if (path === '/admin/status' && request.method === 'GET') {
     const guard = await env.DB.prepare('SELECT day, requests, paused FROM guard WHERE id = 1').first();
     return json({ guard, configurationPaused: env.SYNC_PAUSED !== 'false', dailyLimit: dailyLimit(env) });
@@ -34,24 +53,7 @@ async function admin(request: Request, env: Env, path: string): Promise<Response
   if (path === '/admin/invites' && request.method === 'POST') {
     const body = await jsonBody(request, 1024);
     if (typeof body.label !== 'string' || !body.label.trim() || body.label.length > 80) throw new HttpError(400, 'Enter a device label (up to 80 characters).');
-    const now = Date.now();
-    await env.DB.prepare('DELETE FROM invites WHERE expires_at < ?').bind(now).run();
-    const count = await env.DB.prepare('SELECT COUNT(*) AS total FROM devices').first<{ total: number }>();
-    const invites = await env.DB.prepare('SELECT COUNT(*) AS total FROM invites').first<{ total: number }>();
-    if ((count?.total ?? 0) + (invites?.total ?? 0) >= 100) throw new HttpError(409, 'Remove an old device or wait for invitations to expire.');
-    const expires = now + 24 * 60 * 60000;
-    for (let attempt = 0; attempt < 5; attempt++) {
-      const code = pairingCode();
-      // Limit valid targets as well as guesses. Conditional insertion also protects
-      // against simultaneous owner requests and does not replace colliding codes.
-      const inserted = await env.DB.prepare(`INSERT INTO invites (code_hash, label, expires_at)
-        SELECT ?, ?, ? WHERE (SELECT COUNT(*) FROM invites WHERE claimed_hash IS NULL AND expires_at > ?) < 5
-          AND (SELECT COUNT(*) FROM devices) + (SELECT COUNT(*) FROM invites) < 100
-        ON CONFLICT(code_hash) DO NOTHING RETURNING code_hash`)
-        .bind(await hash(code), body.label.trim(), expires, now).first();
-      if (inserted) return json({ code, expires });
-    }
-    throw new HttpError(409, 'Could not create a code. Use an existing code or wait for unused codes to expire (up to five at once).');
+    return json(await createInvitation(env, body.label.trim()));
   }
   throw new HttpError(404, 'Unknown owner action.');
 }
@@ -88,6 +90,10 @@ async function pair(request: Request, env: Env) {
   const codeHash = await hash(code);
   const tokenHash = await hash(body.token);
   const now = Date.now();
+  const invitation = await env.DB.prepare('SELECT email_hash FROM invites WHERE code_hash = ?').bind(codeHash).first<{ email_hash: string | null }>();
+  if (invitation?.email_hash && !await emailStillAllowed(env, invitation.email_hash)) {
+    throw new HttpError(400, 'This pairing code has expired or was already used. Ask for a new code.');
+  }
   // Atomic claim; retrying with the same client-generated secret recovers a lost
   // response. Another device cannot reuse the code, and revocation cannot be undone.
   await env.DB.batch([
@@ -106,8 +112,19 @@ async function pair(request: Request, env: Env) {
 
 async function route(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
+  if (['/admin', '/admin/'].includes(url.pathname) && request.method === 'GET') {
+    const nonce = crypto.randomUUID();
+    return new Response(ownerPage.replaceAll('__NONCE__', nonce), { headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Content-Security-Policy': `default-src 'none'; script-src 'nonce-${nonce}'; style-src 'nonce-${nonce}'; font-src https://h-wilderspin.github.io; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`,
+      'Referrer-Policy': 'no-referrer',
+      'X-Frame-Options': 'DENY',
+    } });
+  }
   if (url.pathname.startsWith('/admin/')) return admin(request, env, url.pathname);
   await admit(env);
+  if (url.pathname === '/pair/options' && request.method === 'GET') return json(emailPairingOptions(env));
+  if (url.pathname === '/pair/email' && request.method === 'POST') return requestEmailCode(request, env);
   if (url.pathname === '/pair' && request.method === 'POST') return pair(request, env);
   const token = bearer(request);
   if (!/^device_[a-f0-9]{64}$/.test(token)) throw new HttpError(401, 'Connect this device in Settings with a family pairing code.');
@@ -130,7 +147,9 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const origin = request.headers.get('origin');
     const permitted = origin === env.APP_ORIGIN;
-    if (origin && !permitted) return json({ error: 'Origin not allowed.' }, 403);
+    const url = new URL(request.url);
+    const ownerOrigin = url.pathname.startsWith('/admin/') && origin === url.origin;
+    if (origin && !permitted && !ownerOrigin) return json({ error: 'Origin not allowed.' }, 403);
     const headers = new Headers({ 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', Vary: 'Origin' });
     if (permitted) {
       headers.set('Access-Control-Allow-Origin', env.APP_ORIGIN);

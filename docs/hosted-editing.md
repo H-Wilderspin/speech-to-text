@@ -11,6 +11,107 @@ go to the Worker; D1 stores access metadata, not meals.
 
 ## Pairing and owner commands
 
+### Email codes in the app
+
+After email setup and deployment, Settings shows an **Email address** dropdown
+containing only the approved addresses, followed by **Email me a code**. Choose
+your address; there is no free-text email field. Only approved addresses receive a six-digit code. Enter it
+in the existing **Pairing code** field to connect the device. Emailed and manually
+issued codes both expire after **24 hours**. Both are single
+use, and connected devices retain access without routine expiry.
+
+The app uses Brevo's transactional-email API so the owner does not need to buy a
+domain. Brevo can verify an individual sender mailbox and may replace a free
+mailbox's sender domain with its own `brevosend.com` domain. Recipients do not
+need Brevo accounts. Delivery to the actual family inboxes still needs checking;
+provider acceptance does not prove inbox delivery.
+
+The allowlist is configured on the server and returned to the app for the dropdown;
+anyone who can open the unpaired app can see those approved addresses. They are
+not embedded in frontend assets or tracked files. The sender address and API key
+remain private server secrets. Email addresses are not saved by the app in browser storage or D1.
+D1 stores keyed recipient hashes for limits and access checks; Brevo necessarily
+receives the recipient address and email content. Devices created through this
+flow have the label **Family device (email)** in the owner device list.
+
+Requests use the same response for unknown addresses, resend limits and delivery
+failure; the dropdown separately lists the approved addresses. The server still
+checks every requested recipient, even if the browser is modified. Check spam or ask the
+administrator if no email arrives. Resends replace that address's previous unused
+code; use only the newest message. Sending is limited to once per minute and five
+attempts per recipient per UTC day, plus twenty attempts across the service per
+UTC day. Failed sends count too. The existing five-unused-code cap and pairing
+guess limits apply to manual and emailed codes together. No request retries
+automatically. Removing an address blocks its outstanding emailed codes and
+future requests; separately revoke its already connected devices if required.
+
+#### Enable email delivery
+
+1. Create a **Free** [Brevo account](https://www.brevo.com/). Do not enable paid
+   add-ons, upgrades or purchased credits. The Free plan currently includes 300
+   emails/day; account limits are separate from this app's smaller guard.
+2. In **Settings > Senders, Domains, IPs > Senders**, add **Speech to Text** with
+   an email address you own. Complete the mailbox verification and any required
+   account/transactional-sending activation. A custom domain is optional for this
+   route; free-mailbox sender addresses may be rewritten by Brevo.
+3. Create a Brevo **API key** (not an SMTP password). Fill in the ignored
+   `service/secrets.email.local.json`: `PAIRING_EMAIL_FROM` is the verified sender;
+   `BREVO_API_KEY` is the key; `PAIRING_EMAIL_ALLOWLIST` is a JSON-array **string**
+   containing up to twenty exact addresses. Keep this file private and never
+   paste the key into chat, frontend configuration or tracked files. Matching
+   trims whitespace and ignores case; aliases are not merged automatically.
+4. Run the checks below and apply migration `0003_email_pairing.sql` remotely
+   using the normal deployment procedure **before deploying this Worker**.
+   Deploy the Worker, then upload only the new secrets with
+   `npx wrangler secret bulk service/secrets.email.local.json --config service/wrangler.jsonc`.
+   This preserves the existing App/owner secrets. It also publishes a Worker
+   version. Do not upload the file while its sender/key fields are empty.
+5. Publish the frontend through the normal Pages process. Test a request from an
+   approved address, receipt, pairing, and remembered access on the actual phone.
+   Verify an unapproved address cannot trigger mail. Do not repeatedly request
+   codes to test delivery; requests consume the small daily allowance.
+
+If email setup is absent, malformed or the service has not yet been updated, the
+app hides the email form and keeps manual pairing available. Removing the Brevo
+key disables new email requests and invalidates outstanding emailed codes; it
+does not disconnect devices or invalidate manual codes.
+
+Provider references (checked 26 November 2026):
+[Free plan](https://help.brevo.com/hc/en-us/articles/208589409-About-Brevo-s-pricing-plans),
+[sender verification](https://help.brevo.com/hc/en-us/articles/208836149-Create-a-new-sender-From-name-and-From-email),
+[free-mailbox sender handling](https://help.brevo.com/hc/en-us/articles/16045394674066-Troubleshooting-Domain-authentication).
+Recheck terms and both providers' Free plans before deployment. See
+[ADR 0078](decisions/0078-allowlisted-email-pairing.md) for the security decisions.
+
+### From your phone
+
+After deploying the updated Worker, open [the owner pairing page](https://speech-to-text-family-sync.wilderspin-family-sync-b71e6c4a.workers.dev/admin)
+and bookmark it before travelling. Sign in using the existing FAMILY_ADMIN_TOKEN
+value from ignored `service/.admin.local` as your **Owner key**. Transfer it to
+your own password manager, associated with this service URL; never send it to
+family members. They only need the six-digit pairing code.
+
+Enter a device name, tap **Create pairing code**, then **Copy code** or
+**Share instructions** (where the phone supports sharing). If clipboard access
+is denied, touch and hold the displayed code to copy it. Expiry is shown in the
+phone's local time. Copy or share before leaving: the page does not save codes,
+and the service stores only their hashes. A network failure may leave an unused
+code on the service; requests are not retried automatically.
+
+Sign-in lasts 12 hours and survives a reload. **Sign out** clears this browser's
+cookie and displayed code. The cookie is HTTPS-only, HttpOnly and SameSite Strict;
+it permits invitation creation only. Other owner actions still require the CLI.
+The page clears the owner-key input after sign-in and does not save it in browser
+storage. A password manager may save it at your request. Rotating ADMIN_TOKEN
+invalidates all browser sessions. As sessions are signed rather than stored,
+sign-out does not revoke a separately copied cookie; it expires within 12 hours.
+See [ADR 0077](decisions/0077-mobile-owner-pairing.md).
+
+Before leaving, test sign-in and copying on your actual phone. Browser automation
+covers simulated phone layouts, not password-manager integration or native sharing.
+
+### From your computer
+
 Use ignored `service/.admin.local`, containing FAMILY_SERVICE_URL and
 FAMILY_ADMIN_TOKEN. Keep it private. From the repository root:
 
@@ -79,6 +180,7 @@ npm run check
 npm run service:build
 npm run service:migrate:local
 npm run test:family
+npm run test:owner
 npm run test:e2e -- --workers=1 --max-failures=1
 ```
 
@@ -92,6 +194,11 @@ For the frontend, set public VITE_SYNC_SERVICE_URL in ignored
 `http://localhost:8787`. Vite proxies only device endpoints with the production
 origin; keep local APP_ORIGIN at `https://h-wilderspin.github.io`.
 Owner endpoints/secrets are not proxied. This file does not affect tests or builds.
+
+The owner page is served directly by the Worker at `/admin`, not by Vite or Pages.
+Browser owner sessions require HTTPS. The owner browser suite exercises the real
+Worker handlers with an isolated SQLite database and simulated HTTPS transport;
+it never uses the local owner key or contacts the hosted service.
 
 Without local configuration, Settings shows legacy token access. Development
 connected to the hosted service edits real family data; use a separate pairing

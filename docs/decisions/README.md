@@ -20,6 +20,8 @@ every feature described is still present. Start with the [current guides](../REA
 | 24-hour invitation codes | [0072 code lifetime](0072-day-long-pairing-codes.md) |
 | Editing interruption and visible-app wake lock | [0073](0073-editing-and-visible-screen-awake.md) |
 | Six-digit pairing and guessing limits | [0074](0074-six-digit-pairing-codes.md) |
+| Mobile owner pairing page | [0077](0077-mobile-owner-pairing.md) |
+| Allowlisted email pairing | [0078](0078-allowlisted-email-pairing.md) |
 | Persistent planner drafts and shopping Undo | [0075](0075-planner-drafts-and-undo.md) |
 
 Earlier records remain at their original paths. In particular, the former

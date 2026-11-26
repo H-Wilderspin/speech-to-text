@@ -6,3 +6,8 @@ GITHUB_APP_ID=""
 GITHUB_INSTALLATION_ID=""
 # PKCS8 PRIVATE KEY PEM, JSON-escaped newlines. Use prepare-key.mjs below.
 GITHUB_PRIVATE_KEY=""
+# Optional email pairing. Use a verified Brevo sender and keep the Free plan.
+# Leave blank to keep email pairing disabled. Local requests can send REAL email.
+PAIRING_EMAIL_ALLOWLIST='[]'
+PAIRING_EMAIL_FROM=""
+BREVO_API_KEY=""

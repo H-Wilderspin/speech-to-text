@@ -1,12 +1,25 @@
 import { expect, test, type Page } from '@playwright/test';
 
 async function fixture(page: Page) {
-  const state = { paused: false, revoked: false, badCode: false, limited: false, pairingRequests: 0, writes: 0, requests: 0, items: [] as { id: string; text: string; checked: boolean }[] };
+  const state = { paused: false, revoked: false, badCode: false, limited: false, emailEnabled: false, emailFailed: false,
+    emailRequests: 0, pairingRequests: 0, writes: 0, requests: 0, items: [] as { id: string; text: string; checked: boolean }[] };
   await page.route('https://raw.githubusercontent.com/**', route => route.fulfill({ json: { version: 1, items: [], meals: {} } }));
   await page.route('https://family.example/**', async route => {
     state.requests++;
     const request = route.request();
     const url = new URL(request.url());
+    if (url.pathname === '/pair/options') return route.fulfill({ json: {
+      emailEnabled: state.emailEnabled, emails: state.emailEnabled ? ['dad@example.test', 'mum@example.test', 'sibling@example.test'] : [],
+    } });
+    if (url.pathname === '/pair/email') {
+      state.emailRequests++;
+      expect(request.postDataJSON().email).toBe('dad@example.test');
+      expect(request.headers().authorization).toBeUndefined();
+      if (state.emailFailed) return route.fulfill({ status: 503, json: { error: 'Email codes are not available. Ask the family administrator for a pairing code.' } });
+      return route.fulfill({ status: 202, json: {
+        message: 'If this email is approved, a code should arrive shortly. Check your spam folder, or ask the family administrator for a pairing code.', retryAfter: 60,
+      } });
+    }
     if (url.pathname === '/pair') {
       state.pairingRequests++;
       expect(request.postDataJSON().code).toMatch(/^(?:[0-9]{6}|[A-F0-9]{20})$/);
@@ -52,6 +65,50 @@ for (const path of ['/', '/speech-to-text/']) {
     await expect(page.getByLabel('Pairing code')).toHaveCount(0);
   });
 }
+
+for (const path of ['/', '/speech-to-text/']) {
+  test(`requests an email code and pairs without persisting the email at ${path}`, async ({ page }) => {
+    const state = await fixture(page);
+    state.emailEnabled = true;
+    await page.goto(path === '/' ? path : `http://127.0.0.1:4181${path}`);
+    await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    const email = page.getByRole('combobox', { name: 'Email address', exact: true });
+    await expect(email.locator('option')).toHaveText(['Choose your email address', 'dad@example.test', 'mum@example.test', 'sibling@example.test']);
+    await expect(page.getByRole('button', { name: 'Email me a code', exact: true })).toBeDisabled();
+    await expect(page.getByRole('textbox', { name: 'Email address', exact: true })).toHaveCount(0);
+    await email.selectOption('dad@example.test');
+    await page.getByRole('button', { name: 'Email me a code', exact: true }).click();
+    await expect(page.getByText(/If this email is approved/)).toBeVisible();
+    await expect(page.getByRole('button', { name: /Send again in/ })).toBeDisabled();
+    expect(state.emailRequests).toBe(1);
+    await page.getByLabel('Pairing code').fill('001234');
+    await page.getByRole('button', { name: 'Connect this device' }).click();
+    await expect(page.getByText('This device is connected.', { exact: true })).toBeVisible();
+    await expect(page.getByLabel('Email address')).toHaveCount(0);
+    expect(await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage }))).not.toContain('dad@example.test');
+    await page.reload();
+    await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await expect(page.getByText('This device is connected.', { exact: true })).toBeVisible();
+    expect(state.emailRequests).toBe(1);
+  });
+}
+
+test('keeps manual pairing available after email failure and never resends automatically', async ({ page }) => {
+  const state = await fixture(page);
+  state.emailEnabled = true;
+  state.emailFailed = true;
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Email address', exact: true }).selectOption('dad@example.test');
+  await page.getByRole('button', { name: 'Email me a code', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('Email codes are not available');
+  await expect(page.getByRole('button', { name: /Send again in/ })).toBeDisabled();
+  await page.getByLabel('Pairing code').fill('001234');
+  await page.getByRole('button', { name: 'Connect this device' }).click();
+  await expect(page.getByText('This device is connected.', { exact: true })).toBeVisible();
+  expect(state.emailRequests).toBe(1);
+  expect(state.pairingRequests).toBe(1);
+});
 
 test('local edits survive a quota pause and reload, then share after recovery', async ({ page }) => {
   const state = await fixture(page);

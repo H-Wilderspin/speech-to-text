@@ -90,3 +90,31 @@ it('never sends a device credential to GitHub when service configuration is miss
   await expect(readJsonFile('defaults.json', 'device_secret')).rejects.toThrow('not configured');
   expect(fetch).not.toHaveBeenCalled();
 });
+
+it('requests email codes without credentials and hides the option on older or unconfigured services', async () => {
+  const fetch = vi.fn().mockResolvedValueOnce(new Response('', { status: 404 }))
+    .mockResolvedValueOnce(Response.json({ emailEnabled: false }))
+    .mockResolvedValueOnce(Response.json({ emailEnabled: true, emails: ['dad@example.test', 'mum@example.test', 'sibling@example.test'] }))
+    .mockResolvedValueOnce(Response.json({ message: 'Check your inbox.', retryAfter: 60 }, { status: 202 }));
+  vi.stubGlobal('fetch', fetch);
+  const { pairingEmailAddresses, requestPairingEmail } = await import('./family-service');
+  expect(await pairingEmailAddresses()).toEqual([]);
+  expect(await pairingEmailAddresses()).toEqual([]);
+  expect(await pairingEmailAddresses()).toEqual(['dad@example.test', 'mum@example.test', 'sibling@example.test']);
+  expect(await requestPairingEmail(' dad@example.test ')).toEqual({ message: 'Check your inbox.', retryAfter: 60 });
+  const [url, init] = fetch.mock.calls[3]!;
+  expect(url).toBe('https://family.example/pair/email');
+  expect(JSON.parse(init.body)).toEqual({ email: 'dad@example.test' });
+  expect(init.headers.Authorization).toBeUndefined();
+});
+
+it('does not pause planner syncing or manual pairing when email delivery is unavailable', async () => {
+  const fetch = vi.fn().mockResolvedValueOnce(Response.json({ error: 'Email unavailable.' }, { status: 503 }))
+    .mockResolvedValue(Response.json({ connected: true }));
+  vi.stubGlobal('fetch', fetch);
+  const { requestPairingEmail, serviceRequest, pairDevice } = await import('./family-service');
+  await expect(requestPairingEmail('dad@example.test')).rejects.toThrow('Email unavailable');
+  expect((await serviceRequest('/session', 'device_existing')).ok).toBe(true);
+  expect(await pairDevice('001234', 'device_candidate')).toBe('device_candidate');
+  expect(fetch).toHaveBeenCalledTimes(3);
+});
