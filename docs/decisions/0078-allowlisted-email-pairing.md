@@ -1,6 +1,7 @@
 # 0078: Allowlisted email pairing
 
-Status: Accepted; live delivery requires owner email-provider setup.
+Status: Accepted. Live setup and verification are recorded in
+[current evidence](../feasibility.md#family-service).
 
 ## Context
 

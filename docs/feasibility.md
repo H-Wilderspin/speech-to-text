@@ -5,39 +5,42 @@ and older results are in [the archive](archive/feasibility-history.md).
 
 ## Latest published app
 
-Release `efd8347`, verified 2026-11-24:
-[successful Pages workflow](https://github.com/H-Wilderspin/speech-to-text/actions/runs/45494632611).
+Release `e53f5cd`, verified 2026-11-26:
+[successful Pages workflow](https://github.com/H-Wilderspin/speech-to-text/actions/runs/45824608093).
 
-- Typecheck, lint, 184 unit tests, two setup-helper tests, production build,
-  full CI browser suites, 12 paired-browser tests, Worker bundle and Pages
-  deployment passed. Local browser coverage passed with four platform skips.
-- Served JavaScript: `assets/index-Cr4V10PT.js`; service worker: `a1dbf6dd1076eee4`.
-- Actual published app: Windows Chromium 156.0.8078.4 (1024 by 900) and WebKit 27.2
-  (iPhone 13 emulation). Verified three themes, remembered preferences, pairing
-  UI, captions using simulated speech, the status divider, meal navigation,
-  public planner reads, updated regular items and offline reopening. Screenshots
-  were reviewed. No family data, pairing codes or remembered devices were changed.
-- Planner drafts recover after reload; shopping supports Undo. The footer shows
-  saving status beside Listening. Automated tests cover recovery, concurrent
-  family changes and Undo during/after writes; live checks were read-only.
-- Accent contrast on canvas/control fills is at least 5.85:1 for earthy green,
-  4.86:1 for coral and 6.93:1 for navy. This is not a whole-app accessibility pass.
-- WOFF2 fonts preserve the original glyph mappings: 103,064 bytes combined,
-  down from 317,628 bytes. Physical speech and accessibility acceptance is pending.
+- Typecheck, lint, 197 unit tests, two setup-helper tests, production build,
+  full CI browser suites, 18 family-pairing tests, six owner-page tests, Worker
+  bundle and Pages deployment passed. CI caught owner-button overflow at 320px
+  with 200% text; the corrected layout passed the same check.
+- Served JavaScript: `assets/index-9AhSdy5u.js`.
+- Actual published app: Windows Chromium 156.0.8078.4 and WebKit 27.2 (iPhone 13
+  emulation), both at 390px. Verified the four approved dropdown options, explicit
+  selection before sending, absence of a free-text email field, 48px select target,
+  24-hour instructions, one-time-code input and no horizontal overflow. These
+  browser checks sent no additional email and changed no planner data.
+- The deployed owner page also fits at 320px with 200% text in both browsers,
+  using display-only sample result content without issuing an invitation.
 
 ## Family service
 
-Worker/D1 and GitHub App access were verified on 2026-11-24: pairing, remembered
-access after reload, authenticated meal/shopping reads, conditional saves,
-stale-revision rejection, pause/resume and revocation. Two owner-approved writes
-preserved existing JSON values; temporary test devices were revoked.
-The later Worker release verified 24-hour code expiry. See
-[rollout evidence](archive/hosted-editing-history.md) for exact versions/commits.
+Worker version `8a54e7fa-9877-4f81-8116-062c3bdbad20` and D1 migration 0003
+were deployed on 2026-11-26. The owner confirmed Cloudflare and Brevo Free plans.
+The service advertises four approved addresses and uses a verified sender;
+one owner-requested test email was reported delivered by Brevo. Its invitation
+expires 24 hours after creation. Inbox placement and delivery to other recipients
+have not been verified.
 
-This frontend release did not deploy the Worker or change D1. Worker version
-`07167713-fb46-4413-89b8-1a4b1b6c07ca` and migration 0002 remain in use.
-The six-digit pairing rollout verified issuance, claiming, guessing limits,
-old-code compatibility and existing-device access during the pairing limit.
+Live checks passed for manual code issuance, 24-hour expiry, claiming,
+authenticated planner reads and revocation. The temporary test device was
+revoked; no planner data was changed. Owner-page login, remembered session after
+reload, logout and layout at 390px passed in Chromium 156.0.8078.4 and WebKit 27.2
+with iPhone 13 emulation. The server sets Secure, HttpOnly and SameSite=Strict;
+Windows WebKit's automation API reports SameSite=None, so its cookie flags alone
+do not establish physical Safari enforcement.
+
+Earlier live checks covered conditional saves, stale-revision rejection,
+pause/resume, guessing limits, old-code compatibility and existing-device access
+during the pairing limit. See [rollout evidence](archive/hosted-editing-history.md).
 
 These checks establish observed operation at that time, not a continuing uptime
 or physical-device guarantee.
