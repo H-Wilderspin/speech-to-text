@@ -5,23 +5,26 @@ and older results are in [the archive](archive/feasibility-history.md).
 
 ## Latest published app
 
-Release `fab173b`, verified 2026-11-26:
-[successful Pages workflow](https://github.com/H-Wilderspin/speech-to-text/actions/runs/45827698543).
+Release `1d5f2ec`, verified 2026-11-26:
+[successful Pages workflow](https://github.com/H-Wilderspin/speech-to-text/actions/runs/45829495981).
 
 - Typecheck, lint, 197 unit tests, two setup-helper tests, production build,
   full CI browser suites, 18 family-pairing tests, six owner-page tests, Worker
-  bundle and Pages deployment passed. Local meal/shopping regression coverage
-  passed 108 tests with four platform-specific skips.
-- Served JavaScript: `assets/index-CWKdehXP.js`.
+  bundle and Pages deployment passed. Additional local Monday-lunch coverage
+  passed six browser cases (blank, default and dated entries in both engines);
+  the later test/evidence commit does not change the deployed application.
+- Served JavaScript: `assets/index-DK2lOLRP.js`.
 - Actual published app: Windows Chromium 156.0.8078.4 and WebKit 27.2 (iPhone 13
-  emulation), resized to 390 by 400. With mocked family data and access, verified
-  Save and Cancel remain fully visible between the header and navigation, have
-  48px targets and are reachable by hit testing. Cancel closes the editor. No
-  real family data was changed. The Chromium screenshot was reviewed.
-- Automated coverage also checks 320px width, cancelling without changing a meal,
-  saving at reduced height and Android Chrome's resize-content viewport setting.
-  Resizing emulation does not establish actual keyboard behaviour on the Pixel;
-  that physical-device acceptance remains pending.
+  emulation). With mocked family data and access, verified Monday lunch at a
+  resized 390-by-400 viewport and with visual-only shrink/pan (400px visible height,
+  35px top offset). Save and Cancel remain above navigation and within the visible
+  area, with 48px targets and successful hit testing. Cancel closes the editor.
+  No real family data was changed. The Chromium screenshot was reviewed.
+- Coverage includes repeated edits, keyboard changes during initial focus,
+  closing/reopening, restoring full height and preserving layout during pinch zoom.
+  The user reported intermittent overlap particularly on Monday lunch in both
+  Pixel Chrome and the installed app. Simulated viewport changes do not establish
+  that physical-device acceptance; confirmation of this follow-up remains pending.
 
 ## Family service
 

@@ -141,6 +141,49 @@ test('meal actions follow visual-only keyboard resizing and panning across repea
   await expect.poll(() => page.locator('.app-shell').evaluate(element => Math.round(element.getBoundingClientRect().height))).toBe(844);
 });
 
+for (const kind of ['blank', 'default', 'dated'] as const) {
+  test(`Monday lunch keeps its actions visible when keyboard opening coincides with focus (${kind})`, async ({ page, context }) => {
+    await page.addInitScript(() => {
+      const viewport = Object.assign(new EventTarget(), { height: 844, offsetTop: 0, scale: 1 });
+      Object.defineProperty(window, 'visualViewport', { configurable: true, value: viewport });
+      document.addEventListener('focusin', event => {
+        if ((event.target as HTMLElement).id !== 'meal-text') return;
+        Object.assign(viewport, { height: 400, offsetTop: 35 });
+        viewport.dispatchEvent(new Event('resize'));
+        viewport.dispatchEvent(new Event('scroll'));
+      });
+    });
+    const state = await fixture(context);
+    if (kind === 'default') state.defaults['monday/lunch'] = 'Vegetables and potatoes with a selection of salads. '.repeat(5);
+    if (kind === 'dated') state.meals[`${week}/lunch`] = 'Soup';
+    await page.setViewportSize({ width: 390, height: 844 });
+    await open(page);
+    await connect(page);
+    for (let attempt = 0; attempt < 2; attempt++) {
+      await page.locator('.planner-panel').evaluate(element => { element.scrollTop = 0; });
+      await page.getByRole('button', { name: /^Monday 19 Oct, Lunch:/ }).click();
+      await expect(page.locator('#meal-text')).toBeFocused();
+      for (const name of ['Save', 'Cancel']) {
+        await expect.poll(() => page.getByRole('button', { name, exact: true }).evaluate(element => {
+          const box = element.getBoundingClientRect();
+          const header = document.querySelector('.meal-header')!.getBoundingClientRect();
+          const footer = document.querySelector('.toolbar')!.getBoundingClientRect();
+          const viewport = window.visualViewport!;
+          return box.top >= header.bottom && box.bottom <= Math.min(footer.top, viewport.offsetTop + viewport.height)
+            && element.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2));
+        })).toBe(true);
+      }
+      await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+      await page.evaluate(() => {
+        Object.assign(window.visualViewport!, { height: 844, offsetTop: 0 });
+        window.visualViewport!.dispatchEvent(new Event('resize'));
+      });
+      await expect.poll(() => page.locator('.app-shell').evaluate(element => Math.round(element.getBoundingClientRect().height))).toBe(844);
+    }
+    expect(state.saves).toBe(0);
+  });
+}
+
 test('meal headings stay below the header while scrolling and default tags sit at card bottoms', async ({ page, context }) => {
   const state = await fixture(context);
   state.defaults['monday/breakfast'] = 'Toast';
