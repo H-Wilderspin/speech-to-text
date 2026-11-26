@@ -100,6 +100,47 @@ test('meal Save and Cancel remain reachable when the keyboard reduces phone heig
   await expect(page.getByRole('form', { name: 'Edit meal' })).toHaveCount(0);
 });
 
+test('meal actions follow visual-only keyboard resizing and panning across repeated edits', async ({ page, context }) => {
+  await page.addInitScript(() => {
+    const viewport = Object.assign(new EventTarget(), { height: 844, offsetTop: 0, scale: 1 });
+    Object.defineProperty(window, 'visualViewport', { configurable: true, value: viewport });
+  });
+  const state = await fixture(context);
+  state.meals[key] = 'Toast';
+  await page.setViewportSize({ width: 390, height: 844 });
+  await open(page);
+  await connect(page);
+  for (const offset of [0, 35, 0]) {
+    await breakfast(page).click();
+    await page.locator('#meal-text').fill('Eggs');
+    await page.evaluate(offsetTop => {
+      Object.assign(window.visualViewport!, { height: 400, offsetTop });
+      window.visualViewport!.dispatchEvent(new Event(offsetTop ? 'scroll' : 'resize'));
+    }, offset);
+    for (const name of ['Save', 'Cancel']) {
+      await expect.poll(() => page.getByRole('button', { name, exact: true }).evaluate(element => {
+        const box = element.getBoundingClientRect();
+        const viewport = window.visualViewport!;
+        const hit = document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2);
+        return box.top >= viewport.offsetTop && box.bottom <= viewport.offsetTop + viewport.height && element.contains(hit);
+      })).toBe(true);
+    }
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await page.evaluate(() => {
+      Object.assign(window.visualViewport!, { height: 844, offsetTop: 0 });
+      window.visualViewport!.dispatchEvent(new Event('resize'));
+    });
+    await expect.poll(() => page.locator('.app-shell').evaluate(element => Math.round(element.getBoundingClientRect().height))).toBe(844);
+  }
+  expect(state.meals[key]).toBe('Toast');
+  await page.evaluate(() => {
+    Object.assign(window.visualViewport!, { height: 200, offsetTop: 70, scale: 2 });
+    window.visualViewport!.dispatchEvent(new Event('resize'));
+  });
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
+  await expect.poll(() => page.locator('.app-shell').evaluate(element => Math.round(element.getBoundingClientRect().height))).toBe(844);
+});
+
 test('meal headings stay below the header while scrolling and default tags sit at card bottoms', async ({ page, context }) => {
   const state = await fixture(context);
   state.defaults['monday/breakfast'] = 'Toast';

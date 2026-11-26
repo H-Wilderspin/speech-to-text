@@ -21,6 +21,9 @@ Shared tokens and layout rules live in `src/app/styles.css`.
 
 The global footer stays visible above device safe areas. App icons select Meals,
 Shopping or Settings; the active icon or Speech to text returns to captions.
+At normal zoom, the app follows visual-viewport height and offset changes to
+keep controls within the visible area above the keyboard. Pinch zoom retains
+the previous layout, allowing native magnification and panning.
 There are no modal Back/Close controls or outside-click dismissal.
 Saving status sits alongside Listening with a `|` divider when both are present,
 wrapping on narrow screens. Distinguish
