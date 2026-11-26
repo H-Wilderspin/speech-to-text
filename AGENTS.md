@@ -26,6 +26,8 @@ durable local edits and clear evidence over new infrastructure or dependencies.
 
 - Keep one chronological transcript. Preserve interim replacement, Android
   cumulative-result handling and late corrections.
+- Retain visible provisional words across recognition end/interruption, still
+  labelled unconfirmed. Never promote them to commands without confirmation.
 - Clear invalidates the session, aborts capture and restarts only after native
   end. Ignore stale callbacks; Stop cancels restarts. Formatting is display-only
   and must not alter command recognition or invent wording.
@@ -48,10 +50,10 @@ durable local edits and clear evidence over new infrastructure or dependencies.
   Below that width use full view while retaining the preference/drafts. Settings
   behaves like the other apps. Never infer tablet hardware from user-agent strings.
 - Preserve week, drafts, focus and caption reading position across navigation.
-  Navigation waits for local persistence, not network saves; active dragging can
+  Navigation gives local persistence at most 150ms, never waits for network saves; active dragging can
   temporarily block it. Hidden planners stop polling but pending writes continue.
-- Shared Refresh checks meals/defaults and shopping/catalogue. Show its icon only
-  at 1024px+ with a hover-capable fine pointer; touch devices use pull-to-refresh.
+- Shared Refresh checks meals/defaults and shopping/catalogue. Keep its button
+  available on every screen and screen width; touch devices also support pull-to-refresh.
   Horizontal meal swipes change weeks without claiming editor/vertical gestures.
 - Keep Poppins, light surfaces, shared colour/spacing tokens, reduced motion,
   zoom support and 48px action targets. Use [the style guide](docs/interface-style.md).

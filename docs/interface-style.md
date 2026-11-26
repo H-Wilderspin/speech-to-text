@@ -35,8 +35,9 @@ show the selected screen full width, retaining the session's split preference,
 week and drafts. Settings follows the same rules; narrow panes stack caption
 text size above speech language.
 
-Refresh appears only at 1024px+ with a hover-capable fine primary pointer.
-Touch users pull down from a planner header at the top. Both actions sync meals,
+Refresh is available in the footer on every screen and at every width. On phones
+it sits beside Listen without adding a row. Touch users can also pull down from
+a planner header at the top. Both actions sync meals,
 defaults, shopping and catalogue while retaining local edits. Horizontal meal
 swipes change weeks; do not claim editor, pinch or vertical-scroll gestures.
 

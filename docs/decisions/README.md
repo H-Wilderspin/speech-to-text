@@ -23,6 +23,7 @@ every feature described is still present. Start with the [current guides](../REA
 | Mobile owner pairing page | [0077](0077-mobile-owner-pairing.md) |
 | Allowlisted email pairing | [0078](0078-allowlisted-email-pairing.md) |
 | Persistent planner drafts and shopping Undo | [0075](0075-planner-drafts-and-undo.md) |
+| Caption retention and bounded navigation waits | [0076](0076-caption-retention-and-responsive-navigation.md) |
 
 Earlier records remain at their original paths. In particular, the former
 speaker pipeline, task planner, top/bottom split, modal navigation, 30-second

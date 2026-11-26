@@ -399,7 +399,7 @@ test('dragging moves across positions once and keyboard pickup supports boundari
   await grip(page, 'Eggs').evaluate(el => el.dispatchEvent(new PointerEvent('pointercancel', { bubbles: true, pointerId: Number((el as HTMLElement).dataset.testPointerId) })));
   await page.mouse.up();
   await expect(grip(page, 'Eggs')).toHaveAttribute('aria-pressed', 'false');
-  await expect(page.locator('.desktop-refresh')).toBeEnabled();
+  await expect(page.locator('.refresh-button')).toBeEnabled();
   expect(state.revisions[path]).toBeUndefined();
   await saveNow(page);
   await expect.poll(() => state.revisions[path]).toBe(2);
@@ -495,7 +495,7 @@ test('releasing or cancelling a touch hold clears pickup and its timer', async (
   await page.evaluate(() => window.dispatchEvent(new Event('touchend')));
   await page.clock.fastForward(400);
   await expect(page.locator('.shopping-dragging')).toHaveCount(0);
-  await expect(page.locator('.desktop-refresh')).toBeEnabled();
+  await expect(page.locator('.refresh-button')).toBeEnabled();
   await start(); await page.clock.fastForward(350);
   await expect(grip(page, 'Milk')).toHaveAttribute('aria-pressed', 'true');
   await page.evaluate(() => window.dispatchEvent(new Event('touchcancel')));
@@ -556,7 +556,7 @@ test('native touch holds drag the row text and ordinary swipes still scroll', as
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await expect.poll(() => panel(page).evaluate(el => el.scrollTop)).toBeGreaterThan(before + 20);
   await expect(page.locator('.shopping-dragging')).toHaveCount(0);
-  await expect(page.locator('.desktop-refresh')).toBeEnabled();
+  await expect(page.locator('.refresh-button')).toBeEnabled();
   await expect(labels(page).first()).toHaveText('Item 2');
   expect(state.revisions[path]).toBeUndefined();
 });
@@ -679,7 +679,7 @@ test('shared refresh updates meals and shopping together, preserves drafts and l
   await expect(page.getByLabel('Shopping item', { exact: true })).toHaveValue('Keep shopping draft');
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   const row = await labels(page).first().elementHandle();
-  if (!await page.locator('.desktop-refresh').isVisible()) await panel(page).evaluate(el => { el.scrollTop = 0; });
+  if (!await page.locator('.refresh-button').isVisible()) await panel(page).evaluate(el => { el.scrollTop = 0; });
   const scroll = await panel(page).evaluate(el => el.scrollTop);
   const sameReads = state.reads.length;
   await refreshPlanners(page);
@@ -701,21 +701,37 @@ async function pullTouch(page: Page, type: string, dx = 0, dy = 0, fingers = 1) 
   }, { type, dx, dy, fingers });
 }
 
-test('Refresh appears only with desktop input and width, with no empty footer column on phones or tablets', async ({ page, context }) => {
+test('Refresh stays visible on phones, tablets and desktops without overflowing the footer', async ({ page, context }) => {
   await fixture(context); await open(page);
   const footer = page.getByRole('contentinfo');
-  const finePointer = await page.evaluate(() => matchMedia('(hover: hover) and (pointer: fine)').matches);
   for (const width of [320, 390, 768, 1023, 1024, 1280, 390]) {
     await page.setViewportSize({ width, height: 900 });
-    const desktop = width >= 1024 && finePointer;
-    await expect(page.locator('.desktop-refresh')).toBeVisible({ visible: desktop });
-    await expect(footer.getByRole('button', { name: 'Refresh', exact: true })).toHaveCount(desktop ? 1 : 0);
-    const buttons = 6 + Number(width >= 768) + Number(desktop);
+    await expect(page.locator('.refresh-button')).toBeVisible();
+    await expect(footer.getByRole('button', { name: 'Refresh', exact: true })).toHaveCount(1);
+    const buttons = 7 + Number(width >= 768);
     await expect(footer.locator('button:visible')).toHaveCount(buttons);
     const columns = await footer.evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ').length);
     expect(columns).toBe(width <= 431 ? 5 : buttons);
     await expect(footer.locator('.saving-indicator')).toHaveCount(1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+});
+
+test('Refresh checks all planner files from captions and Settings as well as both planners', async ({ page, context }) => {
+  const state = await fixture(context);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.clock.setFixedTime(new Date('2026-10-19T12:00:00'));
+  await page.goto('/');
+  for (const screen of ['Speech to text', 'Settings', 'Meal planner', 'Shopping list']) {
+    await page.getByRole('button', { name: screen, exact: true }).click();
+    const refresh = page.getByRole('button', { name: 'Refresh', exact: true });
+    await expect(refresh).toBeVisible();
+    await expect(refresh).toBeEnabled();
+    state.reads = [];
+    await refresh.click();
+    await expect.poll(() => state.reads).toEqual(expect.arrayContaining([
+      'weeks/2026-10-19.json', 'defaults.json', path, cataloguePath,
+    ]));
   }
 });
 

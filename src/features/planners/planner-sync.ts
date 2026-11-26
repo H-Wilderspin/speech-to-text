@@ -77,8 +77,13 @@ export class PlannerSync {
     return (await Promise.all([...this.documents.values()].map(document => document.safeToLeave()))).every(Boolean);
   }
   async navigate() {
-    await this.ready;
-    await Promise.all([...this.documents.values()].map(document => document.navigate()));
+    // Give ordinary local writes a chance to finish, but never lock the shell
+    // behind storage. This client owns pending edits across screen changes.
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const persist = this.ready.then(() => Promise.all([...this.documents.values()].map(document => document.navigate())));
+    try {
+      await Promise.race([persist, new Promise<void>(resolve => { timer = setTimeout(resolve, 150); })]);
+    } finally { clearTimeout(timer); }
   }
   stop() {
     this.channel?.close();

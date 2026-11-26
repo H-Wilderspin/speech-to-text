@@ -391,8 +391,7 @@ test('one split toggle keeps captions left on tablet-sized screens and disappear
     expect(date.y).toBeGreaterThanOrEqual(title.y + title.height);
     expect(date.y + date.height).toBeLessThanOrEqual(heading.y + heading.height);
     expect(Math.abs(date.x + date.width / 2 - title.x - title.width / 2)).toBeLessThan(1);
-    const desktop = await page.evaluate(() => matchMedia('(min-width: 1024px) and (hover: hover) and (pointer: fine)').matches);
-    await expect(page.locator('.desktop-refresh')).toBeVisible({ visible: desktop });
+    await expect(page.locator('.refresh-button')).toBeVisible();
     await expect(page.getByRole('button', { name: /Horizontal split|Vertical split/ })).toHaveCount(0);
     if (width < 768) {
       await expect(split(page)).toHaveCount(0);

@@ -3,6 +3,9 @@
 Date: 2026-11-24
 Status: Accepted; amends the always-visible Refresh alternative in ADR 0068
 
+Refresh visibility was superseded by the owner's 2026-11-26 request to keep the
+button available on every screen. See the current [interface guide](../interface-style.md).
+
 The user requested the Refresh icon only on desktop, with pull-to-refresh on
 other devices. Use CSS media features: minimum width 1024px, hover support and a
 fine primary pointer. A large touch tablet still uses the gesture; a desktop

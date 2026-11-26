@@ -39,21 +39,21 @@ export function App({ engine }: { engine: TranscriptionEngine }) {
   const syncState = useSyncExternalStore(sync.subscribe, sync.getSnapshot);
   useEffect(() => { sync.start(); return () => sync.stop(); }, [sync]);
   useEffect(() => { sync.configure(mealAccess.token, onAccessError); }, [sync, mealAccess.token, onAccessError]);
-  const navigating = useRef(false);
+  const navigation = useRef(0);
   const plannerFocus = useRef<HTMLButtonElement | null>(null);
   const { layout: plannerLayout, setLayout: setPlannerLayout, splitAvailable } = usePlannerLayout();
   const panelOpen = settingsOpen || Boolean(planner);
   const captionsVisible = !panelOpen || plannerLayout === 'split';
   const navigatePlanner = async (next: PlannerKind | null, showSettings = false, focusTarget: HTMLButtonElement | null = null) => {
-    if (plannerBusy || settingsBusy || navigating.current) return;
-    navigating.current = true;
-    try {
-      await sync.navigate();
-      const focusKind = next ?? planner;
-      plannerFocus.current = focusTarget ?? (focusKind ? plannerButton(focusKind).current : settingsButton.current);
-      setPlanner(next);
-      setSettingsOpen(showSettings);
-    } finally { navigating.current = false; }
+    if (plannerBusy || settingsBusy) return;
+    const request = ++navigation.current;
+    await sync.navigate();
+    // A newer tap supersedes this destination while storage is catching up.
+    if (request !== navigation.current) return;
+    const focusKind = next ?? planner;
+    plannerFocus.current = focusTarget ?? (focusKind ? plannerButton(focusKind).current : settingsButton.current);
+    setPlanner(next);
+    setSettingsOpen(showSettings);
   };
   const togglePlanner = (next: PlannerKind) => void navigatePlanner(planner === next && !settingsOpen ? null : next);
   useEffect(() => {
@@ -95,7 +95,7 @@ export function App({ engine }: { engine: TranscriptionEngine }) {
       {offline && <p className="notice">You’re offline. Your browser’s speech service may need a connection.</p>}
       <Transcript visible={captionsVisible} segments={snapshot.segments} textSize={textSize} language={language} />
     </section>
-    {planner && <Planner client={sync} visible={!settingsOpen} kind={planner} token={mealAccess.token} layout={plannerLayout} refresh={refresh} onRefresh={refreshPlanners} busy={plannerBusy} onBusy={setPlannerBusy} onEdit={stopForEditing} />}
+    <Planner client={sync} visible={Boolean(planner) && !settingsOpen} kind={planner ?? 'meals'} token={mealAccess.token} layout={plannerLayout} refresh={refresh} onRefresh={refreshPlanners} busy={plannerBusy} onBusy={setPlannerBusy} onEdit={stopForEditing} />
     {settingsOpen && <SettingsPanel active={active} beforeUpdate={() => sync.safeToLeave()} textSize={textSize} onTextSize={(textSize) => changePreferences({ textSize })}
       theme={theme} onTheme={theme => changePreferences({ theme })}
       language={language} onLanguage={(language) => changePreferences({ language })} installFailed={installFailed} wakeStatus={wakeStatus}
@@ -117,7 +117,7 @@ export function App({ engine }: { engine: TranscriptionEngine }) {
         disabled={plannerBusy || settingsBusy} onClick={event => void navigatePlanner(null, false, event.currentTarget)}><Icon name="captions" /></button>
       <button className="icon-button" aria-label="Meal planner" title="Meal planner" aria-controls="planner-panel" aria-expanded={!settingsOpen && planner === 'meals'} disabled={plannerBusy || settingsBusy} ref={mealButton} onClick={() => togglePlanner('meals')}><Icon name="meals" /></button>
       <button className="icon-button" aria-label="Shopping list" title="Shopping list" aria-controls="planner-panel" aria-expanded={!settingsOpen && planner === 'shopping'} disabled={plannerBusy || settingsBusy} ref={shoppingButton} onClick={() => togglePlanner('shopping')}><Icon name="shopping" /></button>
-      <button className="icon-button desktop-refresh" aria-label="Refresh" title="Refresh meals and shopping" disabled={!planner || plannerBusy || settingsBusy} onClick={refreshPlanners}><Icon name="refresh" /></button>
+      <button className="icon-button refresh-button" aria-label="Refresh" title="Refresh meals and shopping" disabled={plannerBusy || settingsBusy} onClick={refreshPlanners}><Icon name="refresh" /></button>
       {splitAvailable && <button className="icon-button split-button" aria-label="Split view" aria-pressed={plannerLayout === 'split'}
         title={plannerLayout === 'split' ? 'Turn split view off' : 'Show captions on the left'} disabled={!panelOpen || plannerBusy || settingsBusy}
         onClick={event => { event.currentTarget.focus(); setPlannerLayout(plannerLayout === 'split' ? 'full' : 'split'); }}><Icon name="split" /></button>}

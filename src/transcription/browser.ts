@@ -97,9 +97,16 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
     this.listeningRequested = false;
     const recognizer = this.detach();
     if (abort) this.abort(recognizer);
-    this.history.push(...collapseCumulativeResults(this.current.filter((segment) => segment.isFinal)));
-    this.current = [];
+    this.archiveCurrent();
     this.publish(phase, message);
+  }
+
+  private archiveCurrent() {
+    // A provider can end after a pause/error without ever confirming its last
+    // hypothesis (especially Android). Keep the words already shown, with their
+    // provisional flag; only Clear/disposal discards the visible history.
+    this.history.push(...collapseCumulativeResults(this.current));
+    this.current = [];
   }
 
   start(language: string) {
@@ -121,8 +128,7 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
     const delay = this.current.length ? 0 : this.restartDelay;
     const recognizer = this.detach();
     if (abort) this.abort(recognizer);
-    this.history.push(...collapseCumulativeResults(this.current.filter((segment) => segment.isFinal)));
-    this.current = [];
+    this.archiveCurrent();
     if (!this.listeningRequested) { this.publish('idle', 'Stopped.'); return; }
     this.publish('listening', 'Listening. Say “command stop” or tap Stop to finish.');
     this.timer = setTimeout(() => {
@@ -217,7 +223,7 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
   }
 
   private handleCommands(): boolean {
-    const visible = [...this.history, ...collapseCumulativeResults(this.current.filter((segment) => segment.isFinal))];
+    const visible = [...this.history, ...collapseCumulativeResults(this.current)];
     const earlierSessions = visible.filter((segment) => Number(segment.id.split(':')[0]) < this.commandStartSessionId);
     const command = findVoiceCommand(visible.slice(earlierSessions.length));
     if (!command) return false;

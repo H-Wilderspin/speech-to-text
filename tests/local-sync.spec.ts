@@ -45,11 +45,74 @@ async function open(page: Page, screen: 'Shopping list' | 'Meal planner') {
 }
 const refresh = refreshPlanners;
 
+test('completed edits save after a pause without Refresh and retry while another screen is open', async ({ page, context }) => {
+  const state = await fixture(context); await open(page, 'Shopping list');
+  await page.getByRole('checkbox', { name: 'Bought Milk', exact: true }).check();
+  await expect.poll(() => state.documents[listPath]!.items).toContainEqual({ id: 'milk', text: 'Milk', checked: true });
+  await expect(page.locator('.saving-indicator')).toHaveText('Saved');
+  state.offline = true;
+  await page.getByRole('checkbox', { name: 'Bought Bread', exact: true }).check();
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(page.locator('.saving-indicator')).toContainText('waiting to share');
+  state.offline = false;
+  await expect.poll(() => state.documents[listPath]!.items, { timeout: 10000 }).toContainEqual({ id: 'bread', text: 'Bread', checked: true });
+  await expect(page.locator('.saving-indicator')).toHaveText('Saved');
+});
+
+test('unresponsive device storage cannot trap navigation or prevent public planner reads', async ({ page, context }) => {
+  await fixture(context);
+  await context.addInitScript(() => {
+    // Some browsers leave an IndexedDB open request pending without an error.
+    Object.defineProperty(window, 'indexedDB', { value: { open: () => ({}) } });
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible({ timeout: 1000 });
+  // Last selection wins even when earlier navigation requests are still waiting.
+  await page.evaluate(() => {
+    for (const name of ['Shopping list', 'Meal planner', 'Speech to text']) {
+      document.querySelector<HTMLButtonElement>(`.toolbar button[aria-label="${name}"]`)!.click();
+    }
+  });
+  await expect(page.getByRole('region', { name: 'Live transcript' })).toBeVisible({ timeout: 1000 });
+  await page.getByRole('button', { name: 'Shopping list', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Shopping list', exact: true })).toBeVisible({ timeout: 1000 });
+  await expect(page.getByRole('checkbox', { name: 'Bought Milk', exact: true })).toBeVisible();
+});
+
+test('a stalled local write keeps edits in memory and all four screens reachable', async ({ page, context }) => {
+  const state = await fixture(context); await open(page, 'Shopping list');
+  await expect(page.getByRole('checkbox', { name: 'Bought Milk', exact: true })).toBeEnabled();
+  state.offline = true;
+  await page.evaluate(() => {
+    Object.assign(window, { abortedPlannerWrite: false });
+    const transaction = IDBDatabase.prototype.transaction;
+    IDBDatabase.prototype.transaction = function (...args) {
+      if (args[1] === 'readwrite') return {
+        objectStore: () => ({ put() {}, delete() {} }),
+        abort() { Object.assign(window, { abortedPlannerWrite: true }); },
+      } as unknown as IDBTransaction;
+      return transaction.apply(this, args);
+    };
+  });
+  await page.getByRole('checkbox', { name: 'Bought Milk', exact: true }).check();
+  for (const name of ['Meal planner', 'Settings', 'Speech to text', 'Shopping list']) {
+    await page.getByRole('button', { name, exact: true }).click();
+    await expect(page.getByRole('button', { name, exact: true })).toHaveAttribute('aria-expanded', 'true', { timeout: 1000 });
+  }
+  await expect(page.getByRole('checkbox', { name: 'Bought Milk', exact: true })).toBeChecked();
+  await expect.poll(() => page.evaluate(() => (window as Window & { abortedPlannerWrite?: boolean }).abortedPlannerWrite)).toBe(true);
+  await expect(page.locator('.saving-indicator')).toContainText('Changes are only in this open app');
+  expect(await page.evaluate(() => window.dispatchEvent(new Event('beforeunload', { cancelable: true })))).toBe(false);
+  state.offline = false; await refresh(page);
+  await expect.poll(() => state.documents[listPath]!.items).toContainEqual({ id: 'milk', text: 'Milk', checked: true });
+});
+
 test('shopping drafts recover after reload and reopening, and Cancel clears them without a shared write', async ({ page, context }) => {
   const state = await fixture(context); await open(page, 'Shopping list');
   await page.getByRole('button', { name: 'Edit Milk', exact: true }).click();
   await page.getByLabel('Shopping item', { exact: true }).fill('Unfinished milk wording');
-  await expect(page.locator('.activity-status .saving-indicator')).toContainText('Draft kept on this device');
+  await expect(page.locator('.activity-status .saving-indicator')).toBeEmpty();
   await page.reload(); await page.getByRole('button', { name: 'Shopping list', exact: true }).click();
   await expect(page.getByLabel('Shopping item', { exact: true })).toHaveValue('Unfinished milk wording');
   expect(state.puts).toBe(0);
@@ -78,8 +141,8 @@ test('a meal draft restores its week and scope after reload and detects a newer 
 });
 
 test('Undo restores a saved shopping deletion and its position, with visible sync status on mobile', async ({ page, context }) => {
-  const state = await fixture(context); await open(page, 'Shopping list');
   await page.setViewportSize({ width: 390, height: 844 });
+  const state = await fixture(context); await open(page, 'Shopping list');
   await page.getByRole('button', { name: 'Delete Milk', exact: true }).click();
   await expect(page.locator('.saving-indicator')).toContainText('Saved on this device');
   await refresh(page);
@@ -105,7 +168,7 @@ test('editing and navigation continue during a shopping write; its response cann
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page.getByRole('checkbox', { name: 'Bought Milk 2 bottles', exact: true })).not.toBeChecked();
   await page.getByRole('button', { name: 'Speech to text', exact: true }).click();
-  await expect(page.locator('#planner-panel')).toHaveCount(0);
+  await expect(page.locator('#planner-panel')).toBeHidden();
   state.hold = undefined; release();
   await expect.poll(() => state.documents[listPath]!.items).toContainEqual({ id: 'milk', text: 'Milk 2 bottles', checked: false });
   await page.getByRole('button', { name: 'Shopping list', exact: true }).click();

@@ -23,6 +23,28 @@ async function result(page: Page, text: string, isFinal: boolean) {
   }, { text, isFinal });
 }
 
+test('Pixel-style silence retains visible captions and continues on a new line through screen changes', async ({ page }) => {
+  await page.addInitScript(() => Object.defineProperty(navigator, 'userAgent', {
+    value: 'Mozilla/5.0 (Linux; Android 16; Pixel 9) AppleWebKit/537.36 Chrome/142.0.0.0 Mobile Safari/537.36',
+  }));
+  await mockRecognition(page); await page.goto('/');
+  await page.getByRole('button', { name: 'Listen', exact: true }).click();
+  await result(page, 'First words.', true); // Android promotes provisional callbacks to final.
+  await page.evaluate(() => {
+    const native = (window as Window & { testRecognition?: { onerror?: (event: { error: string }) => void; onend?: () => void } }).testRecognition!;
+    native.onerror?.({ error: 'no-speech' }); native.onend?.();
+  });
+  await expect(page.locator('.caption p')).toHaveText(['First words. Unconfirmed']);
+  for (const name of ['Shopping list', 'Meal planner', 'Settings', 'Speech to text']) {
+    await page.getByRole('button', { name, exact: true }).click();
+    await expect(page.getByRole('button', { name, exact: true })).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeEnabled();
+  }
+  await result(page, 'Second sentence.', true);
+  await page.evaluate(() => (window as Window & { testRecognition?: { onend?: () => void } }).testRecognition?.onend?.());
+  await expect(page.locator('.caption p')).toHaveText(['First words. Unconfirmed', 'Second sentence.']);
+});
+
 for (const availability of ['supported', 'denied', 'missing'] as const) test(`screen wake lock: ${availability}`, async ({ page }) => {
   await mockRecognition(page);
   await page.addInitScript((availability) => {
@@ -318,8 +340,8 @@ test('Speech to text selects captions from every screen without changing the lis
 
 test('bottom icon controls leave the viewport to captions and settings preserve an active session', async ({ page }) => {
   await mockRecognition(page); await page.setViewportSize({ width: 390, height: 844 }); await page.goto('/');
-  await expect(page.getByRole('contentinfo').getByRole('button')).toHaveCount(6);
-  for (const name of ['Clear', 'Speech to text', 'Meal planner', 'Shopping list', 'Settings']) await expect(page.getByRole('contentinfo').getByRole('button', { name, exact: true })).toHaveCount(1);
+  await expect(page.getByRole('contentinfo').getByRole('button')).toHaveCount(7);
+  for (const name of ['Clear', 'Speech to text', 'Meal planner', 'Shopping list', 'Refresh', 'Settings']) await expect(page.getByRole('contentinfo').getByRole('button', { name, exact: true })).toHaveCount(1);
   await expect(page.getByRole('button', { name: 'Task planner', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Clear', exact: true })).toBeDisabled();
   const transcript = page.getByRole('region', { name: 'Live transcript' });
@@ -335,7 +357,7 @@ test('bottom icon controls leave the viewport to captions and settings preserve 
   await toggleCurrentPanel(page);
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   await result(page, 'The captions fill this page.', true);
-  await expect(page.getByRole('contentinfo').getByRole('button')).toHaveCount(6);
+  await expect(page.getByRole('contentinfo').getByRole('button')).toHaveCount(7);
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await expect(page.getByLabel('Speech language')).toBeDisabled();
   await page.getByRole('button', { name: 'Larger text' }).click();

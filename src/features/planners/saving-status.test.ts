@@ -8,9 +8,10 @@ it('does not claim a cached or never checked document is saved', () => {
   expect(savingStatus({ ...empty, confirmed: true }, true, false).text).toContain('Waiting to check');
 });
 it('distinguishes local drafts, pending edits, connection failures and conflicts', () => {
-  expect(savingStatus({ ...empty, drafts: 1 }, false, false).text).toContain('tap Save');
+  expect(savingStatus({ ...empty, drafts: 1 }, false, false).text).toBe('');
   expect(savingStatus({ ...empty, pending: 1 }, true, false).text).toContain('waiting to share');
   expect(savingStatus({ ...empty, pending: 1 }, false, true).text).toContain('reconnect');
   expect(savingStatus({ ...empty, pending: 1, conflict: true }, false, false).text).toContain('attention');
   expect(savingStatus({ ...empty, draftsDurable: false }, false, false).text).toContain('Keep the app open');
+  expect(savingStatus({ ...empty, pending: 1, durable: false, error: true }, true, false).text).toContain('only in this open app');
 });

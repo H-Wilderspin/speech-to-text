@@ -46,6 +46,16 @@ describe('browser recognition lifecycle', () => {
     latest().onstart?.();
     expect(engine.getSnapshot().phase).toBe('listening');
   });
+  it('does not clear captions by joining command words across an unconfirmed result', () => {
+    engine.start('en-GB'); latest().onstart?.();
+    latest().onresult?.({ results: [
+      { 0: { transcript: 'Earlier words. Command', confidence: .9 }, isFinal: true, length: 1 },
+      { 0: { transcript: 'perhaps', confidence: .9 }, isFinal: false, length: 1 },
+      { 0: { transcript: 'clear', confidence: .9 }, isFinal: true, length: 1 },
+    ] });
+    expect(engine.getSnapshot().segments.map(segment => segment.text)).toEqual(['Earlier words. Command', 'perhaps', 'clear']);
+    expect(latest().abort).not.toHaveBeenCalled();
+  });
   it('keeps a final result arriving during Stop, then releases callbacks', () => {
     engine.start('en-GB'); const native = latest(); native.onstart?.();
     native.result('unfinished', false); engine.stop();
@@ -106,18 +116,30 @@ describe('browser recognition lifecycle', () => {
     });
     it.each(['network', 'aborted', 'no-speech'])('does not confirm a partial after %s', (error) => {
       androidResult(['command stop']); latest().onerror?.({ error }); latest().onend?.();
-      expect(engine.getSnapshot().segments).toEqual([]);
+      expect(engine.getSnapshot().segments).toMatchObject([{ text: 'command stop', isFinal: false }]);
       expect(engine.getSnapshot().message).not.toBe('Stopped by voice command.');
     });
-    it.each(['interrupt', 'dispose'] as const)('discards provisional text on %s and ignores late results', (action) => {
+    it.each(['interrupt', 'dispose'] as const)('retains provisional text until disposal on %s and ignores late results', (action) => {
       const native = latest(); const late = native.onresult;
       androidResult(['unfinished']); engine[action]();
       late?.({ results: [{ 0: { transcript: 'stale', confidence: .9 }, length: 1, isFinal: true }] });
-      expect(engine.getSnapshot().segments).toEqual([]); expect(native.abort).toHaveBeenCalledOnce();
+      expect(engine.getSnapshot().segments.map(segment => [segment.text, segment.isFinal]))
+        .toEqual(action === 'dispose' ? [] : [['unfinished', false]]);
+      expect(native.abort).toHaveBeenCalledOnce();
     });
     it('does not confirm an unfinished guess when Stop times out', () => {
       androidResult(['unfinished']); engine.stop(); vi.advanceTimersByTime(2_000);
-      expect(engine.getSnapshot().segments).toEqual([]); expect(latest().abort).toHaveBeenCalledOnce();
+      expect(engine.getSnapshot().segments).toMatchObject([{ text: 'unfinished', isFinal: false }]);
+      expect(latest().abort).toHaveBeenCalledOnce();
+    });
+    it('keeps pause lines through no-speech and puts the next native session on a new line', () => {
+      androidResult(['A quiet morning.']); latest().onspeechend?.(); vi.advanceTimersByTime(500);
+      androidResult(['A quiet morning.', 'A quiet morning. A new thought']);
+      latest().onerror?.({ error: 'no-speech' }); latest().onend?.(); vi.advanceTimersByTime(0);
+      latest().onstart?.(); androidResult(['Later words.']); latest().onend?.();
+      expect(engine.getSnapshot().segments.map(segment => [segment.text.trim(), segment.isFinal])).toEqual([
+        ['A quiet morning.', false], ['A new thought', false], ['Later words.', true],
+      ]);
     });
   });
   it('keeps native capture through a pause and preserves a new sentence with the same opening', () => {
@@ -198,9 +220,20 @@ describe('browser recognition lifecycle', () => {
     engine.start('fr-FR'); latest().result('partial', false); latest().onend?.();
     expect(engine.getSnapshot().phase).toBe('listening');
     vi.advanceTimersByTime(200);
-    expect(engine.getSnapshot().segments).toEqual([]);
+    expect(engine.getSnapshot().segments).toMatchObject([{ text: 'partial', isFinal: false }]);
     expect(instances).toHaveLength(2);
     expect(latest().lang).toBe('fr-FR');
+  });
+  it('retains visible words across silent restarts without executing unconfirmed commands', () => {
+    engine.start('en-GB'); latest().onstart?.();
+    latest().result('First words command clear', false);
+    latest().onspeechend?.(); vi.advanceTimersByTime(500);
+    latest().onend?.(); vi.advanceTimersByTime(0);
+    latest().onstart?.(); latest().result('Next sentence.');
+    expect(engine.getSnapshot().segments.map(segment => [segment.text, segment.isFinal])).toEqual([
+      ['First words command clear', false], ['Next sentence.', true],
+    ]);
+    expect(engine.getSnapshot().phase).toBe('listening');
   });
   it.each([true, false])('continues after silence, including missing end events (%s)', (ends) => {
     engine.start('en-GB'); const native = latest(); native.onstart?.();
@@ -245,7 +278,7 @@ describe('browser recognition lifecycle', () => {
     expect(engine.getSnapshot().segments.reduce((sum, segment) => sum + segment.text.length, 0)).toBe(100_000);
     expect(engine.getSnapshot().segments.at(-1)?.text).toBe('b'.repeat(30));
   });
-  it('retains confirmed speech if a cumulative interim extension disappears', () => {
+  it('retains the visible cumulative extension as unconfirmed when the provider ends', () => {
     engine.start('en-GB'); latest().onstart?.();
     latest().onresult?.({ results: [
       { 0: { transcript: 'We are', confidence: .9 }, isFinal: true, length: 1 },
@@ -253,7 +286,7 @@ describe('browser recognition lifecycle', () => {
     ] });
     expect(engine.getSnapshot().segments.map((segment) => segment.text)).toEqual(['We are here']);
     latest().onend?.();
-    expect(engine.getSnapshot().segments.map((segment) => segment.text)).toEqual(['We are']);
+    expect(engine.getSnapshot().segments).toMatchObject([{ text: 'We are here', isFinal: false }]);
   });
   it('does not complete an old voice command across a manual stop and new Listen', () => {
     engine.start('en-GB'); latest().onstart?.(); latest().result('command');

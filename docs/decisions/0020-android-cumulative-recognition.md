@@ -3,6 +3,8 @@
 Date: 2026-10-11
 Status: Accepted; supersedes ADR 0019's result grouping for Android Chromium
 
+Provisional-caption disposal is superseded by [ADR 0076](0076-caption-retention-and-responsive-navigation.md).
+
 ## Context
 
 The user reports that the continuous-mode deployment again repeatedly prints the

@@ -16,6 +16,14 @@ describe('spoken stop command', () => {
   it('does not act on a provisional recognition guess', () => {
     expect(findVoiceCommand([segment('command stop', false)])).toBeNull();
   });
+  it('keeps earlier unconfirmed captions when a later confirmed command stops capture', () => {
+    const earlier = segment('Earlier words', false);
+    expect(findVoiceCommand([earlier, segment('Command stop.', true, '2:0')]))
+      .toEqual({ action: 'stop', before: [earlier] });
+  });
+  it('does not join command words across a retained unconfirmed line', () => {
+    expect(findVoiceCommand([segment('command'), segment('maybe', false, '2:0'), segment('stop', true, '3:0')])).toBeNull();
+  });
 });
 
 describe('spoken clear command', () => {

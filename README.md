@@ -10,6 +10,8 @@ through a GitHub App. Meals and shopping data live in a separate public reposito
 
 - **Listen / Stop** controls captions. Opening an editor or focusing a text field
   stops listening; tap Listen to resume. Confirmed captions stay visible.
+  Words the browser has not confirmed also stay visible across pauses and stops,
+  marked as unconfirmed; they cannot trigger spoken commands.
 - **Clear** empties captions. During listening, wait for Reconnecting before
   speaking again. Spoken **command clear** and **command stop** also work.
 - The **footer icons** switch between captions, meals, shopping and Settings.
@@ -18,8 +20,8 @@ through a GitHub App. Meals and shopping data live in a separate public reposito
 - **Settings** offers earthy green, high-contrast coral and navy/grey themes.
   Choices stay on this device.
 - In meals, use the week arrows or swipe left/right on touch screens.
-  Pull down from a planner's header to refresh both planners; desktop layouts
-  have a Refresh icon.
+  Pull down from a planner's header to refresh both planners, or use the Refresh
+  button available on every screen.
 - **Settings ? Family connection:** enter a six-digit code from the family administrator
   once per device. Unused codes last 24 hours; connected devices have no routine
   expiry. Viewing public meals and shopping needs no code.

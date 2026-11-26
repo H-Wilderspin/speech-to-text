@@ -3,6 +3,8 @@
 Date: 2026-11-24
 Status: Accepted; supersedes ADR 0057 and the save-before-navigation/update rules in ADRs 0062 and 0065
 
+Navigation waits are bounded by [ADR 0076](0076-caption-retention-and-responsive-navigation.md).
+
 ## Context
 
 The user prioritises uninterrupted editing for an elderly family member. Network

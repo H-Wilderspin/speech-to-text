@@ -9,6 +9,8 @@ keyboard, sleep, gesture or VoiceOver behaviour.
 
 - Test microphone permission allowed/denied, interim/final updates, pause lines,
   cumulative duplicates, late corrections and actionable errors.
+  On Pixel/Chrome, speak several sentences with pauses, then Stop/resume and
+  switch screens. Earlier words must remain; unfinished guesses stay unconfirmed.
 - Clear while listening; speak after Reconnecting. Repeat with command clear.
   Stop/command stop release capture; old-session text must not return.
 - Read earlier captions while speech arrives; retain scroll until returning to
@@ -36,6 +38,8 @@ keyboard, sleep, gesture or VoiceOver behaviour.
 - Footer icons switch screens; the active icon and Speech to text return to
   captions. No modal Back/Close/outside dismissal. Restore focus/reading position.
   Pending network saves must not block navigation; active dragging can.
+  Repeat rapid switching while device storage is stalled: the last selection wins,
+  edits remain in memory and a storage warning does not disable navigation.
 - Meal title/date stack between arrows; headings stick below the header.
   Text starts at the top; Weekly default tags sit at the bottom. Shopping Add
   item stays at the panel bottom and hides during editing.
@@ -53,9 +57,9 @@ keyboard, sleep, gesture or VoiceOver behaviour.
 - At a planner's top, pull down from its header and release when prompted.
   Refresh both apps/defaults/catalogue without reloading or losing drafts/captions.
   Short/reversed/cancelled pulls do nothing; below the top, scrolling works.
-- Refresh icon appears only at 1024px+ with a hover-capable fine pointer; touch
-  layouts have no hidden focus stop/empty column. Unchanged data does not jump or
-  write. Repeat offline with queued edits.
+- Refresh is available from captions, Settings, meals and shopping on phones,
+  tablets and desktops. Check it also before opening a planner. Unchanged data
+  does not jump or write. Repeat offline with queued edits.
 
 ## Meals and shopping
 
