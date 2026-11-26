@@ -5,26 +5,23 @@ and older results are in [the archive](archive/feasibility-history.md).
 
 ## Latest published app
 
-Release `1d5f2ec`, verified 2026-11-26:
-[successful Pages workflow](https://github.com/H-Wilderspin/speech-to-text/actions/runs/45829495981).
+Release `4b9ae22`, verified 2026-11-26:
+[successful Pages workflow](https://github.com/H-Wilderspin/speech-to-text/actions/runs/45831507993).
 
 - Typecheck, lint, 197 unit tests, two setup-helper tests, production build,
-  full CI browser suites, 18 family-pairing tests, six owner-page tests, Worker
-  bundle and Pages deployment passed. Additional local Monday-lunch coverage
-  passed six browser cases (blank, default and dated entries in both engines);
-  the later test/evidence commit does not change the deployed application.
-- Served JavaScript: `assets/index-DK2lOLRP.js`.
-- Actual published app: Windows Chromium 156.0.8078.4 and WebKit 27.2 (iPhone 13
-  emulation). With mocked family data and access, verified Monday lunch at a
-  resized 390-by-400 viewport and with visual-only shrink/pan (400px visible height,
-  35px top offset). Save and Cancel remain above navigation and within the visible
-  area, with 48px targets and successful hit testing. Cancel closes the editor.
-  No real family data was changed. The Chromium screenshot was reviewed.
-- Coverage includes repeated edits, keyboard changes during initial focus,
-  closing/reopening, restoring full height and preserving layout during pinch zoom.
-  The user reported intermittent overlap particularly on Monday lunch in both
-  Pixel Chrome and the installed app. Simulated viewport changes do not establish
-  that physical-device acceptance; confirmation of this follow-up remains pending.
+  full CI browser suites, 22 family-connection tests, six owner-page tests,
+  Worker bundle and Pages deployment passed.
+- Served JavaScript: `assets/index-BTwUvPwZ.js`.
+- Actual published app: Windows Chromium 156.0.8078.4 and WebKit 27.2, at 390px.
+  With mocked authentication, verified both remembered legacy and paired access
+  show **This device is connected** before and after refresh. Neither the email
+  request form nor pairing-code field appears. No email options were requested,
+  no code was sent and no family data was changed.
+- Browser regression coverage also verifies a rejected legacy connection offers
+  pairing again and a temporary service pause retains the saved connection.
+- Keyboard regression coverage includes Monday lunch with blank, weekly-default
+  and dated meals, repeated edits, visual-only resize/pan and restoring full
+  height. Physical confirmation of the Pixel keyboard follow-up remains pending.
 
 ## Family service
 
