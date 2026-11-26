@@ -5,22 +5,26 @@ and older results are in [the archive](archive/feasibility-history.md).
 
 ## Latest published app
 
-Release `403a603`, verified 2026-11-26:
-[successful Pages workflow](https://github.com/H-Wilderspin/speech-to-text/actions/runs/45835403057/attempts/2).
+Release `e3b615d`, verified 2026-11-26:
+[successful Pages workflow](https://github.com/H-Wilderspin/speech-to-text/actions/runs/45846194688).
 
-- Typecheck, lint, 205 unit tests, two setup-helper tests, production build,
-  222 app browser tests (four platform-specific skips), 22 family-connection tests, six owner-page tests,
+- Typecheck, lint, 211 unit tests, two setup-helper tests, production build,
+  228 app browser tests (four platform-specific skips), 22 family-connection tests, six owner-page tests,
   Worker bundle and Pages deployment passed.
-- Served JavaScript: `assets/index-D-w0AeLn.js`; the live service worker includes
+- Served JavaScript: `assets/index-z2JNrAKR.js`; the live service worker includes
   the same asset in its precache.
 - Actual published app: Windows Chromium 156.0.8078.4 and WebKit 27.2, at 390px.
-  With simulated recognition and family data, verified captions survive a silence
-  error and screen changes, Refresh reads all planner files from every screen,
-  completed edits sync automatically, and unfinished drafts no longer show the
-  redundant footer reminder. No real microphone, email or family data was used.
-- The owner confirmed local recognition and text retention in Chrome through
-  localhost and the local IP address before authorizing deployment. The IDE
-  preview failed to connect; see [troubleshooting](troubleshooting.md#speech-cannot-connect-inside-the-ide-preview).
+  With simulated segmented Android recognition, four completed sentences survive
+  multiple pause/resume sequences in one native capture session, screen changes
+  and Stop. Deliberate repeats and sentences extending an earlier opening remain
+  separate. No real microphone, email or family data was used.
+- The new regression failed against the previous adapter by discarding the first
+  sentence when the next interim arrived. Tests now cover both legacy cumulative
+  and segmented results, including Clear and voice commands. See
+  [ADR 0079](decisions/0079-adaptive-android-result-slots.md).
+- Local Chrome retention was accepted before the Pixel follow-up exposed this
+  different failure on resuming speech. Physical Pixel acceptance of this fix
+  remains pending; desktop fixtures do not establish the phone's event sequence.
 - Regression coverage retains remembered legacy/paired connection status and
   verifies saves retry while another screen is open. Stalled device storage
   cannot trap navigation or discard pending in-memory edits.
