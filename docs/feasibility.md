@@ -5,20 +5,25 @@ and older results are in [the archive](archive/feasibility-history.md).
 
 ## Latest published app
 
-Release `4b9ae22`, verified 2026-11-26:
-[successful Pages workflow](https://github.com/H-Wilderspin/speech-to-text/actions/runs/45831507993).
+Release `403a603`, verified 2026-11-26:
+[successful Pages workflow](https://github.com/H-Wilderspin/speech-to-text/actions/runs/45835403057/attempts/2).
 
-- Typecheck, lint, 197 unit tests, two setup-helper tests, production build,
-  full CI browser suites, 22 family-connection tests, six owner-page tests,
+- Typecheck, lint, 205 unit tests, two setup-helper tests, production build,
+  222 app browser tests (four platform-specific skips), 22 family-connection tests, six owner-page tests,
   Worker bundle and Pages deployment passed.
-- Served JavaScript: `assets/index-BTwUvPwZ.js`.
+- Served JavaScript: `assets/index-D-w0AeLn.js`; the live service worker includes
+  the same asset in its precache.
 - Actual published app: Windows Chromium 156.0.8078.4 and WebKit 27.2, at 390px.
-  With mocked authentication, verified both remembered legacy and paired access
-  show **This device is connected** before and after refresh. Neither the email
-  request form nor pairing-code field appears. No email options were requested,
-  no code was sent and no family data was changed.
-- Browser regression coverage also verifies a rejected legacy connection offers
-  pairing again and a temporary service pause retains the saved connection.
+  With simulated recognition and family data, verified captions survive a silence
+  error and screen changes, Refresh reads all planner files from every screen,
+  completed edits sync automatically, and unfinished drafts no longer show the
+  redundant footer reminder. No real microphone, email or family data was used.
+- The owner confirmed local recognition and text retention in Chrome through
+  localhost and the local IP address before authorizing deployment. The IDE
+  preview failed to connect; see [troubleshooting](troubleshooting.md#speech-cannot-connect-inside-the-ide-preview).
+- Regression coverage retains remembered legacy/paired connection status and
+  verifies saves retry while another screen is open. Stalled device storage
+  cannot trap navigation or discard pending in-memory edits.
 - Keyboard regression coverage includes Monday lunch with blank, weekly-default
   and dated meals, repeated edits, visual-only resize/pan and restoring full
   height. Physical confirmation of the Pixel keyboard follow-up remains pending.

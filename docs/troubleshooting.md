@@ -40,6 +40,18 @@ has not yet been retested: record OS/browser and keyboard dictation/Voice Contro
 settings. Independent OS dictation is not controlled by this app.
 If another app holds the microphone, stop that app's capture and tap Listen again.
 
+## Speech cannot connect inside the IDE preview
+
+On 2026-11-26 the IDE's integrated preview reported a speech-service connection
+error, while the owner confirmed recognition and caption retention worked in
+Chrome using both localhost and the local IP address. Isolated installed Chrome
+and Edge sessions also returned recognition results from synthetic speech at
+`http://127.0.0.1:5173/`, without recording the real microphone.
+
+Open the local app directly in Chrome or Edge for speech testing. The precise
+embedded-browser failure remains unverified; this symptom does not establish a
+fault in the app server or the family connection. No extra app API key is needed.
+
 ## Windows certificate or login failures
 
 For `UNABLE_TO_GET_ISSUER_CERT_LOCALLY`, Node's `--use-system-ca` successfully
