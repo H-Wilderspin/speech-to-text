@@ -5,21 +5,23 @@ and older results are in [the archive](archive/feasibility-history.md).
 
 ## Latest published app
 
-Release `e53f5cd`, verified 2026-11-26:
-[successful Pages workflow](https://github.com/H-Wilderspin/speech-to-text/actions/runs/45824608093).
+Release `fab173b`, verified 2026-11-26:
+[successful Pages workflow](https://github.com/H-Wilderspin/speech-to-text/actions/runs/45827698543).
 
 - Typecheck, lint, 197 unit tests, two setup-helper tests, production build,
   full CI browser suites, 18 family-pairing tests, six owner-page tests, Worker
-  bundle and Pages deployment passed. CI caught owner-button overflow at 320px
-  with 200% text; the corrected layout passed the same check.
-- Served JavaScript: `assets/index-9AhSdy5u.js`.
+  bundle and Pages deployment passed. Local meal/shopping regression coverage
+  passed 108 tests with four platform-specific skips.
+- Served JavaScript: `assets/index-CWKdehXP.js`.
 - Actual published app: Windows Chromium 156.0.8078.4 and WebKit 27.2 (iPhone 13
-  emulation), both at 390px. Verified the four approved dropdown options, explicit
-  selection before sending, absence of a free-text email field, 48px select target,
-  24-hour instructions, one-time-code input and no horizontal overflow. These
-  browser checks sent no additional email and changed no planner data.
-- The deployed owner page also fits at 320px with 200% text in both browsers,
-  using display-only sample result content without issuing an invitation.
+  emulation), resized to 390 by 400. With mocked family data and access, verified
+  Save and Cancel remain fully visible between the header and navigation, have
+  48px targets and are reachable by hit testing. Cancel closes the editor. No
+  real family data was changed. The Chromium screenshot was reviewed.
+- Automated coverage also checks 320px width, cancelling without changing a meal,
+  saving at reduced height and Android Chrome's resize-content viewport setting.
+  Resizing emulation does not establish actual keyboard behaviour on the Pixel;
+  that physical-device acceptance remains pending.
 
 ## Family service
 
