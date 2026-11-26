@@ -35,6 +35,7 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
   private sessionNumber = 0;
   private revision = 0;
   private nativeEnded = false;
+  private androidUsesResultSlots = false;
   private resetting: BrowserRecognizer | null = null;
   private pauseTimer: ReturnType<typeof setTimeout> | undefined;
   private lines = new PauseLines();
@@ -179,11 +180,20 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
       };
       recognizer.onresult = ({ results }) => {
         if (!current()) return;
+        // Legacy Android promotes every partial to a final-marked revision.
+        // A genuine interim identifies the newer segmented contract: retain
+        // every completed slot while only the trailing interim is replaced.
+        if (this.resultMode === 'android-cumulative' && Array.from(results).some(result => result?.isFinal === false)) {
+          this.androidUsesResultSlots = true;
+        }
         const paused = new Set(this.current.filter((segment) => segment.pauseAfter).map((segment) => segment.id));
-        this.current = this.resultMode === 'android-cumulative'
+        this.current = this.resultMode === 'android-cumulative' && !this.androidUsesResultSlots
           ? reconcileAndroidResults(results, this.sessionId)
-          : reconcileResults(this.current, results, this.sessionId, true, this.utterance);
+          : reconcileResults(this.current, results, this.sessionId, !this.androidUsesResultSlots, this.utterance);
         this.current = this.current.map((segment) => ({ ...segment, sessionId: sessionNumber,
+          // Distinct completed slots may deliberately repeat or extend the same
+          // words. Never collapse them as cumulative revisions of one utterance.
+          ...(this.androidUsesResultSlots ? { utterance: Number(segment.id.split(':')[1]) } : {}),
           revision: ++this.revision, ...(paused.has(segment.id) ? { pauseAfter: true } : {}) }));
         if (this.current.length) this.restartDelay = 200;
         if (this.handleCommands()) return;
@@ -206,7 +216,7 @@ export class BrowserTranscriptionEngine implements TranscriptionEngine {
       recognizer.onend = () => {
         if (!current()) return;
         this.nativeEnded = true;
-        if (this.resultMode === 'android-cumulative' && !this.cycleErrored) {
+        if (this.resultMode === 'android-cumulative' && !this.androidUsesResultSlots && !this.cycleErrored) {
           // Android ends the native session after its completed result callback.
           // Errors/interruptions must not turn a partial guess into confirmed text.
           this.current = this.current.map((segment) => ({ ...segment, isFinal: true }));

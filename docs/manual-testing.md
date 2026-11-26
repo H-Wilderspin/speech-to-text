@@ -11,6 +11,8 @@ keyboard, sleep, gesture or VoiceOver behaviour.
   cumulative duplicates, late corrections and actionable errors.
   On Pixel/Chrome, speak several sentences with pauses, then Stop/resume and
   switch screens. Earlier words must remain; unfinished guesses stay unconfirmed.
+  Specifically check the first new words after each pause while Listen remains
+  active. Repeat a sentence and then extend its opening; keep each spoken sentence.
 - Clear while listening; speak after Reconnecting. Repeat with command clear.
   Stop/command stop release capture; old-session text must not return.
 - Read earlier captions while speech arrives; retain scroll until returning to

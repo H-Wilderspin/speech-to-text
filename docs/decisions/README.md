@@ -24,6 +24,7 @@ every feature described is still present. Start with the [current guides](../REA
 | Allowlisted email pairing | [0078](0078-allowlisted-email-pairing.md) |
 | Persistent planner drafts and shopping Undo | [0075](0075-planner-drafts-and-undo.md) |
 | Caption retention and bounded navigation waits | [0076](0076-caption-retention-and-responsive-navigation.md) |
+| Legacy and segmented Android speech results | [0079](0079-adaptive-android-result-slots.md) |
 
 Earlier records remain at their original paths. In particular, the former
 speaker pipeline, task planner, top/bottom split, modal navigation, 30-second

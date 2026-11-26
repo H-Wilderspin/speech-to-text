@@ -181,14 +181,14 @@ test('anonymous listening, interim revision, stop, resume, clear, and no persist
   expect(await page.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length }))).toEqual({ local: 0, session: 0 });
 });
 
-for (const android of [false, true]) test(`Clear retires capture and rejects stale callbacks (${android ? 'Android' : 'standard'})`, async ({ page }) => {
+for (const mode of ['standard', 'legacy Android', 'segmented Android']) test(`Clear retires capture and rejects stale callbacks (${mode})`, async ({ page }) => {
   await mockRecognition(page);
-  if (android) await page.addInitScript(() => Object.defineProperty(navigator, 'userAgent', {
+  if (mode !== 'standard') await page.addInitScript(() => Object.defineProperty(navigator, 'userAgent', {
     value: 'Mozilla/5.0 (Linux; Android 10; K) Chrome/156.0.0.0 Mobile Safari/537.36',
   }));
   await page.goto('/');
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
-  await result(page, 'We are', false);
+  await result(page, 'We are', mode === 'legacy Android');
   const live = page.getByRole('region', { name: 'Live transcript', exact: true });
   const session = Number(await live.locator('.caption').getAttribute('data-session'));
   await page.evaluate(() => {
@@ -225,28 +225,28 @@ for (const android of [false, true]) test(`Clear retires capture and rejects sta
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
 });
 
-for (const android of [false, true]) test(`command clear clears captions and continues listening (${android ? 'Android' : 'standard'})`, async ({ page }) => {
+for (const mode of ['standard', 'legacy Android', 'segmented Android']) test(`command clear clears captions and continues listening (${mode})`, async ({ page }) => {
   await mockRecognition(page);
-  if (android) await page.addInitScript(() => Object.defineProperty(navigator, 'userAgent', {
+  if (mode !== 'standard') await page.addInitScript(() => Object.defineProperty(navigator, 'userAgent', {
     value: 'Mozilla/5.0 (Linux; Android 10; K) Chrome/156.0.0.0 Mobile Safari/537.36',
   }));
   await page.goto('/');
   await page.getByRole('button', { name: 'Listen', exact: true }).click();
   const live = page.getByRole('region', { name: 'Live transcript', exact: true });
-  await result(page, 'Old words. Command clear.', false);
+  await result(page, 'Old words. Command clear.', mode === 'legacy Android');
   await expect(live).toContainText('Old words.');
   const completed = 'Old words. Command clear. Old payload tail.';
   await result(page, completed, true);
-  if (android) await page.evaluate(() => {
+  if (mode === 'legacy Android') await page.evaluate(() => {
     const host = window as Window & { testRecognition?: { onend: () => void } };
     host.testRecognition?.onend();
   });
   await expect(live.locator('.caption')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeEnabled();
-  await result(page, 'Fresh words.', false);
+  await result(page, 'Fresh words.', mode === 'legacy Android');
   await expect(live.locator('.caption p')).toHaveText(['Fresh words. Unconfirmed']);
   await result(page, 'Fresh words. Command stop.', true);
-  if (android) await page.evaluate(() => {
+  if (mode === 'legacy Android') await page.evaluate(() => {
     (window as Window & { testRecognition?: { onend?: () => void } }).testRecognition?.onend?.();
   });
   await expect(live.locator('.caption p')).toHaveText(['Fresh words.']);
@@ -503,6 +503,41 @@ test('Android cumulative final-marked revisions update one line, including corre
   await expect(page.locator('.confirmed')).toHaveText(['We are here. Now another sentence.']);
   await expect(page.getByRole('button', { name: 'Listen', exact: true })).toBeEnabled();
   expect(await page.evaluate(() => (window as Window & { wasAborted?: boolean }).wasAborted)).toBe(true);
+});
+
+test('Pixel segmented results keep earlier sentences when speaking resumes without ending capture', async ({ page }) => {
+  await mockRecognition(page);
+  await page.addInitScript(() => Object.defineProperty(navigator, 'userAgent', {
+    value: 'Mozilla/5.0 (Linux; Android 16; Pixel 9) Chrome/158.0.0.0 Mobile Safari/537.36',
+  }));
+  await page.goto('/'); await page.clock.install();
+  await page.getByRole('button', { name: 'Listen', exact: true }).click();
+  await result(page, 'First sentence', false);
+  await result(page, 'First sentence.', true);
+  await expect(page.locator('.confirmed')).toHaveText('First sentence.');
+  await page.evaluate(() => Object.assign(window, { originalRecognizer: (window as Window & { testRecognition?: unknown }).testRecognition }));
+  const emit = async (texts: string[], interim: boolean) => page.evaluate(({ texts, interim }) => {
+    const host = window as Window & { testRecognition?: { onresult: (event: unknown) => void }; originalRecognizer?: unknown };
+    if (host.testRecognition !== host.originalRecognizer) throw new Error('Capture restarted across a sentence pause.');
+    host.testRecognition!.onresult({ results: texts.map((transcript, index) => ({
+      0: { transcript, confidence: 1 }, length: 1, isFinal: !interim || index < texts.length - 1,
+    })) });
+  }, { texts, interim });
+  for (const sentence of ['Next sentence.', 'Next sentence.', 'Next sentence with more words.']) {
+    await page.clock.fastForward(5000);
+    const before = await page.locator('.confirmed').allTextContents();
+    await emit([...before, 'A preliminary guess'], true);
+    await expect(page.locator('.confirmed')).toHaveText(before);
+    await emit([...before, sentence], false);
+    await expect(page.locator('.confirmed')).toHaveText([...before, sentence]);
+  }
+  const sentences = ['First sentence.', 'Next sentence.', 'Next sentence.', 'Next sentence with more words.'];
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('button', { name: 'Speech to text', exact: true }).click();
+  await expect(page.locator('.confirmed')).toHaveText(sentences);
+  await page.getByRole('button', { name: 'Stop', exact: true }).click();
+  await expect(page.locator('.confirmed')).toHaveText(sentences);
+  expect(await page.evaluate(() => Object.values(localStorage).join(' '))).not.toContain('First sentence');
 });
 
 test('Android keeps a deliberately repeated sentence from a later native session', async ({ page }) => {

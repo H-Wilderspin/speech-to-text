@@ -78,6 +78,70 @@ describe('browser recognition lifecycle', () => {
       }, null, 'android-cumulative');
       engine.start('en-GB'); latest().onstart?.();
     });
+    it('retains completed Android sentences when a new interim arrives after a pause without native end', () => {
+      const native = latest();
+      native.result('First sentence', false);
+      native.result('First sentence.');
+      vi.advanceTimersByTime(5000);
+      native.onresult?.({ results: [
+        { 0: { transcript: 'First sentence.', confidence: 1 }, length: 1, isFinal: true },
+        { 0: { transcript: 'Next sent', confidence: 1 }, length: 1, isFinal: false },
+      ] });
+      expect(engine.getSnapshot().segments.map(s => [s.text, s.isFinal])).toEqual([
+        ['First sentence.', true], ['Next sent', false],
+      ]);
+      native.onresult?.({ results: ['First sentence.', 'Next sentence.'].map(transcript => ({
+        0: { transcript, confidence: 1 }, length: 1, isFinal: true,
+      })) });
+      expect(engine.getSnapshot().segments.map(s => s.text)).toEqual(['First sentence.', 'Next sentence.']);
+      expect(instances).toHaveLength(1);
+      expect(native.stop).not.toHaveBeenCalled(); expect(native.abort).not.toHaveBeenCalled();
+    });
+    it('preserves repeated and extended completed Android sentences in separate result slots', () => {
+      latest().result('We are here', false);
+      latest().onresult?.({ results: ['We are here.', 'We are here.', 'We are here again.'].map(transcript => ({
+        0: { transcript, confidence: 1 }, length: 1, isFinal: true,
+      })) });
+      expect(engine.getSnapshot().segments.map(s => s.text)).toEqual(['We are here.', 'We are here.', 'We are here again.']);
+    });
+    it('recovers earlier Android result slots when the first observed interim follows a final-only callback', () => {
+      androidResult(['Earlier sentence.']);
+      latest().onresult?.({ results: [
+        { 0: { transcript: 'Earlier sentence.', confidence: 0 }, length: 1, isFinal: true },
+        { 0: { transcript: 'New wording', confidence: 0 }, length: 1, isFinal: false },
+      ] });
+      expect(engine.getSnapshot().segments.map(s => s.text)).toEqual(['Earlier sentence.', 'New wording']);
+      latest().onend?.();
+      expect(engine.getSnapshot().segments.map(s => s.isFinal)).toEqual([true, false]);
+    });
+    it('does not confirm or execute a segmented Android interim command at native end', () => {
+      latest().result('command clear', false);
+      latest().onend?.();
+      expect(engine.getSnapshot().segments).toMatchObject([{ text: 'command clear', isFinal: false }]);
+      expect(latest().abort).not.toHaveBeenCalled();
+    });
+    it('remembers segmented Android support across native restarts and Clear, including final-only results', () => {
+      latest().result('Earlier words.', false); latest().onend?.();
+      vi.advanceTimersByTime(0); latest().onstart?.();
+      androidResult(['First sentence.', 'Next sentence.']);
+      expect(engine.getSnapshot().segments.map(s => s.text)).toEqual(['Earlier words.', 'First sentence.', 'Next sentence.']);
+      const old = latest(); engine.clear(); old.onend?.(); latest().onstart?.();
+      androidResult(['After clear.', 'Another sentence.']);
+      expect(engine.getSnapshot().segments.map(s => s.text)).toEqual(['After clear.', 'Another sentence.']);
+    });
+    it('honours a completed segmented Android command without waiting for native end', () => {
+      latest().result('Earlier words.', false);
+      latest().onresult?.({ results: [
+        { 0: { transcript: 'Earlier words.', confidence: 1 }, length: 1, isFinal: true },
+        { 0: { transcript: 'command stop', confidence: 1 }, length: 1, isFinal: false },
+      ] });
+      expect(engine.getSnapshot().phase).toBe('listening');
+      latest().onresult?.({ results: ['Earlier words.', 'Command stop.'].map(transcript => ({
+        0: { transcript, confidence: 1 }, length: 1, isFinal: true,
+      })) });
+      expect(engine.getSnapshot().phase).toBe('idle');
+      expect(engine.getSnapshot().segments.map(s => s.text)).toEqual(['Earlier words.']);
+    });
     it('replaces revisions despite repeated speechstart events and commits the latest line once', () => {
       const native = latest();
       const texts = ['We', 'We are', 'We are hear', 'We are here.', 'We are here.'];

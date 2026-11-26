@@ -5,11 +5,13 @@ export function usesAndroidRecognition(userAgent: string): boolean {
 }
 
 /**
- * Chromium's Android bridge promotes partial callbacks to final in continuous
+ * Chromium's legacy Android bridge promotes partial callbacks to final in continuous
  * mode, appending each revision as a new Web Speech slot. Android onResults ends
  * that native session. Within it, display the latest hypothesis in one slot and
  * keep it provisional until normal native end. Neither the promoted final flag
  * nor a confidence score reliably distinguishes these revisions from completion.
+ * Newer bridges emit genuine interim/final slots; browser.ts detects that contract
+ * from a real interim and bypasses this compatibility adapter for that engine.
  */
 export function reconcileAndroidResults(results: RecognitionResults, sessionId: number): TranscriptSegment[] {
   const result = results[results.length - 1];

@@ -4,6 +4,7 @@ Date: 2026-10-11
 Status: Accepted; supersedes ADR 0019's result grouping for Android Chromium
 
 Provisional-caption disposal is superseded by [ADR 0076](0076-caption-retention-and-responsive-navigation.md).
+Segmented Android result handling is amended by [ADR 0079](0079-adaptive-android-result-slots.md).
 
 ## Context
 
