@@ -22,7 +22,7 @@ export const ownerPage = String.raw`<!doctype html>
     label { display: block; margin-bottom: .5rem; }
     input, button { font: inherit; min-height: 48px; border: 1px solid #6d795f; border-radius: 12px; padding: .7rem; }
     input { width: 100%; color: inherit; background: white; }
-    button { cursor: pointer; color: #fff; background: #425b35; font-weight: 600; touch-action: manipulation; }
+    button { min-width: 0; max-width: 100%; overflow-wrap: anywhere; cursor: pointer; color: #fff; background: #425b35; font-weight: 600; touch-action: manipulation; }
     button:disabled { opacity: .6; cursor: wait; }
     button.secondary { background: #e9efdf; color: #425b35; }
     :focus-visible { outline: 3px solid #425b35; outline-offset: 3px; }
