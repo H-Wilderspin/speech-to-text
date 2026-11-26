@@ -51,6 +51,7 @@ async function pair(page: Page) {
 for (const path of ['/', '/speech-to-text/']) {
   test(`pairing is remembered and never asks for a GitHub token at ${path}`, async ({ page }) => {
     const state = await fixture(page);
+    state.emailEnabled = true;
     await page.goto(path === '/' ? path : `http://127.0.0.1:4181${path}`);
     await pair(page);
     await expect(page.getByLabel('GitHub token', { exact: true })).toHaveCount(0);
@@ -58,11 +59,43 @@ for (const path of ['/', '/speech-to-text/']) {
     await page.reload();
     await page.getByRole('button', { name: 'Settings', exact: true }).click();
     await expect(page.getByText('This device is connected.', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Email me a code', exact: true })).toHaveCount(0);
+    await expect(page.getByLabel('Pairing code')).toHaveCount(0);
     state.paused = true;
     await page.getByRole('button', { name: 'Speech to text', exact: true }).click();
     await page.getByRole('button', { name: 'Settings', exact: true }).click();
     await expect(page.getByRole('alert')).toContainText('syncing is resting');
     await expect(page.getByLabel('Pairing code')).toHaveCount(0);
+  });
+}
+
+for (const path of ['/', '/speech-to-text/']) {
+  test(`a remembered legacy connection stays connected after reload at ${path}`, async ({ page }) => {
+    const state = await fixture(page);
+    state.emailEnabled = true;
+    let checks = 0;
+    let denied = false;
+    await page.route('https://api.github.com/repos/H-Wilderspin/speech-to-text-meals', route => {
+      checks++;
+      return route.fulfill(denied ? { status: 401, json: {} } : { json: { permissions: { push: true } } });
+    });
+    await page.addInitScript(base => localStorage.setItem(`speech-to-text-meal-editor:${base}`, 'legacy-test-token'), path);
+    await page.goto(path === '/' ? path : `http://127.0.0.1:4181${path}`);
+    for (let visit = 0; visit < 2; visit++) {
+      await page.getByRole('button', { name: 'Settings', exact: true }).click();
+      await expect(page.getByText('This device is connected.', { exact: true })).toBeVisible();
+      await expect(page.getByText('You do not need another code after reopening or updating the app.')).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Email me a code', exact: true })).toHaveCount(0);
+      await expect(page.getByLabel('Pairing code')).toHaveCount(0);
+      await expect.poll(() => checks).toBe(visit + 1);
+      await page.reload();
+    }
+    expect(state.emailRequests).toBe(0);
+    expect(state.pairingRequests).toBe(0);
+    denied = true;
+    await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await expect(page.getByLabel('Pairing code')).toBeVisible();
+    await expect(page.getByText('This device is connected.', { exact: true })).toHaveCount(0);
   });
 }
 

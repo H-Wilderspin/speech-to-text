@@ -16,11 +16,12 @@ export function DeviceAccessSettings({ access, needsToken, onAccessError, onToke
   const candidate = useRef('');
   const input = useRef<HTMLInputElement>(null);
   const paired = isDeviceToken(access.token);
+  const connected = Boolean(access.token) && !needsToken;
   useEffect(() => {
     if (needsToken) input.current?.focus();
   }, [needsToken]);
   useEffect(() => {
-    if (!paired || needsToken) return;
+    if (!connected) return;
     let current = true;
     void checkEditor(access.token).catch(error => {
       if (!current) return;
@@ -28,15 +29,16 @@ export function DeviceAccessSettings({ access, needsToken, onAccessError, onToke
       else setError(error instanceof Error ? error.message : 'Could not check the family connection.');
     });
     return () => { current = false; };
-  }, [access.token, paired, needsToken, onAccessError]);
+  }, [access.token, connected, onAccessError]);
   return <section className="meal-access" aria-labelledby="meal-access-title">
     <h3 id="meal-access-title">Family connection</h3>
     {access.notice && <p role="status">{access.notice}</p>}
     {error && <p className="notice error" role="alert">{error}</p>}
-    {(!paired || needsToken) && <EmailCodeRequest disabled={connecting} onBusy={value => { setRequestingEmail(value); onBusy(value); }} />}
-    {paired && !needsToken ? <>
+    {!connected && <EmailCodeRequest disabled={connecting} onBusy={value => { setRequestingEmail(value); onBusy(value); }} />}
+    {connected ? <>
       <p role="status">This device is connected.</p>
       <p>{access.remembered ? 'You can edit meals and shopping whenever you open the app.' : 'Connected for this session. This browser could not remember access.'}</p>
+      {access.remembered && <p>You do not need another code after reopening or updating the app.</p>}
       <p>Changes are kept on this device and shared with your family when connected.</p>
     </> : <form onSubmit={async event => {
       event.preventDefault();

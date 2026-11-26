@@ -13,7 +13,13 @@ go to the Worker; D1 stores access metadata, not meals.
 
 ### Email codes in the app
 
-After email setup and deployment, Settings shows an **Email address** dropdown
+Connected devices show **This device is connected**, including devices still using
+a valid older GitHub connection. Refreshing, reopening or updating the app does
+not require another code. Code requests stay hidden unless access is missing or
+the saved connection is rejected; a temporary network failure does not require
+pairing again.
+
+After email setup and deployment, unconnected devices show an **Email address** dropdown
 containing only the approved addresses, followed by **Email me a code**. Choose
 your address; there is no free-text email field. Only approved addresses receive a six-digit code. Enter it
 in the existing **Pairing code** field to connect the device. Emailed and manually
